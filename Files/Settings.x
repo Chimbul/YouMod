@@ -102,11 +102,12 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
 - (void)loadWithModel:(id)model fromView:(UIView *)view {
     %orig;
     if ([[self valueForKey:@"_detailsCategoryID"] integerValue] == TweakSection)
-        MSHookIvar<BOOL>(self, "_shouldShowSearchBar") = YES;
+        [self setValue:@YES forKey:@"_shouldShowSearchBar"];
 }
 - (void)setSectionControllers {
     %orig;
-    if (MSHookIvar<BOOL>(self, "_shouldShowSearchBar")) {
+    BOOL show = [self valueForKey:@"_shouldShowSearchBar"];
+    if (show) {
         YTSettingsSectionController *settingsSectionController = [self settingsSectionControllers][[self valueForKey:@"_detailsCategoryID"]];
         YTSearchableSettingsViewController *searchableVC = [self valueForKey:@"_searchableSettingsViewController"];
         if (settingsSectionController)
