@@ -1,6 +1,13 @@
 // Settings.x
 // Thanks to the original codes from YTUHD by PoomSmart - https://github.com/PoomSmart/YTUHD/blob/0e735616fd8fc6546339da7fdc78466f16f23ffd/Settings.x
 #import "Headers.h"
+#import <YouTubeHeader/YTSettingsViewController.h>
+#import <YouTubeHeader/YTSearchableSettingsViewController.h>
+#import <YouTubeHeader/YTSettingsSectionItem.h>
+#import <YouTubeHeader/YTSettingsSectionItemManager.h>
+#import <YouTubeHeader/YTUIUtils.h>
+#import <YouTubeHeader/YTSettingsPickerViewController.h>
+#import <YouTubeHeader/YTToastResponderEvent.h>
 
 #define TweakName @"YouMod"
 
@@ -88,6 +95,24 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
     return order;
 }
 
+%end
+
+// Settings Search Bar
+%hook YTSettingsViewController
+- (void)loadWithModel:(id)model fromView:(UIView *)view {
+    %orig;
+    if ([[self valueForKey:@"_detailsCategoryID"] integerValue] == TweakSection)
+        MSHookIvar<BOOL>(self, "_shouldShowSearchBar") = YES;
+}
+- (void)setSectionControllers {
+    %orig;
+    if (MSHookIvar<BOOL>(self, "_shouldShowSearchBar")) {
+        YTSettingsSectionController *settingsSectionController = [self settingsSectionControllers][[self valueForKey:@"_detailsCategoryID"]];
+        YTSearchableSettingsViewController *searchableVC = [self valueForKey:@"_searchableSettingsViewController"];
+        if (settingsSectionController)
+            [searchableVC storeCollectionViewSections:@[settingsSectionController]];
+    }
+}
 %end
 
 %hook YTSettingsSectionItemManager
