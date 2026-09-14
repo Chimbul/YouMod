@@ -142,6 +142,7 @@
 "METHOD_DIRECT" = "직접";
 "METHOD_SERVER" = "서버";
 "METHOD_ONDEVICE" = "기기 내 처리 (SABR)";
+"AUDIO" = "Audio";
 
 "APPEARANCE" = "화면 표시";
 "OLED_THEME" = "OLED 다크 모드";
@@ -167,6 +168,7 @@
 "HIDE_CAST_BUTTON_NAVBAR_DESC" = "내비게이션 바의 캐스트 버튼을 숨깁니다.";
 "HIDE_MESSAGES_BUTTON" = "Hide messages button";
 "HIDE_MESSAGES_BUTTON_DESC" = "Hide messages button in the navigation bar.";
+
 "FEED" = "피드";
 "HIDE_SUBBAR" = "서브바 숨기기";
 "HIDE_SUBBAR_DESC" = "피드 상단의 서브바를 숨깁니다.";
@@ -514,10 +516,12 @@
 "HIDE_COMMU_GUIDE_DESC" = "커뮤니티 가이드 헤더를 숨깁니다.";
 "HIDE_ENGAGEMENT_SUBBAR" = "댓글 헤더 숨기기";
 "HIDE_ENGAGEMENT_SUBBAR_DESC" = "댓글 정렬 헤더(인기순, 최신순)가 표시되지 않도록 숨깁니다.";
-"HIDE_SORT_FILTER_BUTTON_PANEL" = "Hide sort & filter button panel";
-"HIDE_SORT_FILTER_BUTTON_PANEL_DESC" = "Hide the sort and filter buttons in the comments panel.";
-"HIDE_COMMUNITY_BUTTON_PANEL" = "Hide community button panel";
-"HIDE_COMMUNITY_BUTTON_PANEL_DESC" = "Hide the community button panel on the channel page.";
+"HIDE_SORT_FILTER_BUTTON_PANEL" = "Hide sort & filter button";
+"HIDE_SORT_FILTER_BUTTON_PANEL_DESC" = "Hide the sort and filter button in the engagement panel.";
+"HIDE_COMMUNITY_BUTTON_PANEL" = "Hide community button";
+"HIDE_COMMUNITY_BUTTON_PANEL_DESC" = "Hide the community button in the engagement panel.";
+"HIDE_INFO_BUTTON_PANEL" = "Hide info button";
+"HIDE_INFO_BUTTON_PANEL_DESC" = "Hide the info button in the engagement panel.";
 "DISABLES_RTL" = "RTL 서식 비활성화";
 "DISABLES_RTL_DESC" = "오른쪽에서 왼쪽(RTL)으로 표시되는 언어의 텍스트를 강제로 왼쪽에서 오른쪽(LTR) 형식으로 표시합니다.";
 "DEVICE_UI" = "인터페이스 스타일";
@@ -587,7 +591,6 @@
 "SB_MIN_DURATION_SLIDER" = "건너뛸 최소 구간 길이";
 
 /* SponsorBlock menu / vote / whitelist / user ID */
-"SB_MENU_TITLE" = "SponsorBlock";
 "SB_MENU_ENABLE" = "Enable SponsorBlock";
 "SB_MENU_DISABLE" = "Disable SponsorBlock";
 "SB_MENU_VOTE" = "Vote on segments";
@@ -619,6 +622,3 @@
 "SB_ID_INVALID" = "ID must be at least 30 characters";
 "SB_ID_SAVE" = "Save";
 "SB_ID_CANCEL" = "Cancel";
-"AUDIO" = "Audio";
-"HIDE_INFO_BUTTON_PANEL" = "Hide info button panel";
-"HIDE_INFO_BUTTON_PANEL_DESC" = "Hide the info button panel in the video description.";

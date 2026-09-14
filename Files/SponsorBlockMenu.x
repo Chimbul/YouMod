@@ -479,37 +479,43 @@ static void sbPostVoteQuery(NSString *query, void (^completion)(BOOL success, NS
     BOOL active = sbActiveForVideo(self);
     UIViewController *presenter = (UIViewController *)[self activeVideoPlayerOverlay];
     YTDefaultSheetController *sheet = [%c(YTDefaultSheetController) sheetControllerWithParentResponder:presenter];
-    [sheet addHeaderWithTitle:LOC(@"SB_MENU_TITLE") subtitle:sbCurrentChannelName(self) ?: @""];
 
     __weak typeof(self) weakSelf = self;
 
-    YTActionSheetAction *toggleAction = [%c(YTActionSheetAction) actionWithTitle:LOC(active ? @"SB_MENU_DISABLE" : @"SB_MENU_ENABLE")
-                                                                        iconImage:[UIImage systemImageNamed:active ? @"shield" : @"shield.slash"]
-                                                                             style:0
-                                                                          handler:^(__unused YTActionSheetAction *action) {
-        __strong typeof(weakSelf) strongSelf = weakSelf;
-        if (!strongSelf) return;
-        BOOL newState = !active;
-        [[NSUserDefaults standardUserDefaults] setBool:newState forKey:SBButtonKey];
-        [[NSUserDefaults standardUserDefaults] synchronize];
-        if (newState && strongSelf.sbSegments.count == 0) {
-            [SBRequest fetchSegmentsForVideoID:[strongSelf currentVideoID] completion:^(NSArray<SBSegment *> *segments) {
-                __strong typeof(weakSelf) ss = weakSelf;
-                if (!ss) return;
-                ss.sbSegments = segments;
+    // Whitelisted channel: SponsorBlock is fully overridden, so the enable/
+    // disable toggle is meaningless — only whitelist management is offered.
+    NSString *menuChannelID = sbCurrentChannelID(self);
+    BOOL channelListed = menuChannelID.length > 0 && sbIsChannelWhitelisted(menuChannelID);
+
+    if (!channelListed) {
+        YTActionSheetAction *toggleAction = [%c(YTActionSheetAction) actionWithTitle:LOC(active ? @"SB_MENU_DISABLE" : @"SB_MENU_ENABLE")
+                                                                            iconImage:[UIImage systemImageNamed:active ? @"shield" : @"shield.slash"]
+                                                                                 style:0
+                                                                              handler:^(__unused YTActionSheetAction *action) {
+            __strong typeof(weakSelf) strongSelf = weakSelf;
+            if (!strongSelf) return;
+            BOOL newState = !active;
+            [[NSUserDefaults standardUserDefaults] setBool:newState forKey:SBButtonKey];
+            [[NSUserDefaults standardUserDefaults] synchronize];
+            if (newState && strongSelf.sbSegments.count == 0) {
+                [SBRequest fetchSegmentsForVideoID:[strongSelf currentVideoID] completion:^(NSArray<SBSegment *> *segments) {
+                    __strong typeof(weakSelf) ss = weakSelf;
+                    if (!ss) return;
+                    ss.sbSegments = segments;
+                    [[NSNotificationCenter defaultCenter] postNotificationName:@"SBSegmentsDidLoad"
+                                                                        object:ss
+                                                                      userInfo:@{@"segments": segments ?: @[]}];
+                }];
+            } else {
+                if (!newState) strongSelf.sbSegments = nil;
+                NSArray *segments = newState ? (strongSelf.sbSegments ?: @[]) : @[];
                 [[NSNotificationCenter defaultCenter] postNotificationName:@"SBSegmentsDidLoad"
-                                                                    object:ss
-                                                                  userInfo:@{@"segments": segments ?: @[]}];
-            }];
-        } else {
-            if (!newState) strongSelf.sbSegments = nil;
-            NSArray *segments = newState ? (strongSelf.sbSegments ?: @[]) : @[];
-            [[NSNotificationCenter defaultCenter] postNotificationName:@"SBSegmentsDidLoad"
-                                                                object:strongSelf
-                                                              userInfo:@{@"segments": segments}];
-        }
-    }];
-    [sheet addAction:toggleAction];
+                                                                    object:strongSelf
+                                                                  userInfo:@{@"segments": segments}];
+            }
+        }];
+        [sheet addAction:toggleAction];
+    }
 
     if (active && self.sbSegments.count > 0) {
         YTActionSheetAction *voteAction = [%c(YTActionSheetAction) actionWithTitle:LOC(@"SB_MENU_VOTE")
@@ -522,8 +528,6 @@ static void sbPostVoteQuery(NSString *query, void (^completion)(BOOL success, NS
         [sheet addAction:voteAction];
     }
 
-    NSString *menuChannelID = sbCurrentChannelID(self);
-    BOOL channelListed = menuChannelID.length > 0 && sbIsChannelWhitelisted(menuChannelID);
     YTActionSheetAction *whitelistAction = [%c(YTActionSheetAction) actionWithTitle:LOC(channelListed ? @"SB_WHITELIST_REMOVE" : @"SB_WHITELIST_ADD")
                                                                             iconImage:[UIImage systemImageNamed:channelListed ? @"checkmark.seal.fill" : @"checkmark.seal"]
                                                                                  style:0
@@ -751,8 +755,4 @@ void YMSBPresentWhitelistManager(void) {
     };
 
     [YMSBCardViewController presentCard:card];
-}
-
-%ctor {
-    %init;
 }

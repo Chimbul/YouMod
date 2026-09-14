@@ -142,6 +142,7 @@
 "METHOD_DIRECT" = "Trực tiếp";
 "METHOD_SERVER" = "Máy chủ";
 "METHOD_ONDEVICE" = "Trên thiết bị (SABR)";
+"AUDIO" = "Audio";
 
 "APPEARANCE" = "Hiển thị";
 "OLED_THEME" = "Chế độ tối OLED";
@@ -167,6 +168,7 @@
 "HIDE_CAST_BUTTON_NAVBAR_DESC" = "Ẩn nút truyền phát trên thanh điều hướng.";
 "HIDE_MESSAGES_BUTTON" = "Hide messages button";
 "HIDE_MESSAGES_BUTTON_DESC" = "Hide messages button in the navigation bar.";
+
 "FEED" = "Bảng tin";
 "HIDE_SUBBAR" = "Ẩn thanh bộ lọc";
 "HIDE_SUBBAR_DESC" = "Ẩn thanh bộ lọc ở đầu bảng tin.";
@@ -514,10 +516,12 @@
 "HIDE_COMMU_GUIDE_DESC" = "Ẩn tiêu đề quy tắc cộng đồng.";
 "HIDE_ENGAGEMENT_SUBBAR" = "Ẩn đầu trang bình luận";
 "HIDE_ENGAGEMENT_SUBBAR_DESC" = "Ẩn thanh sắp xếp bình luận (Hàng đầu, Mới nhất) để nó không bao giờ xuất hiện.";
-"HIDE_SORT_FILTER_BUTTON_PANEL" = "Hide sort & filter button panel";
-"HIDE_SORT_FILTER_BUTTON_PANEL_DESC" = "Hide the sort and filter buttons in the comments panel.";
-"HIDE_COMMUNITY_BUTTON_PANEL" = "Hide community button panel";
-"HIDE_COMMUNITY_BUTTON_PANEL_DESC" = "Hide the community button panel on the channel page.";
+"HIDE_SORT_FILTER_BUTTON_PANEL" = "Hide sort & filter button";
+"HIDE_SORT_FILTER_BUTTON_PANEL_DESC" = "Hide the sort and filter button in the engagement panel.";
+"HIDE_COMMUNITY_BUTTON_PANEL" = "Hide community button";
+"HIDE_COMMUNITY_BUTTON_PANEL_DESC" = "Hide the community button in the engagement panel.";
+"HIDE_INFO_BUTTON_PANEL" = "Hide info button";
+"HIDE_INFO_BUTTON_PANEL_DESC" = "Hide the info button in the engagement panel.";
 "DISABLES_RTL" = "Tắt định dạng RTL";
 "DISABLES_RTL_DESC" = "Buộc hiển thị văn bản theo định dạng từ trái sang phải (LTR) với các ngôn ngữ vốn được viết từ phải sang trái (RTL).";
 "DEVICE_UI" = "Kiểu giao diện";
@@ -587,7 +591,6 @@
 "SB_MIN_DURATION_SLIDER" = "Thời lượng đoạn tối thiểu để bỏ qua";
 
 /* SponsorBlock menu / vote / whitelist / user ID */
-"SB_MENU_TITLE" = "SponsorBlock";
 "SB_MENU_ENABLE" = "Enable SponsorBlock";
 "SB_MENU_DISABLE" = "Disable SponsorBlock";
 "SB_MENU_VOTE" = "Vote on segments";
@@ -619,6 +622,3 @@
 "SB_ID_INVALID" = "ID must be at least 30 characters";
 "SB_ID_SAVE" = "Save";
 "SB_ID_CANCEL" = "Cancel";
-"AUDIO" = "Audio";
-"HIDE_INFO_BUTTON_PANEL" = "Hide info button panel";
-"HIDE_INFO_BUTTON_PANEL_DESC" = "Hide the info button panel in the video description.";

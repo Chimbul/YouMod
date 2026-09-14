@@ -588,7 +588,6 @@
 "SB_MIN_DURATION_SLIDER" = "ความยาวขั้นต่ำของช่วงวิดีโอที่จะให้ข้าม";
 
 /* SponsorBlock menu / vote / whitelist / user ID */
-"SB_MENU_TITLE" = "SponsorBlock";
 "SB_MENU_ENABLE" = "เปิด SponsorBlock";
 "SB_MENU_DISABLE" = "ปิด SponsorBlock";
 "SB_MENU_VOTE" = "โหวต segment";
