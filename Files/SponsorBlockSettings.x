@@ -744,56 +744,53 @@ static const void *kSBAllFlatRowsKey = &kSBAllFlatRowsKey;
                                                                       iconImage:[UIImage systemImageNamed:@"square.and.pencil"]
                                                                            style:0
                                                                         handler:^(__unused YTActionSheetAction *action) {
-        YMSBCardView *card = [YMSBCardView presentWithTitle:LOC(isPublic ? @"SB_PUBLIC_ID" : @"SB_PRIVATE_ID")];
-        if (!card) return;
+        YMSBCardViewController *card = [[YMSBCardViewController alloc] init];
+        card.cardTitle = LOC(isPublic ? @"SB_PUBLIC_ID" : @"SB_PRIVATE_ID");
 
         UITextField *field = [[UITextField alloc] init];
         field.text = userID;
         field.font = [UIFont monospacedSystemFontOfSize:14 weight:UIFontWeightRegular];
         field.textColor = [UIColor labelColor];
         field.backgroundColor = [UIColor secondarySystemBackgroundColor];
-        field.layer.cornerRadius = 10;
+        field.layer.cornerRadius = 8;
         field.borderStyle = UITextBorderStyleRoundedRect;
         field.autocapitalizationType = UITextAutocapitalizationTypeNone;
         field.autocorrectionType = UITextAutocorrectionTypeNo;
         field.spellCheckingType = UITextSpellCheckingTypeNo;
         field.keyboardType = UIKeyboardTypeASCIICapable;
         field.clearButtonMode = UITextFieldViewModeWhileEditing;
-        field.translatesAutoresizingMaskIntoConstraints = NO;
-        [field.heightAnchor constraintEqualToConstant:44].active = YES;
-        [card addCustomView:field];
+        card.textField = field;
 
-        __weak YMSBCardView *weakCard = card;
-
-        [card addOptionRowWithSymbol:@"checkmark.circle.fill"
-                               title:LOC(@"SB_ID_SAVE")
-                            subtitle:nil
-                           tintColor:[UIColor systemGreenColor]
-                              handler:^{
-            YMSBCardView *strongCard = weakCard;
-            NSString *newValue = [field.text stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-            if (newValue.length < 30) {
-                sbShowSBPill(LOC(@"SB_ID_INVALID"), NO);
-                return;
-            }
-            if (isPublic) {
-                sbSetPublicUserIDManual(newValue);
-            } else {
-                sbSetPrivateUserID(newValue);
-            }
-            [strongCard dismissAnimated];
-            sbShowSBPill(LOC(@"SB_ID_SAVED"), YES);
-            __strong typeof(weakSelf) strongSelf = weakSelf;
-            [strongSelf.tableView reloadData];
-        }];
-
-        [card addOptionRowWithSymbol:@"xmark.circle"
-                               title:LOC(@"SB_ID_CANCEL")
-                            subtitle:nil
-                           tintColor:[UIColor secondaryLabelColor]
-                              handler:^{
-            [weakCard dismissAnimated];
-        }];
+        card.items = @[
+            [YMSBCardItem itemWithImage:[UIImage systemImageNamed:@"checkmark.circle.fill"]
+                                   title:LOC(@"SB_ID_SAVE")
+                                subtitle:nil
+                               tintColor:[UIColor systemGreenColor]
+                                  handler:^(YMSBCardViewController *c) {
+                NSString *newValue = [field.text stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+                if (newValue.length < 30) {
+                    sbShowSBPill(LOC(@"SB_ID_INVALID"), NO);
+                    return;
+                }
+                if (isPublic) {
+                    sbSetPublicUserIDManual(newValue);
+                } else {
+                    sbSetPrivateUserID(newValue);
+                }
+                [c dismissCard];
+                sbShowSBPill(LOC(@"SB_ID_SAVED"), YES);
+                __strong typeof(weakSelf) strongSelf = weakSelf;
+                [strongSelf.tableView reloadData];
+            }],
+            [YMSBCardItem itemWithImage:[UIImage systemImageNamed:@"xmark.circle"]
+                                   title:LOC(@"SB_ID_CANCEL")
+                                subtitle:nil
+                               tintColor:[UIColor secondaryLabelColor]
+                                  handler:^(YMSBCardViewController *c) {
+                [c dismissCard];
+            }],
+        ];
+        [YMSBCardViewController presentCard:card];
     }];
     [sheet addAction:editAction];
 

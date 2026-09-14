@@ -794,17 +794,32 @@ extern void sbSetPublicUserIDManual(NSString *userID);
 extern void sbShowSBPill(NSString *message, BOOL success);
 extern void YMSBPresentWhitelistManager(void);
 
-// Centered card dialog of our own, used for segment voting, whitelist and
-// user-ID editing. Present with +presentWithTitle:, fill with option rows
-// (or custom views), dismiss with -dismissAnimated.
-@interface YMSBCardView : UIView
+// Form-sheet card dialog of our own (UIModalPresentationFormSheet inside a
+// UINavigationController), used for segment voting, whitelist and user-ID
+// editing. Rows are plain table items; set swipeToDelete + onDeleteItem to get
+// swipe-left delete rows, searchBar to filter items by title/subtitle text.
+@class YMSBCardViewController;
+@interface YMSBCardItem : NSObject
+@property (nonatomic, strong) UIImage *image;
+@property (nonatomic, copy) NSString *title;
+@property (nonatomic, copy) NSString *subtitle;
+@property (nonatomic, strong) UIColor *tintColor;
+@property (nonatomic, copy) NSString *identifier; // e.g. channelID on whitelist rows
+@property (nonatomic, copy) void (^handler)(YMSBCardViewController *card);
++ (instancetype)itemWithImage:(UIImage *)image title:(NSString *)title subtitle:(NSString *)subtitle tintColor:(UIColor *)tint handler:(void (^)(YMSBCardViewController *card))handler;
+@end
+
+@interface YMSBCardViewController : UIViewController <UITableViewDelegate, UITableViewDataSource>
 @property (nonatomic, copy) NSString *cardTitle;
-+ (instancetype)presentWithTitle:(NSString *)title;
-- (void)clearContent;
-- (void)addOptionRowWithImage:(UIImage *)image title:(NSString *)title subtitle:(NSString *)subtitle tintColor:(UIColor *)tint handler:(void (^)(void))handler;
-- (void)addOptionRowWithSymbol:(NSString *)symbolName title:(NSString *)title subtitle:(NSString *)subtitle tintColor:(UIColor *)tint handler:(void (^)(void))handler;
-- (void)addCustomView:(UIView *)view;
-- (void)dismissAnimated;
+@property (nonatomic, copy) NSString *message;        // informational label row on top
+@property (nonatomic, strong) UITextField *textField; // optional editable field row on top
+@property (nonatomic, strong) UISearchBar *searchBar; // optional search bar; filters items by title/subtitle
+@property (nonatomic, strong) NSArray<YMSBCardItem *> *items;
+@property (nonatomic, assign) BOOL swipeToDelete;
+@property (nonatomic, copy) void (^onDeleteItem)(YMSBCardViewController *card, YMSBCardItem *item);
+- (void)reloadItems;
+- (void)dismissCard;
++ (UINavigationController *)presentCard:(YMSBCardViewController *)card;
 @end
 
 // The ordered set of SponsorBlock categories YouMod supports. Both the core
@@ -912,7 +927,8 @@ extern void YouModConfigureSharePopover(UIActivityViewController *activityVC, UI
 - (void)sbShowMainMenuFromView:(UIView *)sourceView;
 - (void)sbShowVoteCard;
 - (void)sbToggleWhitelistFromMenu;
-- (void)sbPopulateVoteOptions:(YMSBCardView *)card segment:(SBSegment *)segment;
+- (void)sbPushVoteOptionsForSegment:(SBSegment *)segment fromCard:(YMSBCardViewController *)card;
+- (void)sbPushCategoryPickerForSegment:(SBSegment *)segment fromCard:(YMSBCardViewController *)card;
 @end
 
 @interface YouModThumbnailViewController : UIViewController <UIScrollViewDelegate, UIGestureRecognizerDelegate>

@@ -3,8 +3,9 @@
 
 // SponsorBlock menu: the player-overlay shield button opens a YouTube-style
 // bottom sheet (enable/disable, segment voting, channel whitelist), while
-// voting / whitelist / user-ID editing use our own centered card dialog
-// (YMSBCardView) presented over the app's key window.
+// voting / whitelist / user-ID editing use our own form-sheet card dialog
+// (YMSBCardViewController) built on a UINavigationController + inset-grouped
+// UITableView, so sub-screens push and swipe-left delete comes for free.
 
 #pragma mark - Small helpers
 
@@ -33,20 +34,18 @@ static NSString *sbLocalizedCategoryName(NSString *category) {
                                             table:nil];
 }
 
-static UIImage *sbSymbolImage(NSString *symbolName, UIColor *tint) {
+static UIImage *sbSymbolImage(NSString *symbolName) {
     UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:18 weight:UIImageSymbolWeightMedium];
-    UIImage *image = [[UIImage systemImageNamed:symbolName withConfiguration:config] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
-    return image;
+    return [[UIImage systemImageNamed:symbolName withConfiguration:config] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
 }
 
 static UIImage *sbDotImage(UIColor *color) {
     UIGraphicsImageRenderer *renderer = [[UIGraphicsImageRenderer alloc] initWithSize:CGSizeMake(18, 18)];
-    UIImage *image = [renderer imageWithActions:^(UIGraphicsImageRendererContext *context) {
+    return [renderer imageWithActions:^(UIGraphicsImageRendererContext *context) {
         UIBezierPath *path = [UIBezierPath bezierPathWithOvalInRect:CGRectMake(2, 2, 14, 14)];
         [color setFill];
         [path fill];
     }];
-    return image;
 }
 
 #pragma mark - User ID
@@ -220,341 +219,250 @@ static void sbPostVoteQuery(NSString *query, void (^completion)(BOOL success, NS
 
 @end
 
-#pragma mark - Card option row
+#pragma mark - YMSBCardItem
 
-@interface YMSBCardOptionRow : UIControl
-@property (nonatomic, strong) UIImageView *iconView;
-@property (nonatomic, strong) UILabel *titleLabel;
-@property (nonatomic, strong) UILabel *subtitleLabel;
-@property (nonatomic, copy) void (^handler)(void);
+@implementation YMSBCardItem
+
++ (instancetype)itemWithImage:(UIImage *)image title:(NSString *)title subtitle:(NSString *)subtitle tintColor:(UIColor *)tint handler:(void (^)(YMSBCardViewController *card))handler {
+    YMSBCardItem *item = [[YMSBCardItem alloc] init];
+    item.image = image;
+    item.title = title;
+    item.subtitle = subtitle;
+    item.tintColor = tint;
+    item.handler = handler;
+    return item;
+}
+
 @end
 
-@implementation YMSBCardOptionRow
+#pragma mark - YMSBCardViewController (form sheet)
 
-- (instancetype)initWithImage:(UIImage *)image title:(NSString *)title subtitle:(NSString *)subtitle tintColor:(UIColor *)tint handler:(void (^)(void))handler {
-    self = [super init];
-    if (self) {
-        _handler = handler;
-        self.translatesAutoresizingMaskIntoConstraints = NO;
+@interface YMSBCardViewController () <UISearchBarDelegate>
+@property (nonatomic, strong) UITableView *tableView;
+@property (nonatomic, strong) NSArray<YMSBCardItem *> *allItems;
+@property (nonatomic, copy) NSString *searchText;
+@end
 
-        _iconView = [[UIImageView alloc] init];
-        _iconView.contentMode = UIViewContentModeScaleAspectFit;
-        _iconView.image = image;
-        _iconView.tintColor = tint;
-        _iconView.translatesAutoresizingMaskIntoConstraints = NO;
-        [self addSubview:_iconView];
+@implementation YMSBCardViewController {
+    NSArray<YMSBCardItem *> *_visibleItems;
+}
 
-        _titleLabel = [[UILabel alloc] init];
-        _titleLabel.text = title;
-        _titleLabel.font = [UIFont systemFontOfSize:15 weight:UIFontWeightMedium];
-        _titleLabel.textColor = [UIColor labelColor];
-        _titleLabel.numberOfLines = 1;
-        _titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
-        [self addSubview:_titleLabel];
+// items is the filtered view of allItems; setting items re-applies the
+// current search query so deletions rebuild the list correctly.
+- (void)setItems:(NSArray<YMSBCardItem *> *)items {
+    self.allItems = items ?: @[];
+    [self refilterItems];
+}
 
-        _subtitleLabel = [[UILabel alloc] init];
-        _subtitleLabel.text = subtitle;
-        _subtitleLabel.font = [UIFont systemFontOfSize:12];
-        _subtitleLabel.textColor = [UIColor secondaryLabelColor];
-        _subtitleLabel.numberOfLines = 1;
-        _subtitleLabel.hidden = subtitle.length == 0;
-        _subtitleLabel.translatesAutoresizingMaskIntoConstraints = NO;
-        [self addSubview:_subtitleLabel];
+- (NSArray<YMSBCardItem *> *)items {
+    return _visibleItems;
+}
 
-        [NSLayoutConstraint activateConstraints:@[
-            [_iconView.leadingAnchor constraintEqualToAnchor:self.leadingAnchor constant:4],
-            [_iconView.centerYAnchor constraintEqualToAnchor:self.centerYAnchor],
-            [_iconView.widthAnchor constraintEqualToConstant:26],
-            [_iconView.heightAnchor constraintEqualToConstant:26],
-            [_titleLabel.leadingAnchor constraintEqualToAnchor:_iconView.trailingAnchor constant:12],
-            [_titleLabel.trailingAnchor constraintLessThanOrEqualToAnchor:self.trailingAnchor constant:-4],
-        ]];
-        if (subtitle.length > 0) {
-            [NSLayoutConstraint activateConstraints:@[
-                [_titleLabel.topAnchor constraintEqualToAnchor:self.topAnchor constant:9],
-                [_subtitleLabel.topAnchor constraintEqualToAnchor:_titleLabel.bottomAnchor constant:1],
-                [_subtitleLabel.leadingAnchor constraintEqualToAnchor:_titleLabel.leadingAnchor],
-                [_subtitleLabel.trailingAnchor constraintLessThanOrEqualToAnchor:self.trailingAnchor constant:-4],
-                [_subtitleLabel.bottomAnchor constraintEqualToAnchor:self.bottomAnchor constant:-9],
-            ]];
-        } else {
-            [NSLayoutConstraint activateConstraints:@[
-                [_titleLabel.centerYAnchor constraintEqualToAnchor:self.centerYAnchor],
-                [self.heightAnchor constraintEqualToConstant:44],
-            ]];
-        }
-
-        [self addTarget:self action:@selector(ymTapped) forControlEvents:UIControlEventTouchUpInside];
+- (void)refilterItems {
+    NSString *query = [self.searchText stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    NSArray *source = self.allItems;
+    if (query.length > 0) {
+        source = [source filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"title CONTAINS[cd] %@ OR subtitle CONTAINS[cd] %@", query, query]];
     }
-    return self;
+    _visibleItems = source;
+    [self.tableView reloadData];
 }
 
-- (void)ymTapped {
-    if (self.handler) self.handler();
-}
-
-@end
-
-#pragma mark - Whitelist swipe-to-delete row
-
-// A row whose content slides right to reveal a red delete button on its left.
-@interface YMSBSwipeRow : UIView <UIGestureRecognizerDelegate>
-@property (nonatomic, strong) UIButton *deleteButton;
-@property (nonatomic, strong) UIView *rowContentView;
-@property (nonatomic, strong) NSLayoutConstraint *contentLeadingConstraint;
-@property (nonatomic, copy) void (^onDelete)(void);
-@end
-
-static const CGFloat kYMSwipeRevealWidth = 72.0;
-
-@implementation YMSBSwipeRow
-
-- (instancetype)initWithChannelName:(NSString *)name onDelete:(void (^)(void))onDelete {
-    self = [super init];
-    if (self) {
-        _onDelete = onDelete;
-        self.translatesAutoresizingMaskIntoConstraints = NO;
-        self.clipsToBounds = YES;
-        self.layer.cornerRadius = 10;
-
-        _deleteButton = [UIButton buttonWithType:UIButtonTypeCustom];
-        _deleteButton.backgroundColor = [UIColor systemRedColor];
-        _deleteButton.translatesAutoresizingMaskIntoConstraints = NO;
-        [_deleteButton setImage:[UIImage systemImageNamed:@"trash.fill"] forState:UIControlStateNormal];
-        [_deleteButton addTarget:self action:@selector(ymDeleteTapped) forControlEvents:UIControlEventTouchUpInside];
-        [self addSubview:_deleteButton];
-
-        _rowContentView = [[UIView alloc] init];
-        _rowContentView.backgroundColor = [UIColor secondarySystemBackgroundColor];
-        _rowContentView.layer.cornerRadius = 10;
-        _rowContentView.translatesAutoresizingMaskIntoConstraints = NO;
-        [self addSubview:_rowContentView];
-
-        UILabel *label = [[UILabel alloc] init];
-        label.text = name;
-        label.font = [UIFont systemFontOfSize:15 weight:UIFontWeightMedium];
-        label.textColor = [UIColor labelColor];
-        label.translatesAutoresizingMaskIntoConstraints = NO;
-        [_rowContentView addSubview:label];
-
-        UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(ymPan:)];
-        pan.delegate = self;
-        [_rowContentView addGestureRecognizer:pan];
-
-        _contentLeadingConstraint = [_rowContentView.leadingAnchor constraintEqualToAnchor:self.leadingAnchor];
-        [NSLayoutConstraint activateConstraints:@[
-            [_deleteButton.leadingAnchor constraintEqualToAnchor:self.leadingAnchor],
-            [_deleteButton.topAnchor constraintEqualToAnchor:self.topAnchor],
-            [_deleteButton.bottomAnchor constraintEqualToAnchor:self.bottomAnchor],
-            [_deleteButton.widthAnchor constraintEqualToConstant:kYMSwipeRevealWidth],
-
-            _contentLeadingConstraint,
-            [_rowContentView.trailingAnchor constraintEqualToAnchor:self.trailingAnchor],
-            [_rowContentView.topAnchor constraintEqualToAnchor:self.topAnchor],
-            [_rowContentView.bottomAnchor constraintEqualToAnchor:self.bottomAnchor],
-
-            [label.leadingAnchor constraintEqualToAnchor:_rowContentView.leadingAnchor constant:12],
-            [label.trailingAnchor constraintLessThanOrEqualToAnchor:_rowContentView.trailingAnchor constant:-12],
-            [label.centerYAnchor constraintEqualToAnchor:_rowContentView.centerYAnchor],
-
-            [self.heightAnchor constraintEqualToConstant:48],
-        ]];
-    }
-    return self;
-}
-
-- (void)ymPan:(UIPanGestureRecognizer *)gesture {
-    CGFloat x = [gesture translationInView:self].x;
-    // Only swipe-to-right within [0, reveal width].
-    CGFloat target = MIN(MAX(0.0, self.contentLeadingConstraint.constant + x), kYMSwipeRevealWidth);
-    if (gesture.state == UIGestureRecognizerStateChanged) {
-        self.contentLeadingConstraint.constant = target;
-        [gesture setTranslation:CGPointZero inView:self];
-    } else if (gesture.state == UIGestureRecognizerStateEnded) {
-        CGFloat open = target > kYMSwipeRevealWidth / 2.0 ? kYMSwipeRevealWidth : 0.0;
-        [UIView animateWithDuration:0.2 animations:^{
-            self.contentLeadingConstraint.constant = open;
-            [self layoutIfNeeded];
-        }];
-    }
-}
-
-- (void)ymDeleteTapped {
-    if (self.onDelete) self.onDelete();
-}
-
-- (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer {
-    return NO;
-}
-
-@end
-
-#pragma mark - YMSBCardView
-
-@interface YMSBCardView ()
-@property (nonatomic, strong) UIControl *backdropControl;
-@property (nonatomic, strong) UIView *cardView;
-@property (nonatomic, strong) UILabel *titleLabel;
-@property (nonatomic, strong) UIButton *closeButton;
-@property (nonatomic, strong) UIScrollView *scrollView;
-@property (nonatomic, strong) UIStackView *contentStack;
-@end
-
-@implementation YMSBCardView
-
-- (void)setCardTitle:(NSString *)cardTitle {
-    _cardTitle = [cardTitle copy];
-    self.titleLabel.text = cardTitle;
-}
-
-+ (instancetype)presentWithTitle:(NSString *)title {
-    UIWindow *window = nil;
-    for (UIWindowScene *scene in [UIApplication sharedApplication].connectedScenes) {
-        if (scene.activationState != UISceneActivationStateForegroundActive) continue;
-        for (UIWindow *w in scene.windows) {
-            if (w.isKeyWindow) {
-                window = w;
-                break;
-            }
-        }
-        if (!window && scene.windows.count > 0) window = scene.windows.firstObject;
-        if (window) break;
-    }
-    if (!window) return nil;
-
-    YMSBCardView *card = [[self alloc] initWithFrame:window.bounds];
-    card.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-    card.cardTitle = title;
-    [window addSubview:card];
-
-    card.backdropControl.alpha = 0.0;
-    card.cardView.alpha = 0.0;
-    card.cardView.transform = CGAffineTransformMakeScale(0.92, 0.92);
-    [UIView animateWithDuration:0.22 animations:^{
-        card.backdropControl.alpha = 0.5;
-        card.cardView.alpha = 1.0;
-        card.cardView.transform = CGAffineTransformIdentity;
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    self.title = self.cardTitle;
+    self.view.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor *(UITraitCollection *trait) {
+        return (trait.userInterfaceStyle == UIUserInterfaceStyleDark) ? [%c(YTColor) black3] : [UIColor systemBackgroundColor];
     }];
-    return card;
-}
 
-- (instancetype)initWithFrame:(CGRect)frame {
-    self = [super initWithFrame:frame];
-    if (self) {
-        self.backgroundColor = [UIColor clearColor];
+    self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithImage:[UIImage systemImageNamed:@"xmark"]
+                                                                               style:UIBarButtonItemStylePlain
+                                                                              target:self
+                                                                              action:@selector(dismissCard)];
 
-        _backdropControl = [[UIControl alloc] init];
-        _backdropControl.backgroundColor = [UIColor blackColor];
-        _backdropControl.translatesAutoresizingMaskIntoConstraints = NO;
-        [_backdropControl addTarget:self action:@selector(dismissAnimated) forControlEvents:UIControlEventTouchUpInside];
-        [self addSubview:_backdropControl];
-
-        _cardView = [[UIView alloc] init];
-        _cardView.backgroundColor = isDarkMode(self) ? [%c(YTColor) black3] : [UIColor systemBackgroundColor];
-        _cardView.layer.cornerRadius = 16;
-        _cardView.layer.masksToBounds = NO;
-        _cardView.translatesAutoresizingMaskIntoConstraints = NO;
-        [self addSubview:_cardView];
-
-        _titleLabel = [[UILabel alloc] init];
-        _titleLabel.font = [UIFont systemFontOfSize:17 weight:UIFontWeightSemibold];
-        _titleLabel.textColor = [UIColor labelColor];
-        _titleLabel.numberOfLines = 2;
-        _titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
-        [_cardView addSubview:_titleLabel];
-
-        _closeButton = [UIButton buttonWithType:UIButtonTypeSystem];
-        UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:13 weight:UIImageSymbolWeightSemibold];
-        [_closeButton setImage:[[UIImage systemImageNamed:@"xmark" withConfiguration:config] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate] forState:UIControlStateNormal];
-        _closeButton.tintColor = [UIColor secondaryLabelColor];
-        _closeButton.backgroundColor = [UIColor secondarySystemBackgroundColor];
-        _closeButton.layer.cornerRadius = 13;
-        _closeButton.translatesAutoresizingMaskIntoConstraints = NO;
-        [_closeButton addTarget:self action:@selector(dismissAnimated) forControlEvents:UIControlEventTouchUpInside];
-        [_cardView addSubview:_closeButton];
-
-        _scrollView = [[UIScrollView alloc] init];
-        _scrollView.showsVerticalScrollIndicator = NO;
-        _scrollView.translatesAutoresizingMaskIntoConstraints = NO;
-        [_cardView addSubview:_scrollView];
-
-        _contentStack = [[UIStackView alloc] init];
-        _contentStack.axis = UILayoutConstraintAxisVertical;
-        _contentStack.spacing = 2;
-        _contentStack.translatesAutoresizingMaskIntoConstraints = NO;
-        [_scrollView addSubview:_contentStack];
-
-        [NSLayoutConstraint activateConstraints:@[
-            [_backdropControl.topAnchor constraintEqualToAnchor:self.topAnchor],
-            [_backdropControl.bottomAnchor constraintEqualToAnchor:self.bottomAnchor],
-            [_backdropControl.leadingAnchor constraintEqualToAnchor:self.leadingAnchor],
-            [_backdropControl.trailingAnchor constraintEqualToAnchor:self.trailingAnchor],
-
-            [_cardView.centerXAnchor constraintEqualToAnchor:self.centerXAnchor],
-            [_cardView.centerYAnchor constraintEqualToAnchor:self.centerYAnchor],
-            [_cardView.widthAnchor constraintEqualToConstant:300],
-            [_cardView.heightAnchor constraintLessThanOrEqualToAnchor:self.safeAreaLayoutGuide.heightAnchor constant:-48],
-            [_cardView.topAnchor constraintGreaterThanOrEqualToAnchor:self.safeAreaLayoutGuide.topAnchor constant:32],
-            [_cardView.bottomAnchor constraintLessThanOrEqualToAnchor:self.safeAreaLayoutGuide.bottomAnchor constant:-32],
-
-            [_titleLabel.topAnchor constraintEqualToAnchor:_cardView.topAnchor constant:16],
-            [_titleLabel.leadingAnchor constraintEqualToAnchor:_cardView.leadingAnchor constant:16],
-            [_titleLabel.trailingAnchor constraintLessThanOrEqualToAnchor:_closeButton.leadingAnchor constant:-8],
-
-            [_closeButton.topAnchor constraintEqualToAnchor:_cardView.topAnchor constant:14],
-            [_closeButton.trailingAnchor constraintEqualToAnchor:_cardView.trailingAnchor constant:-14],
-            [_closeButton.widthAnchor constraintEqualToConstant:26],
-            [_closeButton.heightAnchor constraintEqualToConstant:26],
-
-            [_scrollView.topAnchor constraintEqualToAnchor:_titleLabel.bottomAnchor constant:12],
-            [_scrollView.leadingAnchor constraintEqualToAnchor:_cardView.leadingAnchor constant:12],
-            [_scrollView.trailingAnchor constraintEqualToAnchor:_cardView.trailingAnchor constant:-12],
-            [_scrollView.bottomAnchor constraintEqualToAnchor:_cardView.bottomAnchor constant:-16],
-
-            [_contentStack.topAnchor constraintEqualToAnchor:_scrollView.topAnchor],
-            [_contentStack.bottomAnchor constraintEqualToAnchor:_scrollView.bottomAnchor],
-            [_contentStack.leadingAnchor constraintEqualToAnchor:_scrollView.leadingAnchor],
-            [_contentStack.trailingAnchor constraintEqualToAnchor:_scrollView.trailingAnchor],
-            [_contentStack.widthAnchor constraintEqualToAnchor:_scrollView.widthAnchor],
-        ]];
-    }
-    return self;
-}
-
-- (void)clearContent {
-    for (UIView *sub in [_contentStack.arrangedSubviews copy]) {
-        [_contentStack removeArrangedSubview:sub];
-        [sub removeFromSuperview];
-    }
-    self.scrollView.contentOffset = CGPointZero;
-}
-
-- (void)addOptionRowWithImage:(UIImage *)image title:(NSString *)title subtitle:(NSString *)subtitle tintColor:(UIColor *)tint handler:(void (^)(void))handler {
-    YMSBCardOptionRow *row = [[YMSBCardOptionRow alloc] initWithImage:image title:title subtitle:subtitle tintColor:tint handler:handler];
-    row.translatesAutoresizingMaskIntoConstraints = NO;
-    [self.contentStack addArrangedSubview:row];
-}
-
-- (void)addOptionRowWithSymbol:(NSString *)symbolName title:(NSString *)title subtitle:(NSString *)subtitle tintColor:(UIColor *)tint handler:(void (^)(void))handler {
-    [self addOptionRowWithImage:sbSymbolImage(symbolName, tint) title:title subtitle:subtitle tintColor:tint handler:handler];
-}
-
-- (void)addCustomView:(UIView *)view {
-    view.translatesAutoresizingMaskIntoConstraints = NO;
-    [self.contentStack addArrangedSubview:view];
+    _tableView = [[UITableView alloc] initWithFrame:CGRectZero style:UITableViewStyleInsetGrouped];
+    _tableView.delegate = self;
+    _tableView.dataSource = self;
+    _tableView.backgroundColor = [UIColor clearColor];
+    _tableView.rowHeight = UITableViewAutomaticDimension;
+    _tableView.estimatedRowHeight = 54;
+    _tableView.keyboardDismissMode = UIScrollViewKeyboardDismissModeInteractive;
+    _tableView.translatesAutoresizingMaskIntoConstraints = NO;
+    [self.view addSubview:_tableView];
     [NSLayoutConstraint activateConstraints:@[
-        [view.widthAnchor constraintEqualToAnchor:self.contentStack.widthAnchor],
+        [_tableView.topAnchor constraintEqualToAnchor:self.view.topAnchor],
+        [_tableView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor],
+        [_tableView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
+        [_tableView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
     ]];
+
+    if (self.searchBar) {
+        self.searchBar.delegate = self;
+        self.searchBar.searchBarStyle = UISearchBarStyleMinimal;
+        self.searchBar.frame = CGRectMake(0, 0, 0, 56);
+        _tableView.tableHeaderView = self.searchBar;
+    }
+
+    [self refilterItems];
 }
 
-- (void)dismissAnimated {
-    [UIView animateWithDuration:0.18 animations:^{
-        self.backdropControl.alpha = 0.0;
-        self.cardView.alpha = 0.0;
-        self.cardView.transform = CGAffineTransformMakeScale(0.94, 0.94);
-    } completion:^(__unused BOOL finished) {
-        [self removeFromSuperview];
+- (void)searchBar:(UISearchBar *)searchBar textDidChange:(NSString *)searchText {
+    self.searchText = searchText;
+    [self refilterItems];
+}
+
+- (void)searchBarSearchButtonClicked:(UISearchBar *)searchBar {
+    [searchBar resignFirstResponder];
+}
+
+- (void)viewDidAppear:(BOOL)animated {
+    [super viewDidAppear:animated];
+    // Autofocus the field on the Edit-ID card's first appearance.
+    if (self.textField && self.isBeingPresented) [self.textField becomeFirstResponder];
+}
+
+#pragma mark Row mapping: [message?][textField?][items...]
+
+- (YMSBCardItem *)itemForRow:(NSInteger)row {
+    NSInteger offset = 0;
+    if (self.message.length > 0) {
+        if (row == 0) return nil;
+        offset = 1;
+    }
+    if (self.textField) {
+        if (row == offset) return nil;
+        offset += 1;
+    }
+    NSInteger idx = row - offset;
+    return (idx >= 0 && idx < (NSInteger)self.items.count) ? self.items[idx] : nil;
+}
+
+#pragma mark UITableViewDataSource / Delegate
+
+- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
+    return 1;
+}
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    return self.items.count + (self.message.length > 0 ? 1 : 0) + (self.textField ? 1 : 0);
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    // Message row
+    if (self.message.length > 0 && indexPath.row == 0) {
+        UITableViewCell *cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:nil];
+        cell.selectionStyle = UITableViewCellSelectionStyleNone;
+        cell.backgroundColor = [UIColor clearColor];
+        UILabel *label = [[UILabel alloc] init];
+        label.text = self.message;
+        label.font = [UIFont systemFontOfSize:13];
+        label.textColor = [UIColor secondaryLabelColor];
+        label.numberOfLines = 0;
+        label.translatesAutoresizingMaskIntoConstraints = NO;
+        [cell.contentView addSubview:label];
+        [NSLayoutConstraint activateConstraints:@[
+            [label.leadingAnchor constraintEqualToAnchor:cell.contentView.layoutMarginsGuide.leadingAnchor],
+            [label.trailingAnchor constraintLessThanOrEqualToAnchor:cell.contentView.layoutMarginsGuide.trailingAnchor],
+            [label.topAnchor constraintEqualToAnchor:cell.contentView.topAnchor constant:8],
+            [label.bottomAnchor constraintEqualToAnchor:cell.contentView.bottomAnchor constant:-8],
+        ]];
+        return cell;
+    }
+
+    // Text field row
+    if (self.textField && indexPath.row == (self.message.length > 0 ? 1 : 0)) {
+        UITableViewCell *cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:nil];
+        cell.selectionStyle = UITableViewCellSelectionStyleNone;
+        UITextField *field = self.textField;
+        field.translatesAutoresizingMaskIntoConstraints = NO;
+        [cell.contentView addSubview:field];
+        [NSLayoutConstraint activateConstraints:@[
+            [field.leadingAnchor constraintEqualToAnchor:cell.contentView.layoutMarginsGuide.leadingAnchor],
+            [field.trailingAnchor constraintEqualToAnchor:cell.contentView.layoutMarginsGuide.trailingAnchor],
+            [field.topAnchor constraintEqualToAnchor:cell.contentView.topAnchor constant:8],
+            [field.bottomAnchor constraintEqualToAnchor:cell.contentView.bottomAnchor constant:-8],
+            [field.heightAnchor constraintEqualToConstant:40],
+        ]];
+        return cell;
+    }
+
+    YMSBCardItem *item = [self itemForRow:indexPath.row];
+    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"sbCardItem"];
+    if (!cell) {
+        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:@"sbCardItem"];
+        cell.textLabel.font = [UIFont systemFontOfSize:15 weight:UIFontWeightMedium];
+        cell.textLabel.textColor = [UIColor labelColor];
+        cell.detailTextLabel.font = [UIFont systemFontOfSize:12];
+        cell.detailTextLabel.textColor = [UIColor secondaryLabelColor];
+    }
+    cell.imageView.image = item.image;
+    cell.imageView.tintColor = item.tintColor;
+    cell.textLabel.text = item.title;
+    cell.detailTextLabel.text = item.subtitle.length > 0 ? item.subtitle : nil;
+    return cell;
+}
+
+- (BOOL)tableView:(UITableView *)tableView shouldHighlightRowAtIndexPath:(NSIndexPath *)indexPath {
+    return [self itemForRow:indexPath.row] != nil;
+}
+
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+    [tableView deselectRowAtIndexPath:indexPath animated:YES];
+    YMSBCardItem *item = [self itemForRow:indexPath.row];
+    if (item && item.handler) item.handler(self);
+}
+
+// Trailing swipe (swipe left, Mail-style) reveals the delete button, used by
+// the whitelist manager.
+- (UISwipeActionsConfiguration *)tableView:(UITableView *)tableView trailingSwipeActionsConfigurationForRowAtIndexPath:(NSIndexPath *)indexPath {
+    if (!self.swipeToDelete) return nil;
+    YMSBCardItem *item = [self itemForRow:indexPath.row];
+    if (!item) return nil;
+    __weak typeof(self) weakSelf = self;
+    UIContextualAction *delete = [UIContextualAction contextualActionWithStyle:UIContextualActionStyleDestructive
+                                                                         title:LOC(@"SB_WHITELIST_DELETE")
+                                                                       handler:^(__unused UIContextualAction *action, __unused UIView *view, void (^completion)(BOOL finished)) {
+        __strong typeof(weakSelf) strongSelf = weakSelf;
+        if (strongSelf && strongSelf.onDeleteItem) strongSelf.onDeleteItem(strongSelf, item);
+        completion(YES);
     }];
+    UISwipeActionsConfiguration *config = [UISwipeActionsConfiguration configurationWithActions:@[delete]];
+    config.performsFirstActionWithFullSwipe = YES;
+    return config;
+}
+
+- (void)reloadItems {
+    [self.tableView reloadData];
+}
+
+- (void)dismissCard {
+    [self dismissViewControllerAnimated:YES completion:nil];
+}
+
++ (UINavigationController *)presentCard:(YMSBCardViewController *)card {
+    UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:card];
+    nav.modalPresentationStyle = UIModalPresentationFormSheet;
+
+    NSInteger rows = card.items.count + (card.message.length > 0 ? 1 : 0) + (card.textField ? 1 : 0) + (card.searchBar ? 1 : 0);
+    CGFloat height = 150.0 + rows * 54.0;
+    if (height > 540.0) height = 540.0;
+    nav.preferredContentSize = CGSizeMake(340.0, height);
+
+    UINavigationBarAppearance *appearance = [[UINavigationBarAppearance alloc] init];
+    [appearance configureWithDefaultBackground];
+    appearance.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor *(UITraitCollection *trait) {
+        return (trait.userInterfaceStyle == UIUserInterfaceStyleDark) ? [%c(YTColor) black3] : [UIColor systemBackgroundColor];
+    }];
+    nav.navigationBar.standardAppearance = appearance;
+    nav.navigationBar.scrollEdgeAppearance = appearance;
+    nav.navigationBar.tintColor = [UIColor systemBlueColor];
+
+    UIViewController *presenter = YouModTopViewController(nil);
+    while (presenter.presentedViewController) {
+        presenter = presenter.presentedViewController;
+    }
+    [presenter presentViewController:nav animated:YES completion:nil];
+    return nav;
 }
 
 @end
@@ -628,8 +536,8 @@ static const CGFloat kYMSwipeRevealWidth = 72.0;
     [sheet presentFromView:sourceView animated:YES completion:nil];
 }
 
-// Centered card listing every loaded segment (categories the user enabled),
-// then vote options for the tapped one.
+// Form-sheet card listing every loaded segment (categories the user enabled);
+// tapping one pushes the vote options screen.
 %new
 - (void)sbShowVoteCard {
     NSArray<SBSegment *> *segments = [self.sbSegments sortedArrayUsingComparator:^NSComparisonResult(SBSegment *a, SBSegment *b) {
@@ -641,44 +549,43 @@ static const CGFloat kYMSwipeRevealWidth = 72.0;
         return;
     }
 
-    YMSBCardView *card = [YMSBCardView presentWithTitle:LOC(@"SB_VOTE_TITLE")];
-    if (!card) return;
     __weak typeof(self) weakSelf = self;
-    __weak YMSBCardView *weakCard = card;
-
+    YMSBCardViewController *card = [[YMSBCardViewController alloc] init];
+    card.cardTitle = LOC(@"SB_VOTE_TITLE");
+    UISearchBar *searchBar = [[UISearchBar alloc] init];
+    searchBar.placeholder = LOC(@"SEARCH");
+    card.searchBar = searchBar;
+    NSMutableArray<YMSBCardItem *> *items = [NSMutableArray array];
     for (SBSegment *segment in segments) {
         NSString *catName = sbLocalizedCategoryName(segment.category);
         NSString *subtitle = [NSString stringWithFormat:@"%@ – %@  ·  %@",
                               sbFormatTime(segment.startTime),
                               sbFormatTime(segment.endTime),
                               [NSString stringWithFormat:LOC(@"SB_VOTES_COUNT"), (long)segment.votes]];
-        [card addOptionRowWithImage:sbDotImage(segment.segmentColor)
-                              title:catName
-                           subtitle:subtitle
-                          tintColor:[UIColor labelColor]
-                             handler:^{
+        [items addObject:[YMSBCardItem itemWithImage:sbDotImage(segment.segmentColor)
+                                                title:catName
+                                             subtitle:subtitle
+                                            tintColor:[UIColor labelColor]
+                                               handler:^(YMSBCardViewController *c) {
             __strong typeof(weakSelf) strongSelf = weakSelf;
-            YMSBCardView *strongCard = weakCard;
-            if (!strongCard || !strongSelf) return;
-            [strongCard clearContent];
-            strongCard.cardTitle = catName;
-            [strongSelf sbPopulateVoteOptions:strongCard segment:segment];
-        }];
+            if (strongSelf) [strongSelf sbPushVoteOptionsForSegment:segment fromCard:c];
+        }]];
     }
+    card.items = items;
+    [YMSBCardViewController presentCard:card];
 }
 
+// Vote options for one segment, pushed onto the card's navigation stack.
 %new
-- (void)sbPopulateVoteOptions:(YMSBCardView *)card segment:(SBSegment *)segment {
+- (void)sbPushVoteOptionsForSegment:(SBSegment *)segment fromCard:(YMSBCardViewController *)card {
     __weak typeof(self) weakSelf = self;
-    __weak YMSBCardView *weakCard = card;
-
     NSString *segmentInfo = [NSString stringWithFormat:@"%@ – %@",
                              sbFormatTime(segment.startTime),
                              sbFormatTime(segment.endTime)];
 
     void (^voteHandler)(NSInteger) = ^(NSInteger type) {
         __strong typeof(weakSelf) strongSelf = weakSelf;
-        [weakCard dismissAnimated];
+        [card dismissCard];
         if (!strongSelf) return;
         NSString *videoID = [strongSelf currentVideoID];
         [SBRequest voteOnSegment:segment videoID:videoID type:type completion:^(BOOL success, NSString *errorMessage) {
@@ -692,52 +599,88 @@ static const CGFloat kYMSwipeRevealWidth = 72.0;
         }];
     };
 
-    [card addOptionRowWithSymbol:@"hand.thumbsup.fill" title:LOC(@"SB_VOTE_UPVOTE") subtitle:segmentInfo tintColor:[UIColor systemGreenColor] handler:^{
-        voteHandler(1);
-    }];
-    [card addOptionRowWithSymbol:@"hand.thumbsdown.fill" title:LOC(@"SB_VOTE_DOWNVOTE") subtitle:segmentInfo tintColor:[UIColor systemRedColor] handler:^{
-        voteHandler(0);
-    }];
-    [card addOptionRowWithSymbol:@"arrow.uturn.backward" title:LOC(@"SB_VOTE_UNDO") subtitle:segmentInfo tintColor:[UIColor labelColor] handler:^{
-        voteHandler(20);
-    }];
-    [card addOptionRowWithSymbol:@"tag" title:LOC(@"SB_VOTE_CHANGE_CATEGORY") subtitle:segmentInfo tintColor:[UIColor labelColor] handler:^{
-        [weakCard clearContent];
-        weakCard.cardTitle = LOC(@"SB_VOTE_CHANGE_CATEGORY");
-        for (NSString *category in sbAllCategories()) {
-            NSString *hex = [[NSUserDefaults standardUserDefaults] stringForKey:SB_COLOR_KEY(category)];
-            UIColor *color = hex ? SBColorFromHex(hex) : [UIColor whiteColor];
-            [weakCard addOptionRowWithImage:sbDotImage(color)
-                                      title:sbLocalizedCategoryName(category)
-                                   subtitle:nil
-                                  tintColor:[UIColor labelColor]
-                                     handler:^{
-                __strong typeof(weakSelf) strongSelf = weakSelf;
-                [weakCard dismissAnimated];
-                if (!strongSelf) return;
-                NSString *videoID = [strongSelf currentVideoID];
-                [SBRequest voteCategoryOnSegment:segment videoID:videoID category:category completion:^(BOOL success, NSString *errorMessage) {
-                    if (success) {
-                        sbInvalidateSegmentCache(videoID);
-                        sbShowSBPill(LOC(@"SB_VOTE_SUCCESS"), YES);
-                    } else {
-                        NSString *reason = errorMessage.length > 0 ? [NSString stringWithFormat:@"%@ — %@", LOC(@"SB_VOTE_FAILED"), errorMessage] : LOC(@"SB_VOTE_FAILED");
-                        sbShowSBPill(reason, NO);
-                    }
-                }];
+    YMSBCardViewController *options = [[YMSBCardViewController alloc] init];
+    options.cardTitle = sbLocalizedCategoryName(segment.category);
+    options.items = @[
+        [YMSBCardItem itemWithImage:sbSymbolImage(@"hand.thumbsup.fill")
+                               title:LOC(@"SB_VOTE_UPVOTE")
+                            subtitle:segmentInfo
+                           tintColor:[UIColor systemGreenColor]
+                              handler:^(__unused YMSBCardViewController *c) { voteHandler(1); }],
+        [YMSBCardItem itemWithImage:sbSymbolImage(@"hand.thumbsdown.fill")
+                               title:LOC(@"SB_VOTE_DOWNVOTE")
+                            subtitle:segmentInfo
+                           tintColor:[UIColor systemRedColor]
+                              handler:^(__unused YMSBCardViewController *c) { voteHandler(0); }],
+        [YMSBCardItem itemWithImage:sbSymbolImage(@"arrow.uturn.backward")
+                               title:LOC(@"SB_VOTE_UNDO")
+                            subtitle:segmentInfo
+                           tintColor:[UIColor labelColor]
+                              handler:^(__unused YMSBCardViewController *c) { voteHandler(20); }],
+        [YMSBCardItem itemWithImage:sbSymbolImage(@"tag")
+                               title:LOC(@"SB_VOTE_CHANGE_CATEGORY")
+                            subtitle:segmentInfo
+                           tintColor:[UIColor labelColor]
+                               handler:^(YMSBCardViewController *c) {
+            __strong typeof(weakSelf) strongSelf = weakSelf;
+            if (strongSelf) [strongSelf sbPushCategoryPickerForSegment:segment fromCard:c];
+        }],
+        [YMSBCardItem itemWithImage:sbSymbolImage(@"backward.end.fill")
+                               title:LOC(@"SB_VOTE_JUMP_START")
+                            subtitle:segmentInfo
+                           tintColor:[UIColor labelColor]
+                              handler:^(__unused YMSBCardViewController *c) {
+            __strong typeof(weakSelf) strongSelf = weakSelf;
+            [card dismissCard];
+            if (strongSelf) [strongSelf seekToTime:(CGFloat)segment.startTime];
+        }],
+        [YMSBCardItem itemWithImage:sbSymbolImage(@"forward.end.fill")
+                               title:LOC(@"SB_VOTE_JUMP_END")
+                            subtitle:segmentInfo
+                           tintColor:[UIColor labelColor]
+                              handler:^(__unused YMSBCardViewController *c) {
+            __strong typeof(weakSelf) strongSelf = weakSelf;
+            [card dismissCard];
+            if (strongSelf) [strongSelf seekToTime:(CGFloat)segment.endTime];
+        }],
+    ];
+    [card.navigationController pushViewController:options animated:YES];
+}
+
+// Category picker for a category vote, pushed onto the card's navigation stack.
+%new
+- (void)sbPushCategoryPickerForSegment:(SBSegment *)segment fromCard:(YMSBCardViewController *)card {
+    __weak typeof(self) weakSelf = self;
+
+    NSMutableArray<YMSBCardItem *> *items = [NSMutableArray array];
+    for (NSString *category in sbAllCategories()) {
+        NSString *hex = [[NSUserDefaults standardUserDefaults] stringForKey:SB_COLOR_KEY(category)];
+        UIColor *color = hex ? SBColorFromHex(hex) : [UIColor whiteColor];
+        [items addObject:[YMSBCardItem itemWithImage:sbDotImage(color)
+                                               title:sbLocalizedCategoryName(category)
+                                            subtitle:nil
+                                           tintColor:[UIColor labelColor]
+                                              handler:^(__unused YMSBCardViewController *c) {
+            __strong typeof(weakSelf) strongSelf = weakSelf;
+            [card dismissCard];
+            if (!strongSelf) return;
+            NSString *videoID = [strongSelf currentVideoID];
+            [SBRequest voteCategoryOnSegment:segment videoID:videoID category:category completion:^(BOOL success, NSString *errorMessage) {
+                if (success) {
+                    sbInvalidateSegmentCache(videoID);
+                    sbShowSBPill(LOC(@"SB_VOTE_SUCCESS"), YES);
+                } else {
+                    NSString *reason = errorMessage.length > 0 ? [NSString stringWithFormat:@"%@ — %@", LOC(@"SB_VOTE_FAILED"), errorMessage] : LOC(@"SB_VOTE_FAILED");
+                    sbShowSBPill(reason, NO);
+                }
             }];
-        }
-    }];
-    [card addOptionRowWithSymbol:@"backward.end.fill" title:LOC(@"SB_VOTE_JUMP_START") subtitle:segmentInfo tintColor:[UIColor labelColor] handler:^{
-        __strong typeof(weakSelf) strongSelf = weakSelf;
-        [weakCard dismissAnimated];
-        if (strongSelf) [strongSelf seekToTime:(CGFloat)segment.startTime];
-    }];
-    [card addOptionRowWithSymbol:@"forward.end.fill" title:LOC(@"SB_VOTE_JUMP_END") subtitle:segmentInfo tintColor:[UIColor labelColor] handler:^{
-        __strong typeof(weakSelf) strongSelf = weakSelf;
-        [weakCard dismissAnimated];
-        if (strongSelf) [strongSelf seekToTime:(CGFloat)segment.endTime];
-    }];
+        }]];
+    }
+
+    YMSBCardViewController *picker = [[YMSBCardViewController alloc] init];
+    picker.cardTitle = LOC(@"SB_VOTE_CHANGE_CATEGORY");
+    picker.items = items;
+    [card.navigationController pushViewController:picker animated:YES];
 }
 
 // Adds/removes the current channel to/from the whitelist directly from the
@@ -766,37 +709,48 @@ static const CGFloat kYMSwipeRevealWidth = 72.0;
 
 #pragma mark - Whitelist manager (tab bar entry)
 
-static void sbRebuildWhitelistCardContent(YMSBCardView *card);
-
-void YMSBPresentWhitelistManager(void) {
-    YMSBCardView *card = [YMSBCardView presentWithTitle:LOC(@"SB_WHITELIST_MANAGE")];
-    if (!card) return;
-    sbRebuildWhitelistCardContent(card);
-}
-
-static void sbRebuildWhitelistCardContent(YMSBCardView *card) {
-    [card clearContent];
+static NSArray<YMSBCardItem *> *sbWhitelistManagerItems(void) {
     NSDictionary *whitelist = sbWhitelistDictionary();
     NSArray *channelIDs = [whitelist.allKeys sortedArrayUsingSelector:@selector(localizedCaseInsensitiveCompare:)];
-    if (channelIDs.count == 0) {
-        UILabel *empty = [[UILabel alloc] init];
-        empty.text = LOC(@"SB_WHITELIST_EMPTY");
-        empty.font = [UIFont systemFontOfSize:14];
-        empty.textColor = [UIColor secondaryLabelColor];
-        empty.numberOfLines = 0;
-        [card addCustomView:empty];
-        return;
-    }
+    NSMutableArray<YMSBCardItem *> *items = [NSMutableArray array];
     for (NSString *channelID in channelIDs) {
-        NSString *name = whitelist[channelID];
-        __weak YMSBCardView *weakCard = card;
-        YMSBSwipeRow *row = [[YMSBSwipeRow alloc] initWithChannelName:name onDelete:^{
-            sbSetChannelWhitelisted(channelID, name, NO);
-            YMSBCardView *strongCard = weakCard;
-            if (strongCard) sbRebuildWhitelistCardContent(strongCard);
-        }];
-        [card addCustomView:row];
+        // No icon on whitelist rows — just the channel name and its ID.
+        [items addObject:[YMSBCardItem itemWithImage:nil
+                                                title:whitelist[channelID]
+                                             subtitle:channelID
+                                            tintColor:nil
+                                               handler:nil]];
+        items.lastObject.identifier = channelID;
     }
+    return items;
+}
+
+void YMSBPresentWhitelistManager(void) {
+    YMSBCardViewController *card = [[YMSBCardViewController alloc] init];
+    card.cardTitle = LOC(@"SB_WHITELIST_MANAGE");
+    card.swipeToDelete = YES;
+
+    UISearchBar *searchBar = [[UISearchBar alloc] init];
+    searchBar.placeholder = LOC(@"SEARCH");
+    card.searchBar = searchBar;
+
+    NSDictionary *whitelist = sbWhitelistDictionary();
+    if (whitelist.count == 0) {
+        card.message = LOC(@"SB_WHITELIST_EMPTY");
+        card.items = @[];
+    } else {
+        card.items = sbWhitelistManagerItems();
+    }
+
+    card.onDeleteItem = ^(YMSBCardViewController *c, YMSBCardItem *item) {
+        if (item.identifier.length > 0) {
+            sbSetChannelWhitelisted(item.identifier, item.title, NO);
+        }
+        c.message = sbWhitelistDictionary().count == 0 ? LOC(@"SB_WHITELIST_EMPTY") : nil;
+        c.items = sbWhitelistManagerItems();
+    };
+
+    [YMSBCardViewController presentCard:card];
 }
 
 %ctor {
