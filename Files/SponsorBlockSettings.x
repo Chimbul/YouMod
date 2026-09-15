@@ -748,13 +748,10 @@ static const void *kSBAllFlatRowsKey = &kSBAllFlatRowsKey;
         field.text = userID;
         field.font = [UIFont monospacedSystemFontOfSize:14 weight:UIFontWeightRegular];
         field.textColor = [UIColor labelColor];
-        // Search-bar look: rounded, gray border, leading icon, clear button.
+        // Border, corner radius and background are applied by the card
+        // (sbStyleFieldBorders) so they follow appearance changes; here only
+        // the search-bar-like leading icon and behaviors are set up.
         field.borderStyle = UITextBorderStyleNone;
-        field.backgroundColor = [UIColor secondarySystemBackgroundColor];
-        field.layer.cornerRadius = 10.0;
-        field.layer.masksToBounds = YES;
-        field.layer.borderWidth = 1.0;
-        field.layer.borderColor = [UIColor systemGray3Color].CGColor;
         UIImageView *iconView = [[UIImageView alloc] initWithImage:[[UIImage systemImageNamed:@"person.crop.circle"] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate]];
         iconView.tintColor = [UIColor systemGray2Color];
         iconView.contentMode = UIViewContentModeScaleAspectFit;

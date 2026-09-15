@@ -304,7 +304,8 @@ static void sbPostVoteQuery(NSString *query, void (^completion)(BOOL success, NS
     [super viewDidLoad];
     self.title = self.cardTitle;
 
-    self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithImage:[UIImage systemImageNamed:@"xmark"]
+    UIImageSymbolConfiguration *closeConfig = [UIImageSymbolConfiguration configurationWithPointSize:16 weight:UIImageSymbolWeightMedium];
+    self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithImage:[[UIImage systemImageNamed:@"xmark" withConfiguration:closeConfig] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate]
                                                                                style:UIBarButtonItemStylePlain
                                                                               target:self
                                                                               action:@selector(dismissCard)];
@@ -326,15 +327,27 @@ static void sbPostVoteQuery(NSString *query, void (^completion)(BOOL success, NS
 
     if (self.searchBar) {
         self.searchBar.delegate = self;
-        self.searchBar.frame = CGRectMake(0, 0, 0, 56);
-        // Rounded field with a gray border.
-        UITextField *searchField = self.searchBar.searchTextField;
-        searchField.layer.cornerRadius = 10.0;
-        searchField.layer.masksToBounds = YES;
-        searchField.layer.borderWidth = 1.0;
-        searchField.layer.borderColor = [UIColor systemGray3Color].CGColor;
-        _tableView.tableHeaderView = self.searchBar;
+        // Clear the bar's own background so only the rounded inner field
+        // shows — no outer white frame.
+        self.searchBar.backgroundImage = [[UIImage alloc] init];
+        self.searchBar.translatesAutoresizingMaskIntoConstraints = NO;
+
+        // Wrap the bar in a fixed-height, full-width header view: a bare
+        // search bar as tableHeaderView gets mis-sized on inset-grouped
+        // tables and rows slide underneath it.
+        UIView *header = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 320, 56)];
+        header.backgroundColor = [UIColor clearColor];
+        [header addSubview:self.searchBar];
+        [NSLayoutConstraint activateConstraints:@[
+            [self.searchBar.topAnchor constraintEqualToAnchor:header.topAnchor constant:4],
+            [self.searchBar.bottomAnchor constraintEqualToAnchor:header.bottomAnchor constant:-4],
+            [self.searchBar.leadingAnchor constraintEqualToAnchor:header.leadingAnchor constant:8],
+            [self.searchBar.trailingAnchor constraintEqualToAnchor:header.trailingAnchor constant:-8],
+        ]];
+        _tableView.tableHeaderView = header;
     }
+
+    [self sbStyleFieldBorders];
 
     if (self.swipeToDelete) {
         // Editing mode puts a red minus on the leading edge of every row;
@@ -345,6 +358,34 @@ static void sbPostVoteQuery(NSString *query, void (^completion)(BOOL success, NS
     }
 
     [self refilterItems];
+}
+
+// Layer borders use CGColor snapshots, which don't follow trait changes on
+// their own — re-apply them (and reload cells) whenever appearance flips so
+// every text/color stays in sync with dark/light mode.
+- (void)sbStyleFieldBorders {
+    UIColor *border = [UIColor systemGray3Color];
+    UITextField *searchField = self.searchBar.searchTextField;
+    searchField.layer.cornerRadius = 10.0;
+    searchField.layer.masksToBounds = YES;
+    searchField.layer.borderWidth = 1.0;
+    searchField.layer.borderColor = border.CGColor;
+
+    if (self.textField) {
+        self.textField.layer.cornerRadius = 10.0;
+        self.textField.layer.masksToBounds = YES;
+        self.textField.layer.borderWidth = 1.0;
+        self.textField.layer.borderColor = border.CGColor;
+        self.textField.backgroundColor = [UIColor secondarySystemBackgroundColor];
+    }
+}
+
+- (void)traitCollectionDidChange:(UITraitCollection *)previousTraitCollection {
+    [super traitCollectionDidChange:previousTraitCollection];
+    if (previousTraitCollection.userInterfaceStyle != self.traitCollection.userInterfaceStyle) {
+        [self sbStyleFieldBorders];
+        [self.tableView reloadData];
+    }
 }
 
 - (void)searchBar:(UISearchBar *)searchBar textDidChange:(NSString *)searchText {
@@ -662,8 +703,9 @@ static void sbPostVoteQuery(NSString *query, void (^completion)(BOOL success, NS
                             subtitle:segmentInfo
                            tintColor:[UIColor labelColor]
                               handler:^(__unused YMSBCardViewController *c) {
+            // Jumping keeps the card open so the user can keep browsing or
+            // vote right after scrubbing around.
             __strong typeof(weakSelf) strongSelf = weakSelf;
-            [card dismissCard];
             if (strongSelf) [strongSelf seekToTime:(CGFloat)segment.startTime];
         }],
         [YMSBCardItem itemWithImage:sbSymbolImage(@"forward.end.fill")
@@ -672,7 +714,6 @@ static void sbPostVoteQuery(NSString *query, void (^completion)(BOOL success, NS
                            tintColor:[UIColor labelColor]
                               handler:^(__unused YMSBCardViewController *c) {
             __strong typeof(weakSelf) strongSelf = weakSelf;
-            [card dismissCard];
             if (strongSelf) [strongSelf seekToTime:(CGFloat)segment.endTime];
         }],
     ];
