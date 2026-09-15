@@ -29,8 +29,6 @@ static void startNetworkMonitoring(void) {
     });
 }
 
-extern YTPlayerViewController *YouModCurrentPlayerViewController;
-
 #pragma mark - Rewind / Fast-forward on iOS media controls
 
 // The user-chosen skip amount for each direction, in seconds. Zero means the
