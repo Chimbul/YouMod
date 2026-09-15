@@ -295,6 +295,7 @@ static void YouModAddEndTime(YTInlinePlayerBarContainerView *playerbar, YTPlayer
 %end
 
 static BOOL hasSetSeekButtons = NO;
+static BOOL isYouModPrevNextButtons = NO;
 
 %hook YTMainAppControlsOverlayView
 // Hide autoplay Switch
@@ -310,6 +311,11 @@ static BOOL hasSetSeekButtons = NO;
     YTMainAppVideoPlayerOverlayViewController *mainOverlayController = (YTMainAppVideoPlayerOverlayViewController *)self.eventsDelegate;
     YTPlayerViewController *playerViewController = mainOverlayController.parentViewController;
     visible ? [playerViewController pause] : [playerViewController play];
+    if (IS_ENABLED(ReplacePrevNextButtons)) {
+        isYouModPrevNextButtons = YES;
+        [self setSeekAccessibilityButtonsVisible:visible];
+        isYouModPrevNextButtons = NO;
+    }
 }
 // Replace previous/next buttons with back and forward
 - (void)didMoveToWindow {
@@ -340,7 +346,7 @@ static BOOL hasSetSeekButtons = NO;
 - (void)setSeekBackwardAccessibilityButtonHidden:(BOOL)arg { if (!IS_ENABLED(ReplacePrevNextButtons)) %orig; }
 - (void)setSeekForwardAccessibilityButtonVisible:(BOOL)arg { if (!IS_ENABLED(ReplacePrevNextButtons)) %orig; }
 - (void)setSeekBackwardAccessibilityButtonVisible:(BOOL)arg { if (!IS_ENABLED(ReplacePrevNextButtons)) %orig; }
-- (void)setSeekAccessibilityButtonsVisible:(BOOL)arg { if (!IS_ENABLED(ReplacePrevNextButtons)) %orig; }
+- (void)setSeekAccessibilityButtonsVisible:(BOOL)arg { if (!IS_ENABLED(ReplacePrevNextButtons) || isYouModPrevNextButtons) %orig; }
 - (void)setPreviousButtonEnabled:(BOOL)arg { if (!IS_ENABLED(ReplacePrevNextButtons)) %orig; }
 - (void)setNextButtonEnabled:(BOOL)arg { if (!IS_ENABLED(ReplacePrevNextButtons)) %orig; }
 - (void)setPreviousButtonHidden:(BOOL)arg { if (!IS_ENABLED(ReplacePrevNextButtons)) %orig; }

@@ -2111,23 +2111,18 @@ static NSString *YouModExtractCommentText(UIView *cellView, BOOL isPost) {
             } else {
                 ASDisplayNode *node = [current performSelector:@selector(keepalive_node)];
                 if (![node isKindOfClass:%c(ELMExpandableTextNode)] && ![node isKindOfClass:%c(ELMTextNode)]) {
-                    BOOL found = NO;
                     for (id child in node.yogaChildren) {
                         if ([child isKindOfClass:%c(ELMExpandableTextNode)] || [child isKindOfClass:%c(ELMTextNode)]) {
                             node = child;
-                            found = YES;
                             break;
                         }
                     }
-                    if (!found) continue;
                 }
                 NSString *desc = nil;
                 @try {
                     desc = [[[[node performSelector:@selector(nodeController)] performSelector:@selector(parent)] performSelector:@selector(owningComponent)] description];
-                } @catch (id ex) {
-                    continue;
-                }
-                if ([desc containsString:@"post_text.eml"]) {
+                } @catch (id ex) {}
+                if (desc != nil && [desc containsString:@"post_text.eml"]) {
                     if ([node isKindOfClass:%c(ELMExpandableTextNode)]) {
                         node = [node performSelector:@selector(currentTextNode)];
                     }

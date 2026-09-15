@@ -169,6 +169,38 @@ BOOL sbActiveForVideo(YTPlayerViewController *player) {
     return YES;
 }
 
+// Pushes a fresh segments notification for the player: fetches and activates
+// segments when SB is (back) on, clears markers when it is off/whitelisted.
+static void sbPostSegmentsForPlayer(YTPlayerViewController *player, BOOL enabled) {
+    if (!player) return;
+    NSString *videoID = [player currentVideoID];
+    sbInvalidateSegmentCache(videoID);
+    player.sbSegments = nil;
+    if (!enabled || !sbActiveForVideo(player)) {
+        [[NSNotificationCenter defaultCenter] postNotificationName:@"SBSegmentsDidLoad"
+                                                            object:player
+                                                          userInfo:@{@"segments": @[]}];
+        return;
+    }
+    [SBRequest fetchSegmentsForVideoID:videoID completion:^(NSArray<SBSegment *> *segments) {
+        player.sbSegments = segments;
+        [[NSNotificationCenter defaultCenter] postNotificationName:@"SBSegmentsDidLoad"
+                                                            object:player
+                                                          userInfo:@{@"segments": segments ?: @[]}];
+    }];
+}
+
+// Re-syncs the currently playing video after the whitelist changed, so
+// removing a channel brings skipping/markers back immediately instead of
+// waiting for the next video.
+static void sbRefreshPlayerAfterWhitelistChange(void) {
+    YTPlayerViewController *player = YouModCurrentPlayerViewController;
+    if (!player) return;
+    NSString *channelID = sbCurrentChannelID(player);
+    BOOL listed = channelID.length > 0 && sbIsChannelWhitelisted(channelID);
+    sbPostSegmentsForPlayer(player, !listed);
+}
+
 #pragma mark - SBRequest (Vote)
 
 // All parameters go in the URL query string per the SponsorBlock API; the
@@ -271,9 +303,6 @@ static void sbPostVoteQuery(NSString *query, void (^completion)(BOOL success, NS
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.title = self.cardTitle;
-    self.view.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor *(UITraitCollection *trait) {
-        return (trait.userInterfaceStyle == UIUserInterfaceStyleDark) ? [%c(YTColor) black3] : [UIColor systemBackgroundColor];
-    }];
 
     self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithImage:[UIImage systemImageNamed:@"xmark"]
                                                                                style:UIBarButtonItemStylePlain
@@ -283,7 +312,6 @@ static void sbPostVoteQuery(NSString *query, void (^completion)(BOOL success, NS
     _tableView = [[UITableView alloc] initWithFrame:CGRectZero style:UITableViewStyleInsetGrouped];
     _tableView.delegate = self;
     _tableView.dataSource = self;
-    _tableView.backgroundColor = [UIColor clearColor];
     _tableView.rowHeight = UITableViewAutomaticDimension;
     _tableView.estimatedRowHeight = 54;
     _tableView.keyboardDismissMode = UIScrollViewKeyboardDismissModeInteractive;
@@ -298,9 +326,22 @@ static void sbPostVoteQuery(NSString *query, void (^completion)(BOOL success, NS
 
     if (self.searchBar) {
         self.searchBar.delegate = self;
-        self.searchBar.searchBarStyle = UISearchBarStyleMinimal;
         self.searchBar.frame = CGRectMake(0, 0, 0, 56);
+        // Rounded field with a gray border.
+        UITextField *searchField = self.searchBar.searchTextField;
+        searchField.layer.cornerRadius = 10.0;
+        searchField.layer.masksToBounds = YES;
+        searchField.layer.borderWidth = 1.0;
+        searchField.layer.borderColor = [UIColor systemGray3Color].CGColor;
         _tableView.tableHeaderView = self.searchBar;
+    }
+
+    if (self.swipeToDelete) {
+        // Editing mode puts a red minus on the leading edge of every row;
+        // tapping it reveals the red Delete button, identical to the
+        // swipe-left interaction.
+        _tableView.editing = YES;
+        _tableView.allowsSelectionDuringEditing = NO;
     }
 
     [self refilterItems];
@@ -352,7 +393,6 @@ static void sbPostVoteQuery(NSString *query, void (^completion)(BOOL success, NS
     if (self.message.length > 0 && indexPath.row == 0) {
         UITableViewCell *cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:nil];
         cell.selectionStyle = UITableViewCellSelectionStyleNone;
-        cell.backgroundColor = [UIColor clearColor];
         UILabel *label = [[UILabel alloc] init];
         label.text = self.message;
         label.font = [UIFont systemFontOfSize:13];
@@ -412,23 +452,25 @@ static void sbPostVoteQuery(NSString *query, void (^completion)(BOOL success, NS
     if (item && item.handler) item.handler(self);
 }
 
-// Trailing swipe (swipe left, Mail-style) reveals the delete button, used by
-// the whitelist manager.
-- (UISwipeActionsConfiguration *)tableView:(UITableView *)tableView trailingSwipeActionsConfigurationForRowAtIndexPath:(NSIndexPath *)indexPath {
-    if (!self.swipeToDelete) return nil;
+// Editing mode: every whitelist row gets a red minus on its leading edge;
+// tapping it bounces out the same red Delete button the swipe-left
+// interaction used to reveal.
+- (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath {
+    return self.swipeToDelete && [self itemForRow:indexPath.row] != nil;
+}
+
+- (UITableViewCellEditingStyle)tableView:(UITableView *)tableView editingStyleForRowAtIndexPath:(NSIndexPath *)indexPath {
+    return (self.swipeToDelete && [self itemForRow:indexPath.row] != nil) ? UITableViewCellEditingStyleDelete : UITableViewCellEditingStyleNone;
+}
+
+- (NSString *)tableView:(UITableView *)tableView titleForDeleteConfirmationButtonForRowAtIndexPath:(NSIndexPath *)indexPath {
+    return LOC(@"SB_WHITELIST_DELETE");
+}
+
+- (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath {
+    if (editingStyle != UITableViewCellEditingStyleDelete) return;
     YMSBCardItem *item = [self itemForRow:indexPath.row];
-    if (!item) return nil;
-    __weak typeof(self) weakSelf = self;
-    UIContextualAction *delete = [UIContextualAction contextualActionWithStyle:UIContextualActionStyleDestructive
-                                                                         title:LOC(@"SB_WHITELIST_DELETE")
-                                                                       handler:^(__unused UIContextualAction *action, __unused UIView *view, void (^completion)(BOOL finished)) {
-        __strong typeof(weakSelf) strongSelf = weakSelf;
-        if (strongSelf && strongSelf.onDeleteItem) strongSelf.onDeleteItem(strongSelf, item);
-        completion(YES);
-    }];
-    UISwipeActionsConfiguration *config = [UISwipeActionsConfiguration configurationWithActions:@[delete]];
-    config.performsFirstActionWithFullSwipe = YES;
-    return config;
+    if (item && self.onDeleteItem) self.onDeleteItem(self, item);
 }
 
 - (void)reloadItems {
@@ -442,20 +484,6 @@ static void sbPostVoteQuery(NSString *query, void (^completion)(BOOL success, NS
 + (UINavigationController *)presentCard:(YMSBCardViewController *)card {
     UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:card];
     nav.modalPresentationStyle = UIModalPresentationFormSheet;
-
-    NSInteger rows = card.items.count + (card.message.length > 0 ? 1 : 0) + (card.textField ? 1 : 0) + (card.searchBar ? 1 : 0);
-    CGFloat height = 150.0 + rows * 54.0;
-    if (height > 540.0) height = 540.0;
-    nav.preferredContentSize = CGSizeMake(340.0, height);
-
-    UINavigationBarAppearance *appearance = [[UINavigationBarAppearance alloc] init];
-    [appearance configureWithDefaultBackground];
-    appearance.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor *(UITraitCollection *trait) {
-        return (trait.userInterfaceStyle == UIUserInterfaceStyleDark) ? [%c(YTColor) black3] : [UIColor systemBackgroundColor];
-    }];
-    nav.navigationBar.standardAppearance = appearance;
-    nav.navigationBar.scrollEdgeAppearance = appearance;
-    nav.navigationBar.tintColor = [UIColor systemBlueColor];
 
     UIViewController *presenter = YouModTopViewController(nil);
     while (presenter.presentedViewController) {
@@ -700,11 +728,9 @@ static void sbPostVoteQuery(NSString *query, void (^completion)(BOOL success, NS
     BOOL wasListed = sbIsChannelWhitelisted(channelID);
     sbSetChannelWhitelisted(channelID, channelName, !wasListed);
 
-    sbInvalidateSegmentCache([self currentVideoID]);
-    self.sbSegments = nil;
-    [[NSNotificationCenter defaultCenter] postNotificationName:@"SBSegmentsDidLoad"
-                                                        object:self
-                                                      userInfo:@{@"segments": @[]}];
+    // Removing the whitelist brings skipping/markers back for the video
+    // being watched right now; adding it clears them.
+    sbPostSegmentsForPlayer(self, wasListed);
 
     sbShowSBPill(LOC(wasListed ? @"SB_WHITELIST_REMOVE" : @"SB_WHITELIST_ADD"), YES);
 }
@@ -752,6 +778,7 @@ void YMSBPresentWhitelistManager(void) {
         }
         c.message = sbWhitelistDictionary().count == 0 ? LOC(@"SB_WHITELIST_EMPTY") : nil;
         c.items = sbWhitelistManagerItems();
+        sbRefreshPlayerAfterWhitelistChange();
     };
 
     [YMSBCardViewController presentCard:card];

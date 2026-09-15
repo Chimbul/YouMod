@@ -793,6 +793,7 @@ extern void sbSetPrivateUserID(NSString *userID);
 extern void sbSetPublicUserIDManual(NSString *userID);
 extern void sbShowSBPill(NSString *message, BOOL success);
 extern void YMSBPresentWhitelistManager(void);
+extern YTPlayerViewController *YouModCurrentPlayerViewController;
 
 // Form-sheet card dialog of our own (UIModalPresentationFormSheet inside a
 // UINavigationController), used for segment voting, whitelist and user-ID
