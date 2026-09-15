@@ -672,8 +672,9 @@ static const void *kSBAllFlatRowsKey = &kSBAllFlatRowsKey;
         return;
     }
     if (indexPath.section == 3) {
+        UITableViewCell *sourceCell = [tableView cellForRowAtIndexPath:indexPath];
         [tableView deselectRowAtIndexPath:indexPath animated:YES];
-        [self sbPresentUserIDSheetForRow:indexPath.row];
+        [self sbPresentUserIDSheetForRow:indexPath.row sourceView:sourceCell];
         return;
     }
     if (indexPath.section != 2) return;
@@ -720,7 +721,7 @@ static const void *kSBAllFlatRowsKey = &kSBAllFlatRowsKey;
     return cell;
 }
 
-- (void)sbPresentUserIDSheetForRow:(NSInteger)row {
+- (void)sbPresentUserIDSheetForRow:(NSInteger)row sourceView:(UIView *)sourceView {
     BOOL isPublic = (row == 1);
     NSString *userID = isPublic ? sbPublicUserID() : sbLocalUserID();
 
@@ -751,14 +752,26 @@ static const void *kSBAllFlatRowsKey = &kSBAllFlatRowsKey;
         field.text = userID;
         field.font = [UIFont monospacedSystemFontOfSize:14 weight:UIFontWeightRegular];
         field.textColor = [UIColor labelColor];
+        // Search-bar look: rounded, gray border, leading icon, clear button.
+        field.borderStyle = UITextBorderStyleNone;
         field.backgroundColor = [UIColor secondarySystemBackgroundColor];
-        field.layer.cornerRadius = 8;
-        field.borderStyle = UITextBorderStyleRoundedRect;
+        field.layer.cornerRadius = 10.0;
+        field.layer.masksToBounds = YES;
+        field.layer.borderWidth = 1.0;
+        field.layer.borderColor = [UIColor systemGray3Color].CGColor;
+        UIImageView *iconView = [[UIImageView alloc] initWithImage:[[UIImage systemImageNamed:@"person.crop.circle"] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate]];
+        iconView.tintColor = [UIColor systemGray2Color];
+        iconView.contentMode = UIViewContentModeScaleAspectFit;
+        iconView.frame = CGRectMake(10, 10, 20, 20);
+        UIView *leftContainer = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 40, 40)];
+        [leftContainer addSubview:iconView];
+        field.leftView = leftContainer;
+        field.leftViewMode = UITextFieldViewModeAlways;
+        field.clearButtonMode = UITextFieldViewModeWhileEditing;
         field.autocapitalizationType = UITextAutocapitalizationTypeNone;
         field.autocorrectionType = UITextAutocorrectionTypeNo;
         field.spellCheckingType = UITextSpellCheckingTypeNo;
         field.keyboardType = UIKeyboardTypeASCIICapable;
-        field.clearButtonMode = UITextFieldViewModeWhileEditing;
         card.textField = field;
 
         card.items = @[
@@ -782,10 +795,10 @@ static const void *kSBAllFlatRowsKey = &kSBAllFlatRowsKey;
                 __strong typeof(weakSelf) strongSelf = weakSelf;
                 [strongSelf.tableView reloadData];
             }],
-            [YMSBCardItem itemWithImage:[UIImage systemImageNamed:@"xmark.circle"]
+            [YMSBCardItem itemWithImage:[UIImage systemImageNamed:@"xmark.circle.fill"]
                                    title:LOC(@"SB_ID_CANCEL")
                                 subtitle:nil
-                               tintColor:[UIColor secondaryLabelColor]
+                               tintColor:[UIColor systemRedColor]
                                   handler:^(YMSBCardViewController *c) {
                 [c dismissCard];
             }],
@@ -794,7 +807,7 @@ static const void *kSBAllFlatRowsKey = &kSBAllFlatRowsKey;
     }];
     [sheet addAction:editAction];
 
-    [sheet presentFromViewController:self animated:YES completion:nil];
+    [sheet presentFromView:sourceView animated:YES completion:nil];
 }
 
 #pragma mark - UIColorPickerViewControllerDelegate
