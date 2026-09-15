@@ -726,10 +726,6 @@ static const void *kSBAllFlatRowsKey = &kSBAllFlatRowsKey;
     NSString *userID = isPublic ? sbPublicUserID() : sbLocalUserID();
 
     YTDefaultSheetController *sheet = [%c(YTDefaultSheetController) sheetControllerWithParentResponder:self];
-    if (isPublic) {
-        [sheet addHeaderWithTitle:LOC(@"SB_PUBLIC_ID") subtitle:userID];
-    }
-
     __weak typeof(self) weakSelf = self;
 
     YTActionSheetAction *copyAction = [%c(YTActionSheetAction) actionWithTitle:LOC(@"SB_COPY_ID")
