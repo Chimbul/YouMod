@@ -80,9 +80,8 @@ void YouModApplyOLEDCollectionView(ASCollectionView *self, NSString *iden) {
     }];
 }
 
-%hook YTActionSheetDialogViewController
-- (BOOL)forcePreferredContentSize { return NO; }
-- (void)setForcePreferredContentSize:(BOOL)arg { %orig(NO); }
+%hook YTContextualSheetManager
+- (void)installInContainerView:(UIView *)view {}
 %end
 
 %hook MDCInkView
