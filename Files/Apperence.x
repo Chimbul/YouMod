@@ -82,7 +82,7 @@ void YouModApplyOLEDCollectionView(ASCollectionView *self, NSString *iden) {
 
 %hook YTActionSheetDialogViewController
 - (BOOL)forcePreferredContentSize { return NO; }
-- (void)setForcePreferredContentSize { %orig(NO); }
+- (void)setForcePreferredContentSize:(BOOL)arg { %orig(NO); }
 %end
 
 %hook MDCInkView
