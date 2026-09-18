@@ -424,6 +424,11 @@ static BOOL isYouModPrevNextButtons = NO;
 - (void)setPaidContentWithPlayerData:(id)data { if (!IS_ENABLED(HidePaidPromoOverlay)) %orig; }
 %end
 
+// Moved out of the overlay VC in 20.21.6, so the hook above only covers 19.x now.
+%hook YTPaidContentViewController
+- (void)showPaidContentRenderer:(id)renderer { if (!IS_ENABLED(HidePaidPromoOverlay)) %orig; }
+%end
+
 // Remove Watermarks
 %hook YTAnnotationsViewController
 - (void)loadFeaturedChannelWatermark { 
@@ -537,18 +542,33 @@ static BOOL isYouModPrevNextButtons = NO;
 
 #define itemCount 13
 
+// Class on 19.x/20.x, protocol from 21.32.4 where the class is ...Impl. Hook both.
+static void YouModApplyExtraSpeedOptions(id controller) {
+    float speeds[] = {0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0, 5.0, 7.5, 10.0};
+    id options[itemCount];
+    Class optionClass = %c(YTVarispeedSwitchControllerOption);
+    for (int i = 0; i < itemCount; ++i) {
+        NSString *title = [NSString stringWithFormat:@"%.2fx", speeds[i]];
+        options[i] = [[optionClass alloc] initWithTitle:title rate:speeds[i]];
+    }
+    [controller setValue:[NSArray arrayWithObjects:options count:itemCount] forKey:@"_options"];
+}
+
 %hook YTVarispeedSwitchController
 
 - (id)init {
     self = %orig;
-    float speeds[] = {0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0, 5.0, 7.5, 10.0};
-    id options[itemCount];
-    Class YTVarispeedSwitchControllerOptionClass = %c(YTVarispeedSwitchControllerOption);
-    for (int i = 0; i < itemCount; ++i) {
-        NSString *title = [NSString stringWithFormat:@"%.2fx", speeds[i]];
-        options[i] = [[YTVarispeedSwitchControllerOptionClass alloc] initWithTitle:title rate:speeds[i]];
-    }
-    [self setValue:[NSArray arrayWithObjects:options count:itemCount] forKey:@"_options"];
+    YouModApplyExtraSpeedOptions(self);
+    return self;
+}
+
+%end
+
+%hook YTVarispeedSwitchControllerImpl
+
+- (id)init {
+    self = %orig;
+    YouModApplyExtraSpeedOptions(self);
     return self;
 }
 
@@ -579,6 +599,8 @@ static CGFloat YouModSpeedForHoldIndex(NSInteger index) {
 }
 
 %hook YTMainAppVideoPlayerOverlayView
+// setPlayerResponse: sets this directly, so the YTAnnotationsViewController hooks miss it.
+- (void)setFeaturedChannelWatermarkImageView:(id)arg { if (!IS_ENABLED(HideWaterMark)) %orig; }
 - (void)setLongPressGestureRecognizer:(UILongPressGestureRecognizer *)arg {
     if (INTFORVAL(HoldToSpeedIndex) != 0) return;
     %orig;
