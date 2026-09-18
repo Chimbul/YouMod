@@ -75,10 +75,14 @@
     ]];
 
     [constraints addObjectsFromArray:@[
-        [closeBtn.topAnchor constraintEqualToAnchor:bgContainer.safeAreaLayoutGuide.topAnchor constant:12],
-        [closeBtn.leadingAnchor constraintEqualToAnchor:bgContainer.safeAreaLayoutGuide.leadingAnchor constant:12],
-        [moreBtn.topAnchor constraintEqualToAnchor:bgContainer.safeAreaLayoutGuide.topAnchor constant:12],
-        [moreBtn.trailingAnchor constraintEqualToAnchor:bgContainer.trailingAnchor constant:-12],
+        // Anchored to the VC's own safe area guide (not the container's raw
+        // edges) so on notched / Dynamic Island iPhones the buttons can never
+        // ride up into the top or side safe areas, including when the form
+        // sheet renders near-fullscreen (landscape).
+        [closeBtn.topAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.topAnchor constant:12],
+        [closeBtn.leadingAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.leadingAnchor constant:12],
+        [moreBtn.topAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.topAnchor constant:12],
+        [moreBtn.trailingAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.trailingAnchor constant:-12],
     ]];
 
     [constraints addObjectsFromArray:@[
