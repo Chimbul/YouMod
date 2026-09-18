@@ -93,7 +93,6 @@
 
 // Disables Snackbar
 %hook GOOHUDManagerInternal
-- (id)sharedInstance { return IS_ENABLED(DisablesSnackBar) ? nil : %orig; }
 - (void)showMessageMainThread:(id)arg { if (!IS_ENABLED(DisablesSnackBar)) %orig; }
 - (void)activateOverlay:(id)arg { if (!IS_ENABLED(DisablesSnackBar)) %orig; }
 - (void)displayHUDViewForMessage:(id)arg { if (!IS_ENABLED(DisablesSnackBar)) %orig; }
@@ -105,8 +104,7 @@
     int iconnum = renderer.icon.iconType;
     if (iconnum == 251 && IS_ENABLED(RemovePlayInNextQueueOption)) {
         return NO;
-    }
-    if (iconnum == 895 && IS_ENABLED(RemoveAddToLastQueueOption)) {
+    } else if (iconnum == 895 && IS_ENABLED(RemoveAddToLastQueueOption)) {
         return NO;
     }
     return %orig;
@@ -118,8 +116,7 @@
     int iconnum = renderer.icon.iconType;
     if (iconnum == 251 && IS_ENABLED(RemovePlayInNextQueueOption)) {
         return NO;
-    }
-    if (iconnum == 895 && IS_ENABLED(RemoveAddToLastQueueOption)) {
+    } else if (iconnum == 895 && IS_ENABLED(RemoveAddToLastQueueOption)) {
         return NO;
     }
     return %orig;
@@ -197,8 +194,7 @@
 - (UIUserInterfaceIdiom)userInterfaceIdiom {
     if (INTFORVAL(DeviceUIIndex) == 1) {
         return UIUserInterfaceIdiomPad;
-    }
-    if (INTFORVAL(DeviceUIIndex) == 2) {
+    } else if (INTFORVAL(DeviceUIIndex) == 2) {
         return UIUserInterfaceIdiomPhone;
     }
     return %orig;

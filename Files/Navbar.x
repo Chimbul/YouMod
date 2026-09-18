@@ -89,15 +89,11 @@
 %end
 
 %hook YTHeaderLogoController
-- (id)init {
-    return INTFORVAL(YTLogoIndex) == 3 ? nil : %orig;
-}
+- (id)init { return INTFORVAL(YTLogoIndex) == 3 ? nil : %orig; }
 %end
 
 %hook YTHeaderLogoControllerImpl
-- (id)init {
-    return INTFORVAL(YTLogoIndex) == 3 ? nil : %orig;
-}
+- (id)init { return INTFORVAL(YTLogoIndex) == 3 ? nil : %orig; }
 %end
 
 %hook YTNavigationBarTitleView

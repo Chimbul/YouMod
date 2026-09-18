@@ -187,7 +187,7 @@ static void YouModAddEndTime(YTInlinePlayerBarContainerView *playerbar, YTPlayer
 %property (nonatomic, strong) NSString *endTimeString;
 - (void)didMoveToWindow {
     %orig;
-    if (!IS_ENABLED(TapToSeek) || [self._viewControllerForAncestor isKindOfClass:%c(YTPivotBarViewController)]) return;
+    if (!IS_ENABLED(TapToSeek) || ![self._viewControllerForAncestor isKindOfClass:%c(YTMainAppVideoPlayerOverlayViewController)]) return;
     for (UIView *subview in self.subviews) {
         if ([subview isKindOfClass:%c(YTInlineScrubGestureView)]) {
             BOOL hasCustomTap = NO;

@@ -13,9 +13,7 @@
 %hook YTSearchViewController
 - (void)viewDidLoad {
     %orig;
-    if (IS_ENABLED(HideVoiceSearch)) {
-        [self setValue:@(NO) forKey:@"_isVoiceSearchAllowed"];
-    }
+    if (IS_ENABLED(HideVoiceSearch)) [self setValue:@(NO) forKey:@"_isVoiceSearchAllowed"];
 }
 - (void)setSuggestions:(id)arg1 { if (!IS_ENABLED(HideSearchHis)) %orig; }
 %end
@@ -28,12 +26,10 @@
 // Hide related videos in the player
 %hook YTWatchNextResultsViewController
 - (void)setVisibleSections:(NSInteger)sections {
-    if (![self.parentViewController isKindOfClass:%c(YTWatchNextResponseViewController)]) {
-        %orig;
-        return;
+    if ([self.parentViewController isKindOfClass:%c(YTWatchNextResponseViewController)] && IS_ENABLED(HideRelatedVideos)) {
+        sections = 1;
     }
-    NSInteger value = IS_ENABLED(HideRelatedVideos) ? 1 : sections;
-    %orig(value);
+    %orig(sections);
 }
 %end
 

@@ -84,3 +84,10 @@ static const void *YouModASViewKey = &YouModASViewKey;
     NSLog(@"[WaterDev] viewDidAppear LiveChat got called");
 }
 %end
+
+%hook YTReelPlayerViewController
+- (void)restart {
+    %orig;
+    NSLog(@"[WaterDev] restart reel got called");
+}
+%end
