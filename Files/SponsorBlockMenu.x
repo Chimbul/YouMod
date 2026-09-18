@@ -563,6 +563,19 @@ static void sbPostVoteQuery(NSString *query, void (^completion)(BOOL success, NS
     UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:card];
     nav.modalPresentationStyle = UIModalPresentationFormSheet;
 
+    // YouTube restyles navigation bars app-wide (appearance proxies), which
+    // can leave a sheet's title invisible. Give our bar its own explicit
+    // dynamic title color while keeping system-default backgrounds.
+    NSMutableDictionary *titleAttributes = [[NSMutableDictionary alloc] init];
+    titleAttributes[NSForegroundColorAttributeName] = [UIColor labelColor];
+    UINavigationBarAppearance *barAppearance = [[UINavigationBarAppearance alloc] init];
+    [barAppearance configureWithDefaultBackground];
+    barAppearance.titleTextAttributes = titleAttributes;
+    nav.navigationBar.standardAppearance = barAppearance;
+    nav.navigationBar.scrollEdgeAppearance = barAppearance;
+    nav.navigationBar.titleTextAttributes = titleAttributes;
+    nav.navigationBar.prefersLargeTitles = NO;
+
     UIViewController *presenter = YouModTopViewController(nil);
     while (presenter.presentedViewController) {
         presenter = presenter.presentedViewController;
