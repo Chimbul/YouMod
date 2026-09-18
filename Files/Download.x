@@ -2313,7 +2313,6 @@ void YouModHandleDownloadButtonAction(_ASDisplayView *view, UITapGestureRecogniz
     YouModShowDownloadManager(YouModCurrentPlayerViewController, presenter, view, NO);
 }
 
-static BOOL hasSetShortsDownloadButton = NO;
 %hook YTReelWatchPlaybackOverlayView
 - (void)layoutSubviews {
     %orig;
@@ -2344,10 +2343,7 @@ static BOOL hasSetShortsDownloadButton = NO;
         btnHeight = btnHeight + 16.0;
     } else {
         Y = pov.frame.origin.y - 60.0;
-        if (!hasSetShortsDownloadButton) {
-            [downloadBtn enableNewTouchFeedback];
-            hasSetShortsDownloadButton = YES;
-        }
+        [downloadBtn enableNewTouchFeedback];
     }
     downloadBtn.frame = CGRectMake(X, Y, btnWidth, btnHeight);
     [self bringSubviewToFront:downloadBtn];
