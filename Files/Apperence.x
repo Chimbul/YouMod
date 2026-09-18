@@ -41,16 +41,13 @@ void YouModApplyOLEDToDisplayView(_ASDisplayView *view, NSString *iden) {
         view.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor * _Nonnull(UITraitCollection * _Nonnull traitCollection) {
             return isDarkMode(view) ? [UIColor blackColor] : [UIColor clearColor];
         }];
-        return;
     } else if ([iden isEqualToString:@"id.elements.components.filter_chip_bar"]) {
         UIColor *dynamicColor = [UIColor colorWithDynamicProvider:^UIColor * _Nonnull(UITraitCollection * _Nonnull traitCollection) {
             return isDarkMode(view) ? [UIColor blackColor] : [UIColor clearColor];
         }];
         view.backgroundColor = dynamicColor;
         view.superview.backgroundColor = dynamicColor;
-        return;
-    }  
-    if ([controller isKindOfClass:%c(YTActionSheetDialogViewController)] || [controller isKindOfClass:%c(YTBottomSheetController)]) {
+    } else if ([controller isKindOfClass:%c(YTActionSheetDialogViewController)] || [controller isKindOfClass:%c(YTBottomSheetController)]) {
         if ([view.superview.accessibilityIdentifier isEqualToString:@"eml.animated_subscribe_button"]) return;
         view.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor * _Nonnull(UITraitCollection * _Nonnull traitCollection) {
             return isDarkMode(view) ? [UIColor blackColor] : [UIColor clearColor];
@@ -77,46 +74,25 @@ void YouModApplyOLEDToDisplayView(_ASDisplayView *view, NSString *iden) {
 }
 
 void YouModApplyOLEDCollectionView(ASCollectionView *self, NSString *iden) {
-    if (!IS_ENABLED(OLEDTheme)) return;
-    if ([iden isEqualToString:@"eml.chip_bar_collection"]) {
-        self.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor * _Nonnull(UITraitCollection * _Nonnull traitCollection) {
-            return isDarkMode(self) ? [UIColor blackColor] : [UIColor clearColor];
-        }];
-    }
+    if (!IS_ENABLED(OLEDTheme) || ![iden isEqualToString:@"eml.chip_bar_collection"]) return;
+    self.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor * _Nonnull(UITraitCollection * _Nonnull traitCollection) {
+        return isDarkMode(self) ? [UIColor blackColor] : [UIColor clearColor];
+    }];
 }
 
-%hook YTContextualWrapView
-- (void)didMoveToWindow {
-    %orig;
-    if (objc_getAssociatedObject(self, kOLEDKey)) return;
-    if ([self.superview isKindOfClass:%c(YTContextualSheetView)]) {
-        self.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor * _Nonnull(UITraitCollection * _Nonnull traitCollection) {
-            return isDarkMode(self) ? [UIColor blackColor] : [UIColor whiteColor];
-        }];
-    }
-    for (UIView *sub in self.subviews) {
-        if ([sub isKindOfClass:%c(YTDialogContainerScrollView)]) {
-            sub.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor * _Nonnull(UITraitCollection * _Nonnull traitCollection) {
-                return isDarkMode(sub) ? [UIColor blackColor] : [UIColor whiteColor];
-            }];
-            break;
-        }
-    }
-    objc_setAssociatedObject(self, kOLEDKey, @YES, OBJC_ASSOCIATION_ASSIGN);
-}
+%hook YTContextualSheetManager
+- (void)installInContainerView:(UIView *)view {}
 %end
 
 %hook MDCInkView
 - (void)didMoveToWindow {
     %orig;
-    if (objc_getAssociatedObject(self, kOLEDKey)) return;
-    if ([self.superview isKindOfClass:%c(GOODialogActionMDCButton)]) {
-        UIViewController *controller = self._viewControllerForAncestor;
-        if ([controller isKindOfClass:%c(YTBottomSheetController)] || [controller isKindOfClass:%c(GOOModalWindowViewController)]) return;
-        self.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor * _Nonnull(UITraitCollection * _Nonnull traitCollection) {
-            return isDarkMode(self) ? [UIColor blackColor] : [UIColor clearColor];
-        }];
-    }
+    if (objc_getAssociatedObject(self, kOLEDKey) || ![self.superview isKindOfClass:%c(GOODialogActionMDCButton)]) return;
+    UIViewController *controller = self._viewControllerForAncestor;
+    if ([controller isKindOfClass:%c(YTBottomSheetController)] || [controller isKindOfClass:%c(GOOModalWindowViewController)]) return;
+    self.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor * _Nonnull(UITraitCollection * _Nonnull traitCollection) {
+        return isDarkMode(self) ? [UIColor blackColor] : [UIColor clearColor];
+    }];
     objc_setAssociatedObject(self, kOLEDKey, @YES, OBJC_ASSOCIATION_ASSIGN);
 }
 %end
@@ -148,14 +124,13 @@ void YouModApplyOLEDCollectionView(ASCollectionView *self, NSString *iden) {
 %hook YTEngagementPanelView
 - (void)setFooterView:(UIView *)view {
     %orig;
-    if (view) {
-        UIView *sub = view.subviews.firstObject;
-        if (objc_getAssociatedObject(sub, kOLEDKey)) return;
-        sub.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor * _Nonnull(UITraitCollection * _Nonnull traitCollection) {
-            return isDarkMode(sub) ? [UIColor blackColor] : [UIColor clearColor];
-        }];
-        objc_setAssociatedObject(sub, kOLEDKey, @YES, OBJC_ASSOCIATION_ASSIGN);
-    }
+    if (!view) return;
+    UIView *sub = view.subviews.firstObject;
+    if (objc_getAssociatedObject(sub, kOLEDKey)) return;
+    sub.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor * _Nonnull(UITraitCollection * _Nonnull traitCollection) {
+        return isDarkMode(sub) ? [UIColor blackColor] : [UIColor clearColor];
+    }];
+    objc_setAssociatedObject(sub, kOLEDKey, @YES, OBJC_ASSOCIATION_ASSIGN);
 }
 %end
 %end
@@ -203,11 +178,10 @@ void YouModApplyOLEDCollectionView(ASCollectionView *self, NSString *iden) {
 - (void)layoutSubviews {
     %orig;
     if (objc_getAssociatedObject(self, kOLEDKey)) return;
-    if ([self isKindOfClass:NSClassFromString(@"TUIEmojiSearchInputView")] || [self isKindOfClass:NSClassFromString(@"_SFAutoFillInputView")]) {
-        self.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor * _Nonnull(UITraitCollection * _Nonnull traitCollection) {
-            return isDarkMode(self) ? [UIColor blackColor] : [UIColor clearColor];
-        }];
-    }
+    if (![self isKindOfClass:NSClassFromString(@"TUIEmojiSearchInputView")] && ![self isKindOfClass:NSClassFromString(@"_SFAutoFillInputView")]) return;
+    self.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor * _Nonnull(UITraitCollection * _Nonnull traitCollection) {
+        return isDarkMode(self) ? [UIColor blackColor] : [UIColor clearColor];
+    }];
     objc_setAssociatedObject(self, kOLEDKey, @YES, OBJC_ASSOCIATION_ASSIGN);
 }
 %end

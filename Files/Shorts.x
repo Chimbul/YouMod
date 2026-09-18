@@ -182,7 +182,7 @@ void YouModFilterShortsDisplayView(_ASDisplayView *view, NSString *iden) {
         @"id.elements.components.suggested_action" : @(IS_ENABLED(HideShortsRecbar))
     };
     for (NSString *id in elements) {
-        if ([id isEqualToString:iden] && [elements[id] boolValue]) {    
+        if ([iden isEqualToString:id] && [elements[id] boolValue]) {    
             [view removeFromSuperview];
             return;
         }

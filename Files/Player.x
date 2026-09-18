@@ -187,7 +187,7 @@ static void YouModAddEndTime(YTInlinePlayerBarContainerView *playerbar, YTPlayer
 %property (nonatomic, strong) NSString *endTimeString;
 - (void)didMoveToWindow {
     %orig;
-    if (!IS_ENABLED(TapToSeek) || [self._viewControllerForAncestor isKindOfClass:%c(YTPivotBarViewController)]) return;
+    if (!IS_ENABLED(TapToSeek) || ![self._viewControllerForAncestor isKindOfClass:%c(YTMainAppVideoPlayerOverlayViewController)]) return;
     for (UIView *subview in self.subviews) {
         if ([subview isKindOfClass:%c(YTInlineScrubGestureView)]) {
             BOOL hasCustomTap = NO;
@@ -278,17 +278,12 @@ static void YouModAddEndTime(YTInlinePlayerBarContainerView *playerbar, YTPlayer
         }
     }
 }
-- (void)updateTimeLabels {
+- (void)updateCurrentTimeTitleLabel {
     %orig;
-    NSLog(@"[WaterDev] updateTimeLabels got called");
     YTMainAppVideoPlayerOverlayViewController *ovcon = (YTMainAppVideoPlayerOverlayViewController *)self._viewControllerForAncestor;
     if (![ovcon isKindOfClass:%c(YTMainAppVideoPlayerOverlayViewController)]) return;
     YTPlayerViewController *pvc = (YTPlayerViewController *)ovcon.parentViewController;
     YouModAddEndTime(self, pvc, ovcon);
-}
-- (void)updateCurrentTimeTitleLabel {
-    %orig;
-    NSLog(@"[WaterDev] updateCurrentTimeTitleLabel got called");
 }
 %end
 

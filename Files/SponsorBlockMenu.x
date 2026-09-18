@@ -271,6 +271,7 @@ static void sbPostVoteQuery(NSString *query, void (^completion)(BOOL success, NS
 
 @interface YMSBCardViewController () <UISearchBarDelegate>
 @property (nonatomic, strong) UITableView *tableView;
+@property (nonatomic, strong) UILabel *emptyLabel;
 @property (nonatomic, strong) NSArray<YMSBCardItem *> *allItems;
 @property (nonatomic, copy) NSString *searchText;
 @end
@@ -298,6 +299,7 @@ static void sbPostVoteQuery(NSString *query, void (^completion)(BOOL success, NS
     }
     _visibleItems = source;
     [self.tableView reloadData];
+    [self sbUpdateEmptyState];
 }
 
 - (void)viewDidLoad {
@@ -305,10 +307,12 @@ static void sbPostVoteQuery(NSString *query, void (^completion)(BOOL success, NS
     self.title = self.cardTitle;
 
     UIImageSymbolConfiguration *closeConfig = [UIImageSymbolConfiguration configurationWithPointSize:16 weight:UIImageSymbolWeightMedium];
-    self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithImage:[[UIImage systemImageNamed:@"xmark" withConfiguration:closeConfig] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate]
-                                                                               style:UIBarButtonItemStylePlain
-                                                                              target:self
-                                                                              action:@selector(dismissCard)];
+    UIBarButtonItem *closeButton = [[UIBarButtonItem alloc] initWithImage:[[UIImage systemImageNamed:@"xmark" withConfiguration:closeConfig] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate]
+                                                                    style:UIBarButtonItemStylePlain
+                                                                   target:self
+                                                                   action:@selector(dismissCard)];
+    closeButton.tintColor = [UIColor whiteColor];
+    self.navigationItem.rightBarButtonItem = closeButton;
 
     _tableView = [[UITableView alloc] initWithFrame:CGRectZero style:UITableViewStyleInsetGrouped];
     _tableView.delegate = self;
@@ -357,7 +361,34 @@ static void sbPostVoteQuery(NSString *query, void (^completion)(BOOL success, NS
         _tableView.allowsSelectionDuringEditing = NO;
     }
 
+    // Centered empty-state text (e.g. "no whitelisted channels"), shown only
+    // while there are no items.
+    _emptyLabel = [[UILabel alloc] init];
+    _emptyLabel.text = self.emptyText;
+    _emptyLabel.font = [UIFont systemFontOfSize:14 weight:UIFontWeightMedium];
+    _emptyLabel.textColor = [UIColor secondaryLabelColor];
+    _emptyLabel.textAlignment = NSTextAlignmentCenter;
+    _emptyLabel.numberOfLines = 0;
+    _emptyLabel.translatesAutoresizingMaskIntoConstraints = NO;
+    [self.view addSubview:_emptyLabel];
+    [NSLayoutConstraint activateConstraints:@[
+        [_emptyLabel.centerXAnchor constraintEqualToAnchor:self.view.centerXAnchor],
+        [_emptyLabel.centerYAnchor constraintEqualToAnchor:self.view.centerYAnchor],
+        [_emptyLabel.leadingAnchor constraintGreaterThanOrEqualToAnchor:self.view.leadingAnchor constant:24],
+        [_emptyLabel.trailingAnchor constraintLessThanOrEqualToAnchor:self.view.trailingAnchor constant:-24],
+    ]];
+
     [self refilterItems];
+}
+
+- (void)setEmptyText:(NSString *)emptyText {
+    _emptyText = [emptyText copy];
+    _emptyLabel.text = _emptyText;
+    [self sbUpdateEmptyState];
+}
+
+- (void)sbUpdateEmptyState {
+    _emptyLabel.hidden = !(self.items.count == 0 && _emptyText.length > 0);
 }
 
 // Layer borders use CGColor snapshots, which don't follow trait changes on
@@ -370,6 +401,10 @@ static void sbPostVoteQuery(NSString *query, void (^completion)(BOOL success, NS
     searchField.layer.masksToBounds = YES;
     searchField.layer.borderWidth = 1.0;
     searchField.layer.borderColor = border.CGColor;
+    // Slightly fainter fill in light mode; the default depth in dark mode.
+    searchField.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor *(UITraitCollection *trait) {
+        return (trait.userInterfaceStyle == UIUserInterfaceStyleDark) ? [UIColor secondarySystemBackgroundColor] : [UIColor tertiarySystemBackgroundColor];
+    }];
 
     if (self.textField) {
         self.textField.layer.cornerRadius = 10.0;
@@ -471,11 +506,13 @@ static void sbPostVoteQuery(NSString *query, void (^completion)(BOOL success, NS
     UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"sbCardItem"];
     if (!cell) {
         cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:@"sbCardItem"];
-        cell.textLabel.font = [UIFont systemFontOfSize:15 weight:UIFontWeightMedium];
-        cell.textLabel.textColor = [UIColor labelColor];
-        cell.detailTextLabel.font = [UIFont systemFontOfSize:12];
-        cell.detailTextLabel.textColor = [UIColor secondaryLabelColor];
     }
+    // Re-applied on every pass so reused cells always carry the current
+    // dynamic text colors (white in dark mode, black in light mode).
+    cell.textLabel.font = [UIFont systemFontOfSize:15 weight:UIFontWeightMedium];
+    cell.textLabel.textColor = [UIColor labelColor];
+    cell.detailTextLabel.font = [UIFont systemFontOfSize:12];
+    cell.detailTextLabel.textColor = [UIColor secondaryLabelColor];
     cell.imageView.image = item.image;
     cell.imageView.tintColor = item.tintColor;
     cell.textLabel.text = item.title;
@@ -525,6 +562,19 @@ static void sbPostVoteQuery(NSString *query, void (^completion)(BOOL success, NS
 + (UINavigationController *)presentCard:(YMSBCardViewController *)card {
     UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:card];
     nav.modalPresentationStyle = UIModalPresentationFormSheet;
+
+    // YouTube restyles navigation bars app-wide (appearance proxies), which
+    // can leave a sheet's title invisible. Give our bar its own explicit
+    // dynamic title color while keeping system-default backgrounds.
+    NSMutableDictionary *titleAttributes = [[NSMutableDictionary alloc] init];
+    titleAttributes[NSForegroundColorAttributeName] = [UIColor labelColor];
+    UINavigationBarAppearance *barAppearance = [[UINavigationBarAppearance alloc] init];
+    [barAppearance configureWithDefaultBackground];
+    barAppearance.titleTextAttributes = titleAttributes;
+    nav.navigationBar.standardAppearance = barAppearance;
+    nav.navigationBar.scrollEdgeAppearance = barAppearance;
+    nav.navigationBar.titleTextAttributes = titleAttributes;
+    nav.navigationBar.prefersLargeTitles = NO;
 
     UIViewController *presenter = YouModTopViewController(nil);
     while (presenter.presentedViewController) {
@@ -804,20 +854,13 @@ void YMSBPresentWhitelistManager(void) {
     UISearchBar *searchBar = [[UISearchBar alloc] init];
     searchBar.placeholder = LOC(@"SEARCH");
     card.searchBar = searchBar;
-
-    NSDictionary *whitelist = sbWhitelistDictionary();
-    if (whitelist.count == 0) {
-        card.message = LOC(@"SB_WHITELIST_EMPTY");
-        card.items = @[];
-    } else {
-        card.items = sbWhitelistManagerItems();
-    }
+    card.emptyText = LOC(@"SB_WHITELIST_EMPTY");
+    card.items = sbWhitelistManagerItems();
 
     card.onDeleteItem = ^(YMSBCardViewController *c, YMSBCardItem *item) {
         if (item.identifier.length > 0) {
             sbSetChannelWhitelisted(item.identifier, item.title, NO);
         }
-        c.message = sbWhitelistDictionary().count == 0 ? LOC(@"SB_WHITELIST_EMPTY") : nil;
         c.items = sbWhitelistManagerItems();
         sbRefreshPlayerAfterWhitelistChange();
     };
