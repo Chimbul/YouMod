@@ -785,6 +785,19 @@ static CGFloat remainingOverlayWidth(YTPlayerViewController *pvc, CGFloat fullWi
     return fullWidth;
 }
 
+static UISlider *YouModVolumeSlider(void) {
+    static MPVolumeView *volumeView;
+    if (!volumeView) volumeView = [[MPVolumeView alloc] initWithFrame:CGRectMake(-4000, -4000, 1, 1)];
+    if (!volumeView.superview) {
+        for (UIWindow *w in UIApplication.sharedApplication.windows) {
+            if (w.isKeyWindow) { [w addSubview:volumeView]; [volumeView layoutIfNeeded]; break; }
+        }
+    }
+    for (UIView *v in volumeView.subviews)
+        if ([v isKindOfClass:UISlider.class]) return (UISlider *)v;
+    return nil;
+}
+
 %hook YTPlayerViewController
 %property (nonatomic, retain) UIPanGestureRecognizer *YouModPanGesture;
 %property (nonatomic, retain) UITapGestureRecognizer *YouModTapGesture;
@@ -862,20 +875,6 @@ static CGFloat remainingOverlayWidth(YTPlayerViewController *pvc, CGFloat fullWi
     static int controlType = 0;
     static CGFloat deadzoneStartingTranslation;
     static CGFloat sensitivityFactor = 1.0;
-
-    static MPVolumeView *volumeView;
-    static UISlider *volumeViewSlider;
-
-    static dispatch_once_t onceToken;
-    dispatch_once(&onceToken, ^{
-        volumeView = [[MPVolumeView alloc] initWithFrame:CGRectZero];
-        for (UIView *view in volumeView.subviews) {
-            if ([view isKindOfClass:[UISlider class]]) {
-                volumeViewSlider = (UISlider *)view;
-                break;
-            }
-        }
-    });
 
     YTMainAppVideoPlayerOverlayViewController *ovcon = [self activeVideoPlayerOverlay];
 
@@ -990,8 +989,9 @@ static CGFloat remainingOverlayWidth(YTPlayerViewController *pvc, CGFloat fullWi
                 percentString = [NSString stringWithFormat:@" %d%%", (int)(newBrightness * 100)];
             } else if (controlType == 2) {
                 float newVolume = fmaxf(fminf(initialVolume + delta, 1.0), 0.0);
-                dispatch_async(dispatch_get_main_queue(), ^{
-                    volumeViewSlider.value = newVolume;
+                UISlider *volumeSlider = YouModVolumeSlider();
+                if (volumeSlider) dispatch_async(dispatch_get_main_queue(), ^{
+                    volumeSlider.value = newVolume;
                 });
                 
                 if (newVolume == 0.0f) {
