@@ -278,17 +278,12 @@ static void YouModAddEndTime(YTInlinePlayerBarContainerView *playerbar, YTPlayer
         }
     }
 }
-- (void)updateTimeLabels {
+- (void)updateCurrentTimeTitleLabel {
     %orig;
-    NSLog(@"[WaterDev] updateTimeLabels got called");
     YTMainAppVideoPlayerOverlayViewController *ovcon = (YTMainAppVideoPlayerOverlayViewController *)self._viewControllerForAncestor;
     if (![ovcon isKindOfClass:%c(YTMainAppVideoPlayerOverlayViewController)]) return;
     YTPlayerViewController *pvc = (YTPlayerViewController *)ovcon.parentViewController;
     YouModAddEndTime(self, pvc, ovcon);
-}
-- (void)updateCurrentTimeTitleLabel {
-    %orig;
-    NSLog(@"[WaterDev] updateCurrentTimeTitleLabel got called");
 }
 %end
 

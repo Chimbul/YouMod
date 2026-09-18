@@ -80,25 +80,8 @@ void YouModApplyOLEDCollectionView(ASCollectionView *self, NSString *iden) {
     }];
 }
 
-%hook YTContextualWrapView
-- (void)didMoveToWindow {
-    %orig;
-    if (objc_getAssociatedObject(self, kOLEDKey)) return;
-    if ([self.superview isKindOfClass:%c(YTContextualSheetView)]) {
-        self.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor * _Nonnull(UITraitCollection * _Nonnull traitCollection) {
-            return isDarkMode(self) ? [UIColor blackColor] : [UIColor whiteColor];
-        }];
-    }
-    for (UIView *sub in self.subviews) {
-        if ([sub isKindOfClass:%c(YTDialogContainerScrollView)]) {
-            sub.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor * _Nonnull(UITraitCollection * _Nonnull traitCollection) {
-                return isDarkMode(sub) ? [UIColor blackColor] : [UIColor whiteColor];
-            }];
-            break;
-        }
-    }
-    objc_setAssociatedObject(self, kOLEDKey, @YES, OBJC_ASSOCIATION_ASSIGN);
-}
+%hook YTDefaultSheetController
++ (BOOL)shouldDisplayAsContextualSheet { return NO; }
 %end
 
 %hook MDCInkView

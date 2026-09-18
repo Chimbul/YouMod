@@ -525,7 +525,7 @@ static BOOL isRelatedVideosExpanded = NO;
     CGRect exitFrame = exitFullscreenButton.frame;
     CGFloat trailingCenterX = CGRectGetMidX(exitFrame);
     // Stack the row on top of the fullscreen button, not beside/over it.
-    CGFloat rowTop = CGRectGetMinY(exitFrame) - YMOverlayButtonGap - YMOverlayButtonSize;
+    CGFloat rowTop = CGRectGetMinY(exitFrame) - YMOverlayButtonSize;
     CGFloat prevHalfWidth = 0;
 
     for (YMOverlayButtonSpec *spec in specs) {
