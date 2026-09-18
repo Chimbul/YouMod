@@ -2105,7 +2105,9 @@ static NSString *YouModExtractCommentText(UIView *cellView, BOOL isPost) {
             if (!isPost) {
                 BOOL isCommentLabel = [current.accessibilityIdentifier isEqualToString:@"id.comment.content.label"];
                 if (isCommentLabel) {
-                    resultText = current.accessibilityLabel;
+                    // Snapshot: the node's label can be a live mutable string
+                    // that YouTube rewrites (collapse/reuse) after we return.
+                    resultText = [current.accessibilityLabel copy];
                     break;
                 }
             } else {
@@ -2127,7 +2129,10 @@ static NSString *YouModExtractCommentText(UIView *cellView, BOOL isPost) {
                         node = [node performSelector:@selector(currentTextNode)];
                     }
                     NSAttributedString *strings = [node valueForKey:@"_attributedText"];
-                    resultText = strings.string;
+                    // Snapshot: _attributedText backs an NSMutableString that
+                    // the text node truncates in place when the post collapses
+                    // again — without a copy we'd translate whatever is left.
+                    resultText = [strings.string copy];
                     break;
                 }
             }
