@@ -2304,7 +2304,6 @@ void YouModHandlePostLongPressAction(_ASDisplayView *view, UILongPressGestureRec
 }
 
 void YouModHandleDownloadButtonAction(_ASDisplayView *view, UITapGestureRecognizer *sender) {
-    if (sender.state != UIGestureRecognizerStateEnded) return;
     UIViewController *presenter = view._viewControllerForAncestor;
     parentResponder = [presenter valueForKey:@"_parentResponder"];
     YouModShowDownloadManager(YouModCurrentPlayerViewController, presenter, view, NO);
@@ -2362,7 +2361,6 @@ void YouModHandleDownloadButtonAction(_ASDisplayView *view, UITapGestureRecogniz
     download.symbolName = @"arrow.down.circle";
     download.settingsSymbolName = @"arrow.down.circle";
     download.displayName = LOC(@"DOWNLOAD_BUTTON");
-    download.tintColor = [UIColor whiteColor];
     download.sortOrder = 200;
     download.isVisible = ^BOOL(YTPlayerViewController *player) {
         return YMIsOverlayButtonEnabled(@"download.video");

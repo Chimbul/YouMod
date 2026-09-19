@@ -220,12 +220,6 @@
             button.hidden = YES;
         }
     }
-    if (IS_ENABLED(HideSortFilterButtonPanel)) {
-        YTQTMButton *button = self.sortFilterMenuButton;
-        if (button != nil) {
-            button.hidden = YES;
-        }
-    }
     for (UIView *button in self.subviews) {
         if ([button isKindOfClass:%c(YTQTMButton)]) {
             YTIButtonRenderer *renderer = [button valueForKey:@"_buttonRenderer"];
@@ -233,8 +227,7 @@
             NSString *desc = [renderer description];
             if ([desc containsString:@"FEcommunity_page"] && IS_ENABLED(HideCommunityButtonPanel)) {
                 button.hidden = YES;
-            } else if ([desc containsString:@"live_chat_filter_mode_option.eml"] && IS_ENABLED(HideSortFilterButtonPanel)) {
-                button.hidden = YES;
+                break;
             }
         }
     }

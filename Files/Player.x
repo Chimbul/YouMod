@@ -468,7 +468,7 @@ static BOOL hasSetSeekButtons = NO;
         YouModConfigureRemoteSkipCommands();
         if (INTFORVAL(AutoDRCAudioIndex) != 0) [playerviewController YouModAutoDRCAudio];
         if (INTFORVAL(AudioTrack) != 0) [playerviewController performSelector:@selector(YouModAutoAudioTrack) withObject:nil afterDelay:0.5];
-        if (YMIsOverlayButtonEnabled(@"mute.video")) [playerviewController YouModAutoMute];
+        if (YMIsOverlayButtonEnabled(@"mute.video")) [playerviewController performSelector:@selector(YouModAutoMute) withObject:nil afterDelay:0.1];
         if (IS_ENABLED(AutoFullScreen)) [playerviewController performSelector:@selector(YouModAutoFullscreen) withObject:nil afterDelay:0.5];
         if (INTFORVAL(CaptionTrack) != 0) [playerviewController performSelector:@selector(YouModAutoCaptions) withObject:nil afterDelay:0.5];
         if (INTFORVAL(AutoSpeedIndex) != 0) [playerviewController YouModSetAutoSpeed];

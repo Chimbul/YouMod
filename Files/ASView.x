@@ -29,16 +29,17 @@ static const void *YouModASViewKey = &YouModASViewKey;
 }
 %new
 - (void)YouModDownloadButtonTapped:(UITapGestureRecognizer *)sender {
+    if (sender.state != UIGestureRecognizerStateEnded) return;
     YouModHandleDownloadButtonAction(self, sender);
 }
 %new
 - (void)YouModHandleNewDownloadButtonTapped:(UITapGestureRecognizer *)sender {
+    if (sender.state != UIGestureRecognizerStateEnded) return;
     YTDefaultSheetController *sheetController = [self.currentDownloadButton._viewControllerForAncestor valueForKey:@"_delegate"];
     _ASDisplayView *moreButton = [sheetController valueForKey:@"_sourceView"];
     [sheetController dismissViewControllerAnimated:YES completion:^{
         YouModHandleDownloadButtonAction(moreButton, sender);
     }];
-    self.currentDownloadButton = nil;
 }
 %end
 

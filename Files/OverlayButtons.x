@@ -284,7 +284,8 @@ static UIImage *YMOverlayButtonIcon(NSString *symbolName) {
 // implement ymOverlayButtonTapped:.
 static YTQTMButton *YMCreateOverlayButton(UIView *parent, YMOverlayButtonSpec *spec) {
     YTQTMButton *button;
-    UIColor *tint = spec.tintColor ?: [UIColor whiteColor];
+    // Overlay buttons always render white to match YouTube's native controls.
+    UIColor *tint = [UIColor whiteColor];
 
     if (spec.title.length > 0) {
         // Text button: a label instead of an icon. customTitleColor is YTQTMButton's
@@ -384,11 +385,6 @@ static BOOL isRelatedVideosExpanded = NO;
 
         btn.hidden = !overlayVisible || isRelatedVideosExpanded;
 
-        if (spec.tintProvider) {
-            UIColor *dynamic = spec.tintProvider(player);
-            if (spec.title.length > 0) btn.customTitleColor = dynamic;
-            else btn.tintColor = dynamic;
-        }
 
         CGFloat width = (spec.title.length > 0) ? YMOverlayTextButtonWidth : YMOverlayButtonSize;
         CGFloat centerX = (prevHalfWidth == 0) ? trailingCenterX : trailingCenterX - prevHalfWidth - YMOverlayButtonGap - width / 2.0;
@@ -558,11 +554,6 @@ static BOOL isRelatedVideosExpanded = NO;
 
         btn.hidden = !peekVisible || isRelatedVideosExpanded;
 
-        if (spec.tintProvider) {
-            UIColor *dynamic = spec.tintProvider(player);
-            if (spec.title.length > 0) btn.customTitleColor = dynamic;
-            else btn.tintColor = dynamic;
-        }
 
         CGFloat width = (spec.title.length > 0) ? YMOverlayTextButtonWidth : YMOverlayButtonSize;
         CGFloat centerX = (prevHalfWidth == 0) ? trailingCenterX : trailingCenterX - prevHalfWidth - YMOverlayButtonGap - width / 2.0;
@@ -742,7 +733,6 @@ static NSString *getCompactQualityLabel(MLFormat *format) {
     mute.symbolName = IS_ENABLED(KeepMutedKey) ? @"speaker.slash" : @"speaker.wave.2";
     mute.settingsSymbolName = @"speaker.wave.2";
     mute.displayName = LOC(@"MUTE_BUTTON");
-    mute.tintColor = [UIColor whiteColor];
     mute.sortOrder = 300;
     mute.isVisible = ^BOOL(YTPlayerViewController *player) {
         return YMIsOverlayButtonEnabled(@"mute.video");
@@ -796,7 +786,6 @@ static NSString *getCompactQualityLabel(MLFormat *format) {
     share.symbolName = @"arrowshape.turn.up.right";
     share.settingsSymbolName = @"arrowshape.turn.up.right";
     share.displayName = LOC(@"SHARE_BUTTON");
-    share.tintColor = [UIColor whiteColor];
     share.sortOrder = 600;
     share.isVisible = ^BOOL(YTPlayerViewController *player) {
         return YMIsOverlayButtonEnabled(@"share.video");
@@ -810,7 +799,6 @@ static NSString *getCompactQualityLabel(MLFormat *format) {
     loop.symbolName = IS_ENABLED(KeepLoopKey) ? @"repeat.1" : @"repeat";
     loop.settingsSymbolName = @"repeat";
     loop.displayName = LOC(@"LOOP_BUTTON");
-    loop.tintColor = [UIColor whiteColor];
     loop.sortOrder = 700;
     loop.isVisible = ^BOOL(YTPlayerViewController *player) {
         return YMIsOverlayButtonEnabled(@"loop.video");
@@ -827,7 +815,6 @@ static NSString *getCompactQualityLabel(MLFormat *format) {
     caption.symbolName = @"captions.bubble";
     caption.settingsSymbolName = @"captions.bubble";
     caption.displayName = LOC(@"CAPTION_BUTTON");
-    caption.tintColor = [UIColor whiteColor];
     caption.sortOrder = 800;
     caption.isVisible = ^BOOL(YTPlayerViewController *player) {
         return YMIsOverlayButtonEnabled(@"caption.video");

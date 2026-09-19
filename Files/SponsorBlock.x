@@ -640,7 +640,6 @@ UIColor *SBColorFromHex(NSString *hexString) {
     toggle.symbolName = @"shield";
     toggle.settingsSymbolName = @"shield";
     toggle.displayName = LOC(@"SPONSORBLOCK_BUTTON");
-    toggle.tintColor = [UIColor whiteColor];
     toggle.sortOrder = 100;
     toggle.isVisible = ^BOOL(YTPlayerViewController *player) {
         return IS_ENABLED(SBEnabled) && YMIsOverlayButtonEnabled(@"sponsorblock.toggle");

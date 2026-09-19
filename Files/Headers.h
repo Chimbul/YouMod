@@ -260,7 +260,6 @@
 #define HideCommuGuide @"YouModHideCommuGuide"
 #define HideEngagementSubbar @"YouModHideEngagementSubbar"
 #define HideInfoButtonPanel @"YouModHideInfoButtonPanel"
-#define HideSortFilterButtonPanel @"YouModHideSortFilterButtonPanel"
 #define HideCommunityButtonPanel @"YouModHideCommunityButtonPanel"
 #define DisablesRTL @"YouModDisablesRTL"
 #define DeviceUIIndex @"YouModDeviceUIIndex"
@@ -546,7 +545,6 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 
 @interface YTEngagementPanelHeaderView : UIView
 - (YTQTMButton *)informationButton;
-- (YTQTMButton *)sortFilterMenuButton;
 @end
 
 @interface YTEngagementPanelView : UIView
@@ -857,11 +855,9 @@ static const CGFloat SBAlertDurationDefault = 4.0;
 @property (nonatomic, copy) NSString *title;            // text label; set this instead of symbolName for a text button
 @property (nonatomic, copy) NSString *displayName;      // localized display name for settings
 @property (nonatomic, copy) NSString *settingsSymbolName; // custom symbol name for settings table view
-@property (nonatomic, strong) UIColor *tintColor;       // default tint (used if tintProvider is nil)
 @property (nonatomic, assign) NSInteger sortOrder;      // ascending; lower = closer to gear (rightmost)
 @property (nonatomic, copy) void (^onTap)(YTPlayerViewController *player, YTQTMButton *button);
 @property (nonatomic, copy) BOOL (^isVisible)(YTPlayerViewController *player);     // nil = always visible
-@property (nonatomic, copy) UIColor *(^tintProvider)(YTPlayerViewController *player); // nil = use tintColor
 @property (nonatomic, assign) NSInteger viewTag;        // assigned by the registry; do not set
 @end
 

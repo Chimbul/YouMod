@@ -310,13 +310,19 @@ static void sbPostVoteQuery(NSString *query, void (^completion)(BOOL success, NS
 }
 
 - (void)refilterItems {
+    [self refilterItemsWithReload:YES];
+}
+
+// Recomputes the visible list from allItems + the search query. Pass NO for
+// reload when the caller animates row changes itself (e.g. deletion).
+- (void)refilterItemsWithReload:(BOOL)reload {
     NSString *query = [self.searchText stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
     NSArray *source = self.allItems;
     if (query.length > 0) {
         source = [source filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"title CONTAINS[cd] %@ OR subtitle CONTAINS[cd] %@", query, query]];
     }
     _visibleItems = source;
-    [self.tableView reloadData];
+    if (reload) [self.tableView reloadData];
     [self sbUpdateEmptyState];
 }
 
@@ -590,7 +596,17 @@ static void sbPostVoteQuery(NSString *query, void (^completion)(BOOL success, NS
 - (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath {
     if (editingStyle != UITableViewCellEditingStyleDelete) return;
     YMSBCardItem *item = [self itemForRow:indexPath.row];
-    if (item && self.onDeleteItem) self.onDeleteItem(self, item);
+    if (!item) return;
+    // Model change first (onDeleteItem no longer touches the UI), then drop
+    // the item from the backing list and animate the row sliding out — a full
+    // reloadData here would cut the animation off.
+    if (self.onDeleteItem) self.onDeleteItem(self, item);
+    NSMutableArray<YMSBCardItem *> *remaining = [self.allItems mutableCopy];
+    [remaining removeObject:item];
+    self.allItems = remaining;
+    [self refilterItemsWithReload:NO];
+    [self.tableView deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationLeft];
+    [self sbUpdateEmptyState];
 }
 
 - (void)reloadItems {
@@ -612,9 +628,9 @@ static void sbPostVoteQuery(NSString *query, void (^completion)(BOOL success, NS
     UIColor *headerBackground = [UIColor systemGroupedBackgroundColor];
     NSMutableDictionary *titleAttributes = [[NSMutableDictionary alloc] init];
     titleAttributes[NSForegroundColorAttributeName] = [UIColor labelColor];
-    // Same size as the system title, one step heavier so YouTube's styling
-    // proxies can't thin it out.
-    titleAttributes[NSFontAttributeName] = [UIFont systemFontOfSize:17 weight:UIFontWeightBold];
+    // Same size as the × close button (16pt), but bold so the title reads
+    // heavier than the icon.
+    titleAttributes[NSFontAttributeName] = [UIFont systemFontOfSize:16 weight:UIFontWeightBold];
     UINavigationBarAppearance *barAppearance = [[UINavigationBarAppearance alloc] init];
     [barAppearance configureWithOpaqueBackground];
     barAppearance.backgroundColor = headerBackground;
@@ -907,10 +923,10 @@ void YMSBPresentWhitelistManager(void) {
     card.items = sbWhitelistManagerItems();
 
     card.onDeleteItem = ^(YMSBCardViewController *c, YMSBCardItem *item) {
+        // Model only — the card animates the row out itself.
         if (item.identifier.length > 0) {
             sbSetChannelWhitelisted(item.identifier, item.title, NO);
         }
-        c.items = sbWhitelistManagerItems();
         sbRefreshPlayerAfterWhitelistChange();
     };
 

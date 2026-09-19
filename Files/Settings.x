@@ -486,7 +486,6 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
             YMToggle(YMLOC(@"HIDE_COMMU_GUIDE"), YMLOC(@"HIDE_COMMU_GUIDE_DESC"), HideCommuGuide),
             YMToggle(YMLOC(@"HIDE_ENGAGEMENT_SUBBAR"), YMLOC(@"HIDE_ENGAGEMENT_SUBBAR_DESC"), HideEngagementSubbar),
             YMToggle(YMLOC(@"HIDE_INFO_BUTTON_PANEL"), YMLOC(@"HIDE_INFO_BUTTON_PANEL_DESC"), HideInfoButtonPanel),
-            YMToggle(YMLOC(@"HIDE_SORT_FILTER_BUTTON_PANEL"), YMLOC(@"HIDE_SORT_FILTER_BUTTON_PANEL_DESC"), HideSortFilterButtonPanel),
             YMToggle(YMLOC(@"HIDE_COMMUNITY_BUTTON_PANEL"), YMLOC(@"HIDE_COMMUNITY_BUTTON_PANEL_DESC"), HideCommunityButtonPanel),
             YMToggle(YMLOC(@"FLOATING_KEYBOARD"), YMLOC(@"FLOATING_KEYBOARD_DESC"), FloatingKeyboard),
             YMToggle(YMLOC(@"DISABLES_RTL"), YMLOC(@"DISABLES_RTL_DESC"), DisablesRTL),
