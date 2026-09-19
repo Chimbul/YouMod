@@ -689,7 +689,6 @@ static void sbPostVoteQuery(NSString *query, void (^completion)(BOOL success, NS
                     [[NSNotificationCenter defaultCenter] postNotificationName:@"SBSegmentsDidLoad"
                                                                         object:ss
                                                                       userInfo:@{@"segments": segments ?: @[]}];
-                    
                 }];
             } else {
                 if (!newState) strongSelf.sbSegments = nil;
