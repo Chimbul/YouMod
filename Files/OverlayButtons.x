@@ -492,7 +492,10 @@ static BOOL isRelatedVideosExpanded = NO;
     if (self && [self._viewControllerForAncestor isKindOfClass:%c(YTMainAppVideoPlayerOverlayViewController)]) {
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(ymUpdateBarButtonLabels:) name:YouModUpdateSpeedLabel object:nil];
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(ymUpdateBarButtonLabels:) name:YouModUpdateNotification object:nil];
-    }
+        if (IS_ENABLED(SBButtonKey)) {
+            [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(updateCurrentTimeTitleLabel) name:@"YouModUpdateTimeLabel" object:nil];
+        }
+    } 
     return self;
 }
 
@@ -613,6 +616,9 @@ static BOOL isRelatedVideosExpanded = NO;
     if ([self._viewControllerForAncestor isKindOfClass:%c(YTMainAppVideoPlayerOverlayViewController)]) {
         [[NSNotificationCenter defaultCenter] removeObserver:self name:YouModUpdateSpeedLabel object:nil];
         [[NSNotificationCenter defaultCenter] removeObserver:self name:YouModUpdateNotification object:nil];
+        if (IS_ENABLED(SBButtonKey)) {
+            [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(updateCurrentTimeTitleLabel) name:@"YouModUpdateTimeLabel" object:nil];
+        }
     }
     %orig;
 }

@@ -516,8 +516,6 @@
 "HIDE_COMMU_GUIDE_DESC" = "Hide community guidelines header.";
 "HIDE_ENGAGEMENT_SUBBAR" = "Hide comments header";
 "HIDE_ENGAGEMENT_SUBBAR_DESC" = "Hides sort comments header (Top, Newest) so it will never appear.";
-"HIDE_SORT_FILTER_BUTTON_PANEL" = "Hide sort & filter button";
-"HIDE_SORT_FILTER_BUTTON_PANEL_DESC" = "Hide the sort and filter button in the engagement panel.";
 "HIDE_COMMUNITY_BUTTON_PANEL" = "Hide community button";
 "HIDE_COMMUNITY_BUTTON_PANEL_DESC" = "Hide the community button in the engagement panel.";
 "HIDE_INFO_BUTTON_PANEL" = "Hide info button";

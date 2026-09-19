@@ -515,10 +515,10 @@
 "HIDE_COMMU_GUIDE_DESC" = "นำหลักเกณฑ์ชุมชนที่ปักหมุดไว้ออกจากคอมเมนต์";
 "HIDE_ENGAGEMENT_SUBBAR" = "ซ่อนส่วนหัวความคิดเห็น";
 "HIDE_ENGAGEMENT_SUBBAR_DESC" = "ซ่อนแถบจัดเรียงความคิดเห็น (ยอดนิยม, ล่าสุด) ด้านบนของคอมเมนต์";
-"HIDE_SORT_FILTER_BUTTON_PANEL" = "ซ่อนปุ่มเรียงลำดับและตัวกรอง";
-"HIDE_SORT_FILTER_BUTTON_PANEL_DESC" = "ซ่อนปุ่มเรียงลำดับและตัวกรองจากด้านบนของแผง";
 "HIDE_COMMUNITY_BUTTON_PANEL" = "ซ่อนปุ่มชุมชน";
 "HIDE_COMMUNITY_BUTTON_PANEL_DESC" = "ซ่อนปุ่มชุมชนจากด้านบนของแผง";
+"HIDE_INFO_BUTTON_PANEL" = "ซ่อนปุ่มข้อมูล";
+"HIDE_INFO_BUTTON_PANEL_DESC" = "ซ่อนปุ่มข้อมูลจากด้านบนของแผง";
 "DISABLES_RTL" = "ปิดใช้งานเลย์เอาต์ RTL";
 "DISABLES_RTL_DESC" = "บังคับให้แสดงผลจากซ้ายไปขวา (LTR) และปิดการจัดหน้าแบบขวาไปซ้าย (RTL)";
 "DEVICE_UI" = "รูปแบบอุปกรณ์";

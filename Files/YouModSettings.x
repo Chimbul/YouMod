@@ -2289,11 +2289,7 @@ static void ymRegisterStyledSubclass(Class sourceClass, const char *name) {
 %hook YTPivotBarViewController
 - (void)viewDidLoad {
     %orig;
-    [[NSNotificationCenter defaultCenter] removeObserver:self name:@"YouModUpdateTabBar" object:nil];
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(YouModReloadTabBar:)
-                                                 name:@"YouModUpdateTabBar"
-                                               object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(YouModReloadTabBar:) name:@"YouModUpdateTabBar" object:nil];
 }
 %new
 - (void)YouModReloadTabBar:(id)arg {
