@@ -29,6 +29,11 @@
 - (BOOL)enableIosFloatingMiniplayerDoubleTapToResize { return IS_ENABLED(FixesSlowMiniPlayer) ? NO : %orig; }
 // Use old miniplayer
 - (BOOL)enableIosFloatingMiniplayer { return IS_ENABLED(DisablesNewMiniPlayer) ? NO : %orig; }
+// Fixes the old dialog (the rectangular style) layout incorrectly
+- (BOOL)uiSystemsClientGlobalConfigIosEnableActionSheetViewLayoutRefactor { return NO; }
+// Remove the new contextual dialog layout styles
+- (BOOL)crossPlatformCoreClientGlobalConfigIosEnableBottomSheetPaddingFix { return NO; }
+- (BOOL)crossPlatformCoreClientGlobalConfigIosEnableContextualSheetsOnAllScreenSizes { return NO; }
 %end
 
 %hook YTHotConfig
