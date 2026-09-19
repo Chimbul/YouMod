@@ -503,10 +503,9 @@ static BOOL isRelatedVideosExpanded = NO;
     UIView *exitFullscreenButton = [self exitFullscreenButton];
     if (exitFullscreenButton == nil) exitFullscreenButton = [self valueForKey:@"_rightIconsView"];
     BOOL hasAnchor = exitFullscreenButton && exitFullscreenButton.window;
+    if (!hasAnchor) return;
     NSMutableSet<NSNumber *> *activeTags = [NSMutableSet set];
-    if (hasAnchor) {
-        for (YMOverlayButtonSpec *spec in specs) [activeTags addObject:@(spec.viewTag)];
-    }
+    for (YMOverlayButtonSpec *spec in specs) [activeTags addObject:@(spec.viewTag)];
     // Remove stale buttons — all of them when the anchor is unavailable.
     for (YMOverlayButtonSpec *spec in allRegistered) {
         if (![activeTags containsObject:@(spec.viewTag)]) {
@@ -514,7 +513,6 @@ static BOOL isRelatedVideosExpanded = NO;
             if (btn) [btn removeFromSuperview];
         }
     }
-    if (!hasAnchor) return;
 
     YTPlayerViewController *player = ((YTMainAppVideoPlayerOverlayViewController *)self._viewControllerForAncestor).parentViewController;
     YTSingleVideoController *sgvid = player.activeVideo;

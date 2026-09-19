@@ -80,8 +80,19 @@ void YouModApplyOLEDCollectionView(ASCollectionView *self, NSString *iden) {
     }];
 }
 
-%hook YTContextualSheetManager
-- (void)installInContainerView:(UIView *)view {}
+%hook YTContextualWrapView
+- (void)didMoveToWindow {
+    %orig;
+    if (objc_getAssociatedObject(self, kOLEDKey) || ![self.superview isKindOfClass:%c(YTContextualSheetView)]) return;
+    self.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor * _Nonnull(UITraitCollection * _Nonnull traitCollection) {
+        return isDarkMode(self) ? [UIColor blackColor] : [UIColor whiteColor];
+    }];
+    objc_setAssociatedObject(self, kOLEDKey, @YES, OBJC_ASSOCIATION_ASSIGN);
+}
+%end
+
+%hook YTColdConfig
+- (BOOL)crossPlatformCoreClientGlobalConfigIosEnableContextualSheetsOnAllScreenSizes { return NO; }
 %end
 
 %hook MDCInkView
