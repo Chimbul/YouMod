@@ -261,12 +261,31 @@ static UIFont *YMOverlayTextButtonFont(NSString *text, CGSize maxSize) {
     return hasYTFont ? [typeStyle ytSansFontOfSize:(CGFloat)bestSize weight:UIFontWeightSemibold] : [UIFont systemFontOfSize:(CGFloat)bestSize weight:UIFontWeightSemibold];
 }
 
+// Renders a symbol into an exact 24x24 canvas (aspect-fit, centered) so every
+// overlay button icon shares one uniform box regardless of the symbol's
+// natural proportions — same treatment as the SponsorBlock sheet icons.
+static UIImage *YMOverlayButtonIcon(NSString *symbolName) {
+    UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:22 weight:UIImageSymbolWeightMedium];
+    UIImage *symbol = [[UIImage systemImageNamed:symbolName withConfiguration:config] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+    UIGraphicsImageRendererFormat *format = [UIGraphicsImageRendererFormat defaultFormat];
+    UIGraphicsImageRenderer *renderer = [[UIGraphicsImageRenderer alloc] initWithSize:CGSizeMake(24, 24) format:format];
+    return [renderer imageWithActions:^(UIGraphicsImageRendererContext *ctx) {
+        CGFloat width = symbol.size.width;
+        CGFloat height = symbol.size.height;
+        if (width <= 0 || height <= 0) return;
+        CGFloat scale = MIN(24.0 / width, 24.0 / height);
+        CGSize fitted = CGSizeMake(width * scale, height * scale);
+        [symbol drawInRect:CGRectMake((24.0 - fitted.width) / 2.0, (24.0 - fitted.height) / 2.0, fitted.width, fitted.height)];
+    }];
+}
+
 // Parent is the view that will own and receive taps for the button: either the
 // controls overlay (top row) or the inline player bar (bottom row). Both classes
 // implement ymOverlayButtonTapped:.
 static YTQTMButton *YMCreateOverlayButton(UIView *parent, YMOverlayButtonSpec *spec) {
     YTQTMButton *button;
-    UIColor *tint = spec.tintColor ?: [UIColor whiteColor];
+    // Overlay buttons always render white to match YouTube's native controls.
+    UIColor *tint = [UIColor whiteColor];
 
     if (spec.title.length > 0) {
         // Text button: a label instead of an icon. customTitleColor is YTQTMButton's
@@ -287,9 +306,8 @@ static YTQTMButton *YMCreateOverlayButton(UIView *parent, YMOverlayButtonSpec *s
         button.contentVerticalAlignment = UIControlContentVerticalAlignmentCenter;
         button.contentHorizontalAlignment = UIControlContentHorizontalAlignmentCenter;
     } else {
-        UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:20 weight:UIImageSymbolWeightMedium];
         // Template rendering so YTQTMButton's tint colours the glyph reliably.
-        UIImage *icon = [[UIImage systemImageNamed:spec.symbolName withConfiguration:config] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+        UIImage *icon = YMOverlayButtonIcon(spec.symbolName);
         button = [%c(YTQTMButton) iconButton];
         [button setImage:icon forState:UIControlStateNormal];
         button.tintColor = tint;
@@ -367,11 +385,6 @@ static BOOL isRelatedVideosExpanded = NO;
 
         btn.hidden = !overlayVisible || isRelatedVideosExpanded;
 
-        if (spec.tintProvider) {
-            UIColor *dynamic = spec.tintProvider(player);
-            if (spec.title.length > 0) btn.customTitleColor = dynamic;
-            else btn.tintColor = dynamic;
-        }
 
         CGFloat width = (spec.title.length > 0) ? YMOverlayTextButtonWidth : YMOverlayButtonSize;
         CGFloat centerX = (prevHalfWidth == 0) ? trailingCenterX : trailingCenterX - prevHalfWidth - YMOverlayButtonGap - width / 2.0;
@@ -479,7 +492,10 @@ static BOOL isRelatedVideosExpanded = NO;
     if (self && [self._viewControllerForAncestor isKindOfClass:%c(YTMainAppVideoPlayerOverlayViewController)]) {
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(ymUpdateBarButtonLabels:) name:YouModUpdateSpeedLabel object:nil];
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(ymUpdateBarButtonLabels:) name:YouModUpdateNotification object:nil];
-    }
+        if (IS_ENABLED(SBButtonKey)) {
+            [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(updateCurrentTimeTitleLabel) name:@"YouModUpdateTimeLabel" object:nil];
+        }
+    } 
     return self;
 }
 
@@ -503,10 +519,9 @@ static BOOL isRelatedVideosExpanded = NO;
     UIView *exitFullscreenButton = [self exitFullscreenButton];
     if (exitFullscreenButton == nil) exitFullscreenButton = [self valueForKey:@"_rightIconsView"];
     BOOL hasAnchor = exitFullscreenButton && exitFullscreenButton.window;
+    if (!hasAnchor) return;
     NSMutableSet<NSNumber *> *activeTags = [NSMutableSet set];
-    if (hasAnchor) {
-        for (YMOverlayButtonSpec *spec in specs) [activeTags addObject:@(spec.viewTag)];
-    }
+    for (YMOverlayButtonSpec *spec in specs) [activeTags addObject:@(spec.viewTag)];
     // Remove stale buttons — all of them when the anchor is unavailable.
     for (YMOverlayButtonSpec *spec in allRegistered) {
         if (![activeTags containsObject:@(spec.viewTag)]) {
@@ -514,7 +529,6 @@ static BOOL isRelatedVideosExpanded = NO;
             if (btn) [btn removeFromSuperview];
         }
     }
-    if (!hasAnchor) return;
 
     YTPlayerViewController *player = ((YTMainAppVideoPlayerOverlayViewController *)self._viewControllerForAncestor).parentViewController;
     YTSingleVideoController *sgvid = player.activeVideo;
@@ -543,11 +557,6 @@ static BOOL isRelatedVideosExpanded = NO;
 
         btn.hidden = !peekVisible || isRelatedVideosExpanded;
 
-        if (spec.tintProvider) {
-            UIColor *dynamic = spec.tintProvider(player);
-            if (spec.title.length > 0) btn.customTitleColor = dynamic;
-            else btn.tintColor = dynamic;
-        }
 
         CGFloat width = (spec.title.length > 0) ? YMOverlayTextButtonWidth : YMOverlayButtonSize;
         CGFloat centerX = (prevHalfWidth == 0) ? trailingCenterX : trailingCenterX - prevHalfWidth - YMOverlayButtonGap - width / 2.0;
@@ -607,6 +616,9 @@ static BOOL isRelatedVideosExpanded = NO;
     if ([self._viewControllerForAncestor isKindOfClass:%c(YTMainAppVideoPlayerOverlayViewController)]) {
         [[NSNotificationCenter defaultCenter] removeObserver:self name:YouModUpdateSpeedLabel object:nil];
         [[NSNotificationCenter defaultCenter] removeObserver:self name:YouModUpdateNotification object:nil];
+        if (IS_ENABLED(SBButtonKey)) {
+            [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(updateCurrentTimeTitleLabel) name:@"YouModUpdateTimeLabel" object:nil];
+        }
     }
     %orig;
 }
@@ -727,7 +739,6 @@ static NSString *getCompactQualityLabel(MLFormat *format) {
     mute.symbolName = IS_ENABLED(KeepMutedKey) ? @"speaker.slash" : @"speaker.wave.2";
     mute.settingsSymbolName = @"speaker.wave.2";
     mute.displayName = LOC(@"MUTE_BUTTON");
-    mute.tintColor = [UIColor whiteColor];
     mute.sortOrder = 300;
     mute.isVisible = ^BOOL(YTPlayerViewController *player) {
         return YMIsOverlayButtonEnabled(@"mute.video");
@@ -781,7 +792,6 @@ static NSString *getCompactQualityLabel(MLFormat *format) {
     share.symbolName = @"arrowshape.turn.up.right";
     share.settingsSymbolName = @"arrowshape.turn.up.right";
     share.displayName = LOC(@"SHARE_BUTTON");
-    share.tintColor = [UIColor whiteColor];
     share.sortOrder = 600;
     share.isVisible = ^BOOL(YTPlayerViewController *player) {
         return YMIsOverlayButtonEnabled(@"share.video");
@@ -795,7 +805,6 @@ static NSString *getCompactQualityLabel(MLFormat *format) {
     loop.symbolName = IS_ENABLED(KeepLoopKey) ? @"repeat.1" : @"repeat";
     loop.settingsSymbolName = @"repeat";
     loop.displayName = LOC(@"LOOP_BUTTON");
-    loop.tintColor = [UIColor whiteColor];
     loop.sortOrder = 700;
     loop.isVisible = ^BOOL(YTPlayerViewController *player) {
         return YMIsOverlayButtonEnabled(@"loop.video");
@@ -812,7 +821,6 @@ static NSString *getCompactQualityLabel(MLFormat *format) {
     caption.symbolName = @"captions.bubble";
     caption.settingsSymbolName = @"captions.bubble";
     caption.displayName = LOC(@"CAPTION_BUTTON");
-    caption.tintColor = [UIColor whiteColor];
     caption.sortOrder = 800;
     caption.isVisible = ^BOOL(YTPlayerViewController *player) {
         return YMIsOverlayButtonEnabled(@"caption.video");

@@ -48,6 +48,24 @@ static UIImage *sbDotImage(UIColor *color) {
     }];
 }
 
+// Uniform icon size for the YouTube action sheet: each SF Symbol is rendered
+// into an exact 24x24 canvas (aspect-fit, centered), so every row's icon box
+// is identical regardless of the symbol's natural proportions.
+static UIImage *sbSheetIcon(NSString *symbolName) {
+    UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:22 weight:UIImageSymbolWeightMedium];
+    UIImage *symbol = [[UIImage systemImageNamed:symbolName withConfiguration:config] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+    UIGraphicsImageRendererFormat *format = [UIGraphicsImageRendererFormat defaultFormat];
+    UIGraphicsImageRenderer *renderer = [[UIGraphicsImageRenderer alloc] initWithSize:CGSizeMake(24, 24) format:format];
+    return [renderer imageWithActions:^(UIGraphicsImageRendererContext *ctx) {
+        CGFloat width = symbol.size.width;
+        CGFloat height = symbol.size.height;
+        if (width <= 0 || height <= 0) return;
+        CGFloat scale = MIN(24.0 / width, 24.0 / height);
+        CGSize fitted = CGSizeMake(width * scale, height * scale);
+        [symbol drawInRect:CGRectMake((24.0 - fitted.width) / 2.0, (24.0 - fitted.height) / 2.0, fitted.width, fitted.height)];
+    }];
+}
+
 #pragma mark - User ID
 
 NSString *sbLocalUserID(void) {
@@ -292,13 +310,19 @@ static void sbPostVoteQuery(NSString *query, void (^completion)(BOOL success, NS
 }
 
 - (void)refilterItems {
+    [self refilterItemsWithReload:YES];
+}
+
+// Recomputes the visible list from allItems + the search query. Pass NO for
+// reload when the caller animates row changes itself (e.g. deletion).
+- (void)refilterItemsWithReload:(BOOL)reload {
     NSString *query = [self.searchText stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
     NSArray *source = self.allItems;
     if (query.length > 0) {
         source = [source filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"title CONTAINS[cd] %@ OR subtitle CONTAINS[cd] %@", query, query]];
     }
     _visibleItems = source;
-    [self.tableView reloadData];
+    if (reload) [self.tableView reloadData];
     [self sbUpdateEmptyState];
 }
 
@@ -311,7 +335,9 @@ static void sbPostVoteQuery(NSString *query, void (^completion)(BOOL success, NS
                                                                     style:UIBarButtonItemStylePlain
                                                                    target:self
                                                                    action:@selector(dismissCard)];
-    closeButton.tintColor = [UIColor whiteColor];
+    // White in dark mode, black in light mode — re-resolved on appearance
+    // changes in sbUpdateCloseButtonColor with a cross-dissolve.
+    closeButton.tintColor = [UIColor labelColor];
     self.navigationItem.rightBarButtonItem = closeButton;
 
     _tableView = [[UITableView alloc] initWithFrame:CGRectZero style:UITableViewStyleInsetGrouped];
@@ -391,35 +417,57 @@ static void sbPostVoteQuery(NSString *query, void (^completion)(BOOL success, NS
     _emptyLabel.hidden = !(self.items.count == 0 && _emptyText.length > 0);
 }
 
-// Layer borders use CGColor snapshots, which don't follow trait changes on
-// their own — re-apply them (and reload cells) whenever appearance flips so
-// every text/color stays in sync with dark/light mode.
+// Re-applies trait-dependent field styling: no border, and a slightly grayer
+// fill in light mode (default depth in dark mode). Called on theme changes
+// inside a cross-dissolve so the flip is animated.
 - (void)sbStyleFieldBorders {
-    UIColor *border = [UIColor systemGray3Color];
-    UITextField *searchField = self.searchBar.searchTextField;
-    searchField.layer.cornerRadius = 10.0;
-    searchField.layer.masksToBounds = YES;
-    searchField.layer.borderWidth = 1.0;
-    searchField.layer.borderColor = border.CGColor;
-    // Slightly fainter fill in light mode; the default depth in dark mode.
-    searchField.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor *(UITraitCollection *trait) {
-        return (trait.userInterfaceStyle == UIUserInterfaceStyleDark) ? [UIColor secondarySystemBackgroundColor] : [UIColor tertiarySystemBackgroundColor];
+    UIColor *fieldFill = [UIColor colorWithDynamicProvider:^UIColor *(UITraitCollection *trait) {
+        return (trait.userInterfaceStyle == UIUserInterfaceStyleDark) ? [UIColor secondarySystemBackgroundColor] : [UIColor systemGray5Color];
     }];
-
+    if (self.searchBar) {
+        UITextField *searchField = self.searchBar.searchTextField;
+        searchField.layer.cornerRadius = 10.0;
+        searchField.layer.masksToBounds = YES;
+        searchField.layer.borderWidth = 0.0;
+        searchField.layer.borderColor = nil;
+        searchField.backgroundColor = fieldFill;
+    }
     if (self.textField) {
         self.textField.layer.cornerRadius = 10.0;
         self.textField.layer.masksToBounds = YES;
-        self.textField.layer.borderWidth = 1.0;
-        self.textField.layer.borderColor = border.CGColor;
-        self.textField.backgroundColor = [UIColor secondarySystemBackgroundColor];
+        self.textField.layer.borderWidth = 0.0;
+        self.textField.layer.borderColor = nil;
+        self.textField.backgroundColor = fieldFill;
     }
+}
+
+// The close button flips white (dark mode) / black (light mode) with a short
+// cross-dissolve instead of snapping.
+- (void)sbUpdateCloseButtonColor {
+    UIBarButtonItem *closeButton = self.navigationItem.rightBarButtonItem;
+    if (!closeButton) return;
+    BOOL dark = (self.traitCollection.userInterfaceStyle == UIUserInterfaceStyleDark);
+    [UIView transitionWithView:self.navigationController ? self.navigationController.view : self.view
+                      duration:0.25
+                       options:UIViewAnimationOptionTransitionCrossDissolve
+                    animations:^{
+        closeButton.tintColor = dark ? [UIColor whiteColor] : [UIColor blackColor];
+    }
+                    completion:nil];
 }
 
 - (void)traitCollectionDidChange:(UITraitCollection *)previousTraitCollection {
     [super traitCollectionDidChange:previousTraitCollection];
     if (previousTraitCollection.userInterfaceStyle != self.traitCollection.userInterfaceStyle) {
-        [self sbStyleFieldBorders];
-        [self.tableView reloadData];
+        [self sbUpdateCloseButtonColor];
+        [UIView transitionWithView:self.view
+                          duration:0.25
+                           options:UIViewAnimationOptionTransitionCrossDissolve
+                        animations:^{
+            [self sbStyleFieldBorders];
+            [self.tableView reloadData];
+        }
+                        completion:nil];
     }
 }
 
@@ -548,7 +596,17 @@ static void sbPostVoteQuery(NSString *query, void (^completion)(BOOL success, NS
 - (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath {
     if (editingStyle != UITableViewCellEditingStyleDelete) return;
     YMSBCardItem *item = [self itemForRow:indexPath.row];
-    if (item && self.onDeleteItem) self.onDeleteItem(self, item);
+    if (!item) return;
+    // Model change first (onDeleteItem no longer touches the UI), then drop
+    // the item from the backing list and animate the row sliding out — a full
+    // reloadData here would cut the animation off.
+    if (self.onDeleteItem) self.onDeleteItem(self, item);
+    NSMutableArray<YMSBCardItem *> *remaining = [self.allItems mutableCopy];
+    [remaining removeObject:item];
+    self.allItems = remaining;
+    [self refilterItemsWithReload:NO];
+    [self.tableView deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationLeft];
+    [self sbUpdateEmptyState];
 }
 
 - (void)reloadItems {
@@ -564,12 +622,19 @@ static void sbPostVoteQuery(NSString *query, void (^completion)(BOOL success, NS
     nav.modalPresentationStyle = UIModalPresentationFormSheet;
 
     // YouTube restyles navigation bars app-wide (appearance proxies), which
-    // can leave a sheet's title invisible. Give our bar its own explicit
-    // dynamic title color while keeping system-default backgrounds.
+    // can leave a sheet's title invisible. Give our bar an explicit dynamic
+    // title color and a background matching the grouped table so the header
+    // blends seamlessly into the dialog.
+    UIColor *headerBackground = [UIColor systemGroupedBackgroundColor];
     NSMutableDictionary *titleAttributes = [[NSMutableDictionary alloc] init];
     titleAttributes[NSForegroundColorAttributeName] = [UIColor labelColor];
+    // Same size as the × close button (16pt), but bold so the title reads
+    // heavier than the icon.
+    titleAttributes[NSFontAttributeName] = [UIFont systemFontOfSize:16 weight:UIFontWeightBold];
     UINavigationBarAppearance *barAppearance = [[UINavigationBarAppearance alloc] init];
-    [barAppearance configureWithDefaultBackground];
+    [barAppearance configureWithOpaqueBackground];
+    barAppearance.backgroundColor = headerBackground;
+    barAppearance.shadowColor = [UIColor clearColor];
     barAppearance.titleTextAttributes = titleAttributes;
     nav.navigationBar.standardAppearance = barAppearance;
     nav.navigationBar.scrollEdgeAppearance = barAppearance;
@@ -608,7 +673,7 @@ static void sbPostVoteQuery(NSString *query, void (^completion)(BOOL success, NS
 
     if (!channelListed) {
         YTActionSheetAction *toggleAction = [%c(YTActionSheetAction) actionWithTitle:LOC(active ? @"SB_MENU_DISABLE" : @"SB_MENU_ENABLE")
-                                                                            iconImage:[UIImage systemImageNamed:active ? @"shield" : @"shield.slash"]
+                                                                            iconImage:sbSheetIcon(active ? @"shield" : @"shield.slash")
                                                                                  style:0
                                                                               handler:^(__unused YTActionSheetAction *action) {
             __strong typeof(weakSelf) strongSelf = weakSelf;
@@ -624,6 +689,7 @@ static void sbPostVoteQuery(NSString *query, void (^completion)(BOOL success, NS
                     [[NSNotificationCenter defaultCenter] postNotificationName:@"SBSegmentsDidLoad"
                                                                         object:ss
                                                                       userInfo:@{@"segments": segments ?: @[]}];
+                    
                 }];
             } else {
                 if (!newState) strongSelf.sbSegments = nil;
@@ -632,13 +698,14 @@ static void sbPostVoteQuery(NSString *query, void (^completion)(BOOL success, NS
                                                                     object:strongSelf
                                                                   userInfo:@{@"segments": segments}];
             }
+            [[NSNotificationCenter defaultCenter] postNotificationName:@"YouModUpdateTimeLabel" object:nil];
         }];
         [sheet addAction:toggleAction];
     }
 
     if (active && self.sbSegments.count > 0) {
         YTActionSheetAction *voteAction = [%c(YTActionSheetAction) actionWithTitle:LOC(@"SB_MENU_VOTE")
-                                                                          iconImage:[UIImage systemImageNamed:@"hand.thumbsup"]
+                                                                          iconImage:sbSheetIcon(@"hand.thumbsup")
                                                                                style:0
                                                                             handler:^(__unused YTActionSheetAction *action) {
             __strong typeof(weakSelf) strongSelf = weakSelf;
@@ -648,7 +715,7 @@ static void sbPostVoteQuery(NSString *query, void (^completion)(BOOL success, NS
     }
 
     YTActionSheetAction *whitelistAction = [%c(YTActionSheetAction) actionWithTitle:LOC(channelListed ? @"SB_WHITELIST_REMOVE" : @"SB_WHITELIST_ADD")
-                                                                            iconImage:[UIImage systemImageNamed:channelListed ? @"checkmark.seal.fill" : @"checkmark.seal"]
+                                                                            iconImage:sbSheetIcon(channelListed ? @"checkmark.seal.fill" : @"checkmark.seal")
                                                                                  style:0
                                                                               handler:^(__unused YTActionSheetAction *action) {
         __strong typeof(weakSelf) strongSelf = weakSelf;
@@ -858,10 +925,10 @@ void YMSBPresentWhitelistManager(void) {
     card.items = sbWhitelistManagerItems();
 
     card.onDeleteItem = ^(YMSBCardViewController *c, YMSBCardItem *item) {
+        // Model only — the card animates the row out itself.
         if (item.identifier.length > 0) {
             sbSetChannelWhitelisted(item.identifier, item.title, NO);
         }
-        c.items = sbWhitelistManagerItems();
         sbRefreshPlayerAfterWhitelistChange();
     };
 

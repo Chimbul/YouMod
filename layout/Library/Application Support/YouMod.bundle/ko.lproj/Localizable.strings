@@ -516,8 +516,6 @@
 "HIDE_COMMU_GUIDE_DESC" = "커뮤니티 가이드 헤더를 숨깁니다.";
 "HIDE_ENGAGEMENT_SUBBAR" = "댓글 헤더 숨기기";
 "HIDE_ENGAGEMENT_SUBBAR_DESC" = "댓글 정렬 헤더(인기순, 최신순)가 표시되지 않도록 숨깁니다.";
-"HIDE_SORT_FILTER_BUTTON_PANEL" = "Hide sort & filter button";
-"HIDE_SORT_FILTER_BUTTON_PANEL_DESC" = "Hide the sort and filter button in the engagement panel.";
 "HIDE_COMMUNITY_BUTTON_PANEL" = "Hide community button";
 "HIDE_COMMUNITY_BUTTON_PANEL_DESC" = "Hide the community button in the engagement panel.";
 "HIDE_INFO_BUTTON_PANEL" = "Hide info button";

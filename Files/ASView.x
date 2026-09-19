@@ -3,6 +3,7 @@
 static const void *YouModASViewKey = &YouModASViewKey;
 
 %hook _ASDisplayView
+%property (nonatomic, assign) _ASDisplayView *currentDownloadButton;
 - (void)didMoveToWindow {
     %orig;
     if (objc_getAssociatedObject(self, YouModASViewKey)) return;
@@ -28,7 +29,17 @@ static const void *YouModASViewKey = &YouModASViewKey;
 }
 %new
 - (void)YouModDownloadButtonTapped:(UITapGestureRecognizer *)sender {
+    if (sender.state != UIGestureRecognizerStateEnded) return;
     YouModHandleDownloadButtonAction(self, sender);
+}
+%new
+- (void)YouModHandleNewDownloadButtonTapped:(UITapGestureRecognizer *)sender {
+    if (sender.state != UIGestureRecognizerStateEnded) return;
+    YTDefaultSheetController *sheetController = [self.currentDownloadButton._viewControllerForAncestor valueForKey:@"_delegate"];
+    _ASDisplayView *moreButton = [sheetController valueForKey:@"_sourceView"];
+    [sheetController dismissViewControllerAnimated:YES completion:^{
+        YouModHandleDownloadButtonAction(moreButton, sender);
+    }];
 }
 %end
 

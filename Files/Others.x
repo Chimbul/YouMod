@@ -29,6 +29,11 @@
 - (BOOL)enableIosFloatingMiniplayerDoubleTapToResize { return IS_ENABLED(FixesSlowMiniPlayer) ? NO : %orig; }
 // Use old miniplayer
 - (BOOL)enableIosFloatingMiniplayer { return IS_ENABLED(DisablesNewMiniPlayer) ? NO : %orig; }
+// Fixes the old dialog (the rectangular style) layout incorrectly
+- (BOOL)uiSystemsClientGlobalConfigIosEnableActionSheetViewLayoutRefactor { return NO; }
+// Remove the new contextual dialog layout styles
+- (BOOL)crossPlatformCoreClientGlobalConfigIosEnableBottomSheetPaddingFix { return NO; }
+- (BOOL)crossPlatformCoreClientGlobalConfigIosEnableContextualSheetsOnAllScreenSizes { return NO; }
 %end
 
 %hook YTHotConfig
@@ -215,12 +220,6 @@
             button.hidden = YES;
         }
     }
-    if (IS_ENABLED(HideSortFilterButtonPanel)) {
-        YTQTMButton *button = self.sortFilterMenuButton;
-        if (button != nil) {
-            button.hidden = YES;
-        }
-    }
     for (UIView *button in self.subviews) {
         if ([button isKindOfClass:%c(YTQTMButton)]) {
             YTIButtonRenderer *renderer = [button valueForKey:@"_buttonRenderer"];
@@ -228,8 +227,7 @@
             NSString *desc = [renderer description];
             if ([desc containsString:@"FEcommunity_page"] && IS_ENABLED(HideCommunityButtonPanel)) {
                 button.hidden = YES;
-            } else if ([desc containsString:@"live_chat_filter_mode_option.eml"] && IS_ENABLED(HideSortFilterButtonPanel)) {
-                button.hidden = YES;
+                break;
             }
         }
     }

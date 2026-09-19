@@ -516,8 +516,6 @@
 "HIDE_COMMU_GUIDE_DESC" = "Nasconde l'intestazione delle linee guida della community.";
 "HIDE_ENGAGEMENT_SUBBAR" = "Nascondi intestazione commenti";
 "HIDE_ENGAGEMENT_SUBBAR_DESC" = "Nasconde l'intestazione di ordinamento dei commenti (In evidenza, Più recenti) così che non appaia mai.";
-"HIDE_SORT_FILTER_BUTTON_PANEL" = "Hide sort & filter button";
-"HIDE_SORT_FILTER_BUTTON_PANEL_DESC" = "Hide the sort and filter button in the engagement panel.";
 "HIDE_COMMUNITY_BUTTON_PANEL" = "Hide community button";
 "HIDE_COMMUNITY_BUTTON_PANEL_DESC" = "Hide the community button in the engagement panel.";
 "HIDE_INFO_BUTTON_PANEL" = "Hide info button";

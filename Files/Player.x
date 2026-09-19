@@ -288,7 +288,6 @@ static void YouModAddEndTime(YTInlinePlayerBarContainerView *playerbar, YTPlayer
 %end
 
 static BOOL hasSetSeekButtons = NO;
-static BOOL isYouModPrevNextButtons = NO;
 
 %hook YTMainAppControlsOverlayView
 // Hide autoplay Switch
@@ -304,11 +303,6 @@ static BOOL isYouModPrevNextButtons = NO;
     YTMainAppVideoPlayerOverlayViewController *mainOverlayController = (YTMainAppVideoPlayerOverlayViewController *)self.eventsDelegate;
     YTPlayerViewController *playerViewController = mainOverlayController.parentViewController;
     visible ? [playerViewController pause] : [playerViewController play];
-    if (IS_ENABLED(ReplacePrevNextButtons)) {
-        isYouModPrevNextButtons = YES;
-        [self setSeekAccessibilityButtonsVisible:visible];
-        isYouModPrevNextButtons = NO;
-    }
 }
 // Replace previous/next buttons with back and forward
 - (void)didMoveToWindow {
@@ -316,14 +310,16 @@ static BOOL isYouModPrevNextButtons = NO;
     if (IS_ENABLED(ReplacePrevNextButtons) && !hasSetSeekButtons) {
         YTQTMButton *preBut = [self valueForKey:@"_previousButtonView"];
         YTQTMButton *nextBut = [self valueForKey:@"_nextButtonView"];
-        preBut.hidden = YES;
-        nextBut.hidden = YES;
+        [preBut setHidden:YES];
+        [nextBut setHidden:YES];
         [self setValue:[self valueForKey:@"_seekBackwardAccessibilityButtonView"] forKey:@"_previousButtonView"];
         [self setValue:[self valueForKey:@"_seekForwardAccessibilityButtonView"] forKey:@"_nextButtonView"];
         preBut = [[self valueForKey:@"_seekBackwardAccessibilityButtonView"] valueForKey:@"_button"];
         nextBut = [[self valueForKey:@"_seekForwardAccessibilityButtonView"] valueForKey:@"_button"];
-        preBut.enabled = YES;
-        nextBut.enabled = YES;
+        [preBut setEnabled:YES];
+        [preBut setHidden:NO];
+        [nextBut setEnabled:YES];
+        [nextBut setHidden:NO];
         hasSetSeekButtons = YES;
     }
 }
@@ -339,7 +335,7 @@ static BOOL isYouModPrevNextButtons = NO;
 - (void)setSeekBackwardAccessibilityButtonHidden:(BOOL)arg { if (!IS_ENABLED(ReplacePrevNextButtons)) %orig; }
 - (void)setSeekForwardAccessibilityButtonVisible:(BOOL)arg { if (!IS_ENABLED(ReplacePrevNextButtons)) %orig; }
 - (void)setSeekBackwardAccessibilityButtonVisible:(BOOL)arg { if (!IS_ENABLED(ReplacePrevNextButtons)) %orig; }
-- (void)setSeekAccessibilityButtonsVisible:(BOOL)arg { if (!IS_ENABLED(ReplacePrevNextButtons) || isYouModPrevNextButtons) %orig; }
+- (void)setSeekAccessibilityButtonsVisible:(BOOL)arg { if (!IS_ENABLED(ReplacePrevNextButtons)) %orig; }
 - (void)setPreviousButtonEnabled:(BOOL)arg { if (!IS_ENABLED(ReplacePrevNextButtons)) %orig; }
 - (void)setNextButtonEnabled:(BOOL)arg { if (!IS_ENABLED(ReplacePrevNextButtons)) %orig; }
 - (void)setPreviousButtonHidden:(BOOL)arg { if (!IS_ENABLED(ReplacePrevNextButtons)) %orig; }
@@ -477,7 +473,7 @@ static BOOL isYouModPrevNextButtons = NO;
         YouModConfigureRemoteSkipCommands();
         if (INTFORVAL(AutoDRCAudioIndex) != 0) [playerviewController YouModAutoDRCAudio];
         if (INTFORVAL(AudioTrack) != 0) [playerviewController performSelector:@selector(YouModAutoAudioTrack) withObject:nil afterDelay:0.5];
-        if (YMIsOverlayButtonEnabled(@"mute.video")) [playerviewController YouModAutoMute];
+        if (YMIsOverlayButtonEnabled(@"mute.video")) [playerviewController performSelector:@selector(YouModAutoMute) withObject:nil afterDelay:0.1];
         if (IS_ENABLED(AutoFullScreen)) [playerviewController performSelector:@selector(YouModAutoFullscreen) withObject:nil afterDelay:0.5];
         if (INTFORVAL(CaptionTrack) != 0) [playerviewController performSelector:@selector(YouModAutoCaptions) withObject:nil afterDelay:0.5];
         if (INTFORVAL(AutoSpeedIndex) != 0) [playerviewController YouModSetAutoSpeed];

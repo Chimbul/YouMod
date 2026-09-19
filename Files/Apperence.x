@@ -80,10 +80,6 @@ void YouModApplyOLEDCollectionView(ASCollectionView *self, NSString *iden) {
     }];
 }
 
-%hook YTContextualSheetManager
-- (void)installInContainerView:(UIView *)view {}
-%end
-
 %hook MDCInkView
 - (void)didMoveToWindow {
     %orig;

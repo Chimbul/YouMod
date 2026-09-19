@@ -2058,12 +2058,13 @@ void YouModConfigureDownloadButton(_ASDisplayView *view, NSString *iden) {
         }
         if ([desc containsString:@"download_button_inner.eml"]) {
             view.userInteractionEnabled = YES;
-            UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:view action:@selector(YouModDownloadButtonTapped:)];
+            UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:view action:@selector(YouModHandleNewDownloadButtonTapped:)];
             tap.cancelsTouchesInView = YES;
             tap.delaysTouchesBegan = YES;
             tap.delaysTouchesEnded = YES;
             [view addGestureRecognizer:tap];
-            objc_setAssociatedObject(view, @selector(YouModDownloadButtonTapped:), @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+            view.currentDownloadButton = view;
+            objc_setAssociatedObject(view, @selector(YouModHandleNewDownloadButtonTapped:), @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
         }
     }
 }
@@ -2303,13 +2304,8 @@ void YouModHandlePostLongPressAction(_ASDisplayView *view, UILongPressGestureRec
 }
 
 void YouModHandleDownloadButtonAction(_ASDisplayView *view, UITapGestureRecognizer *sender) {
-    if (sender.state != UIGestureRecognizerStateEnded) return;
     UIViewController *presenter = view._viewControllerForAncestor;
-    if ([presenter isKindOfClass:%c(YTActionSheetDialogViewController)]) {
-        parentResponder = [[presenter valueForKey:@"_delegate"] valueForKey:@"_parentResponder"];
-    } else {
-        parentResponder = [presenter valueForKey:@"_parentResponder"];
-    }
+    parentResponder = [presenter valueForKey:@"_parentResponder"];
     YouModShowDownloadManager(YouModCurrentPlayerViewController, presenter, view, NO);
 }
 
@@ -2365,7 +2361,6 @@ void YouModHandleDownloadButtonAction(_ASDisplayView *view, UITapGestureRecogniz
     download.symbolName = @"arrow.down.circle";
     download.settingsSymbolName = @"arrow.down.circle";
     download.displayName = LOC(@"DOWNLOAD_BUTTON");
-    download.tintColor = [UIColor whiteColor];
     download.sortOrder = 200;
     download.isVisible = ^BOOL(YTPlayerViewController *player) {
         return YMIsOverlayButtonEnabled(@"download.video");

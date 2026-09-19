@@ -748,18 +748,9 @@ static const void *kSBAllFlatRowsKey = &kSBAllFlatRowsKey;
         field.text = userID;
         field.font = [UIFont monospacedSystemFontOfSize:14 weight:UIFontWeightRegular];
         field.textColor = [UIColor labelColor];
-        // Border, corner radius and background are applied by the card
-        // (sbStyleFieldBorders) so they follow appearance changes; here only
-        // the search-bar-like leading icon and behaviors are set up.
+        // Border, corner radius and fill are applied by the card
+        // (sbStyleFieldBorders) so they follow appearance changes.
         field.borderStyle = UITextBorderStyleNone;
-        UIImageView *iconView = [[UIImageView alloc] initWithImage:[[UIImage systemImageNamed:@"person.crop.circle"] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate]];
-        iconView.tintColor = [UIColor systemGray2Color];
-        iconView.contentMode = UIViewContentModeScaleAspectFit;
-        iconView.frame = CGRectMake(10, 10, 20, 20);
-        UIView *leftContainer = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 40, 40)];
-        [leftContainer addSubview:iconView];
-        field.leftView = leftContainer;
-        field.leftViewMode = UITextFieldViewModeAlways;
         field.clearButtonMode = UITextFieldViewModeWhileEditing;
         field.autocapitalizationType = UITextAutocapitalizationTypeNone;
         field.autocorrectionType = UITextAutocorrectionTypeNo;
