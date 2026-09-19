@@ -329,6 +329,7 @@
 - (void)presentFromView:(UIView *)view animated:(BOOL)animated completion:(void (^)(void))completion;
 - (void)presentFromViewController:(UIViewController *)vc animated:(BOOL)animated completion:(void (^)(void))completion;
 - (void)addHeaderWithTitle:(NSString *)arg1 subtitle:(NSString *)arg2;
+- (void)dismissViewControllerAnimated:(BOOL)arg1 completion:(void (^)(void))arg2;
 @end
 
 // Gesture Section Enum
@@ -531,6 +532,10 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 
 @interface ASDisplayNode (YouMod)
 - (void)removeYogaChild:(id)arg;
+@end
+
+@interface _ASDisplayView (YouMod)
+@property (nonatomic, assign) _ASDisplayView *currentDownloadButton;
 @end
 
 @interface YTIMySubsFilterHeaderRenderer : GPBMessage

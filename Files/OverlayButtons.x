@@ -261,6 +261,24 @@ static UIFont *YMOverlayTextButtonFont(NSString *text, CGSize maxSize) {
     return hasYTFont ? [typeStyle ytSansFontOfSize:(CGFloat)bestSize weight:UIFontWeightSemibold] : [UIFont systemFontOfSize:(CGFloat)bestSize weight:UIFontWeightSemibold];
 }
 
+// Renders a symbol into an exact 24x24 canvas (aspect-fit, centered) so every
+// overlay button icon shares one uniform box regardless of the symbol's
+// natural proportions — same treatment as the SponsorBlock sheet icons.
+static UIImage *YMOverlayButtonIcon(NSString *symbolName) {
+    UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:22 weight:UIImageSymbolWeightMedium];
+    UIImage *symbol = [[UIImage systemImageNamed:symbolName withConfiguration:config] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+    UIGraphicsImageRendererFormat *format = [UIGraphicsImageRendererFormat defaultFormat];
+    UIGraphicsImageRenderer *renderer = [[UIGraphicsImageRenderer alloc] initWithSize:CGSizeMake(24, 24) format:format];
+    return [renderer imageWithActions:^(UIGraphicsImageRendererContext *ctx) {
+        CGFloat width = symbol.size.width;
+        CGFloat height = symbol.size.height;
+        if (width <= 0 || height <= 0) return;
+        CGFloat scale = MIN(24.0 / width, 24.0 / height);
+        CGSize fitted = CGSizeMake(width * scale, height * scale);
+        [symbol drawInRect:CGRectMake((24.0 - fitted.width) / 2.0, (24.0 - fitted.height) / 2.0, fitted.width, fitted.height)];
+    }];
+}
+
 // Parent is the view that will own and receive taps for the button: either the
 // controls overlay (top row) or the inline player bar (bottom row). Both classes
 // implement ymOverlayButtonTapped:.
@@ -287,9 +305,8 @@ static YTQTMButton *YMCreateOverlayButton(UIView *parent, YMOverlayButtonSpec *s
         button.contentVerticalAlignment = UIControlContentVerticalAlignmentCenter;
         button.contentHorizontalAlignment = UIControlContentHorizontalAlignmentCenter;
     } else {
-        UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:20 weight:UIImageSymbolWeightMedium];
         // Template rendering so YTQTMButton's tint colours the glyph reliably.
-        UIImage *icon = [[UIImage systemImageNamed:spec.symbolName withConfiguration:config] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+        UIImage *icon = YMOverlayButtonIcon(spec.symbolName);
         button = [%c(YTQTMButton) iconButton];
         [button setImage:icon forState:UIControlStateNormal];
         button.tintColor = tint;

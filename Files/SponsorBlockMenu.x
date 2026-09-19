@@ -48,12 +48,22 @@ static UIImage *sbDotImage(UIColor *color) {
     }];
 }
 
-// Uniform icon size for the YouTube action sheet: SF Symbols ship with
-// different natural sizes/weights, so every icon gets the same fixed
-// configuration to optically align the rows.
+// Uniform icon size for the YouTube action sheet: each SF Symbol is rendered
+// into an exact 24x24 canvas (aspect-fit, centered), so every row's icon box
+// is identical regardless of the symbol's natural proportions.
 static UIImage *sbSheetIcon(NSString *symbolName) {
-    UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:24 weight:UIImageSymbolWeightMedium];
-    return [[UIImage systemImageNamed:symbolName withConfiguration:config] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+    UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:22 weight:UIImageSymbolWeightMedium];
+    UIImage *symbol = [[UIImage systemImageNamed:symbolName withConfiguration:config] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+    UIGraphicsImageRendererFormat *format = [UIGraphicsImageRendererFormat defaultFormat];
+    UIGraphicsImageRenderer *renderer = [[UIGraphicsImageRenderer alloc] initWithSize:CGSizeMake(24, 24) format:format];
+    return [renderer imageWithActions:^(UIGraphicsImageRendererContext *ctx) {
+        CGFloat width = symbol.size.width;
+        CGFloat height = symbol.size.height;
+        if (width <= 0 || height <= 0) return;
+        CGFloat scale = MIN(24.0 / width, 24.0 / height);
+        CGSize fitted = CGSizeMake(width * scale, height * scale);
+        [symbol drawInRect:CGRectMake((24.0 - fitted.width) / 2.0, (24.0 - fitted.height) / 2.0, fitted.width, fitted.height)];
+    }];
 }
 
 #pragma mark - User ID
@@ -602,6 +612,9 @@ static void sbPostVoteQuery(NSString *query, void (^completion)(BOOL success, NS
     UIColor *headerBackground = [UIColor systemGroupedBackgroundColor];
     NSMutableDictionary *titleAttributes = [[NSMutableDictionary alloc] init];
     titleAttributes[NSForegroundColorAttributeName] = [UIColor labelColor];
+    // Same size as the system title, one step heavier so YouTube's styling
+    // proxies can't thin it out.
+    titleAttributes[NSFontAttributeName] = [UIFont systemFontOfSize:17 weight:UIFontWeightBold];
     UINavigationBarAppearance *barAppearance = [[UINavigationBarAppearance alloc] init];
     [barAppearance configureWithOpaqueBackground];
     barAppearance.backgroundColor = headerBackground;
