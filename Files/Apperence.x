@@ -91,8 +91,15 @@ void YouModApplyOLEDCollectionView(ASCollectionView *self, NSString *iden) {
 }
 %end
 
-%hook YTColdConfig
-- (BOOL)crossPlatformCoreClientGlobalConfigIosEnableContextualSheetsOnAllScreenSizes { return NO; }
+%hook YTDialogContainerScrollView
+- (void)layoutSubviews {
+    %orig;
+    if (objc_getAssociatedObject(self, kOLEDKey) || ![self.superview isKindOfClass:%c(YTContextualWrapView)]) return;
+    self.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor * _Nonnull(UITraitCollection * _Nonnull traitCollection) {
+        return isDarkMode(self) ? [UIColor blackColor] : [UIColor whiteColor];
+    }];
+    objc_setAssociatedObject(self, kOLEDKey, @YES, OBJC_ASSOCIATION_ASSIGN);
+}
 %end
 
 %hook MDCInkView
