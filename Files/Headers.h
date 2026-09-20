@@ -436,6 +436,7 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 @interface YTReelContentView (YouMod) <UIGestureRecognizerDelegate>
 @property (nonatomic, retain) UILongPressGestureRecognizer *YouModExitShortsOnlyGesture;
 - (YTReelWatchPlaybackOverlayView *)playbackOverlay;
+- (UIView *)stickerContainer;
 @end
 
 @interface YTLanguages : NSObject
