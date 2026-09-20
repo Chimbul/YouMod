@@ -641,8 +641,8 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
 
 %end
 
-    %ctor {
-        [[NSUserDefaults standardUserDefaults] registerDefaults:@{
+%ctor {
+    [[NSUserDefaults standardUserDefaults] registerDefaults:@{
         AutoClearCache: @YES,
         DownloadMethod: @1,
         YTLogoIndex: @1,
