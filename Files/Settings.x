@@ -653,10 +653,5 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
         RewindSeconds: @10.0,
         ForwardSeconds: @10.0,
     }];
-    // The server download method was removed; remap the old on-device index (2)
-    // to its new index (1). Other stored values stay valid.
-    if (INTFORVAL(DownloadMethod) == 2) {
-        [[NSUserDefaults standardUserDefaults] setInteger:DownloadMethodOnDevice forKey:DownloadMethod];
-    }
     %init;
 }
