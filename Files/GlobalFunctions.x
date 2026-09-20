@@ -20,7 +20,7 @@ UIImage *YouModYTIconImage(NSInteger iconType, BOOL useCustomColor, UIColor *cus
     YTIIcon *icon = [%c(YTIIcon) new];
     icon.iconType = iconType;
     UIColor *targetColor = (useCustomColor && customColor) ? customColor : [UIColor labelColor];
-    return [icon iconImageWithColor:targetColor];
+    return [%c(QTMIcon) tintImage:[icon iconImageWithColor:targetColor] color:targetColor];
 }
 
 // Language list
@@ -110,4 +110,4 @@ void YouModConfigureSharePopover(UIActivityViewController *activityVC, UIView *s
             activityVC.popoverPresentationController.permittedArrowDirections = 0;
         }
     }
-}
+}

@@ -284,16 +284,12 @@ static UIImage *YMOverlayButtonIcon(NSString *symbolName) {
 // implement ymOverlayButtonTapped:.
 static YTQTMButton *YMCreateOverlayButton(UIView *parent, YMOverlayButtonSpec *spec) {
     YTQTMButton *button;
-    // Overlay buttons always render white to match YouTube's native controls.
-    UIColor *tint = [UIColor whiteColor];
-
     if (spec.title.length > 0) {
         // Text button: a label instead of an icon. customTitleColor is YTQTMButton's
         // own text-colour channel; sizeWithPaddingAndInsets is disabled so the width
         // stays fixed rather than expanding to fit the text.
         button = [%c(YTQTMButton) textButton];
         [button setTitle:spec.title forState:UIControlStateNormal];
-        button.customTitleColor = tint;
         button.titleLabel.font = YMOverlayTextButtonFont(spec.title, CGSizeMake(25, 25));
         button.titleLabel.textAlignment = NSTextAlignmentCenter;
         button.sizeWithPaddingAndInsets = NO;
@@ -306,11 +302,9 @@ static YTQTMButton *YMCreateOverlayButton(UIView *parent, YMOverlayButtonSpec *s
         button.contentVerticalAlignment = UIControlContentVerticalAlignmentCenter;
         button.contentHorizontalAlignment = UIControlContentHorizontalAlignmentCenter;
     } else {
-        // Template rendering so YTQTMButton's tint colours the glyph reliably.
         UIImage *icon = YMOverlayButtonIcon(spec.symbolName);
         button = [%c(YTQTMButton) iconButton];
-        [button setImage:icon forState:UIControlStateNormal];
-        button.tintColor = tint;
+        [button setImage:[%c(QTMIcon) tintImage:icon color:[UIColor whiteColor]] forState:UIControlStateNormal];
         button.imageView.contentMode = UIViewContentModeScaleAspectFit;
     }
 
