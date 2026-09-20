@@ -274,9 +274,7 @@ void YouModFilterShortsDisplayView(_ASDisplayView *view, NSString *iden) {
 %property (nonatomic, retain) UILongPressGestureRecognizer *YouModExitShortsOnlyGesture;
 - (void)setPlaybackView:(YTPlayerView *)playerView {
     %orig;
-    if (IS_ENABLED(HideShortsProducts) && self.stickerContainer) {
-        [self.stickerContainer removeFromSuperview];
-    }
+    if (IS_ENABLED(HideShortsProducts) && self.stickerContainer) [self.stickerContainer removeFromSuperview];
     self.playbackOverlay.alpha = !isFullscreenEnabled;
     if (!IS_ENABLED(ShortsOnly)) return;
     if (isShortsOnlyOn) {
