@@ -904,8 +904,8 @@ extern UIViewController *YouModTopViewController(UIViewController *root);
 extern BOOL isDarkMode(UIView *view);
 extern BOOL isPad();
 extern void YouModConfigureSharePopover(UIActivityViewController *activityVC, UIView *sourceView);
-void YouModApplyPrevNextReplacement(YTMainAppControlsOverlayView *overlay);
-void YouModConfigureRemoteSkipCommands();
+extern void YouModApplyPrevNextReplacement(YTMainAppControlsOverlayView *overlay);
+extern void YouModConfigureRemoteSkipCommands();
 
 #define LOC(x) [YouModBundle() localizedStringForKey:x value:nil table:nil]
 

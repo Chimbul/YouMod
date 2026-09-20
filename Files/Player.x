@@ -292,8 +292,6 @@ static BOOL YouModShouldForcePrevNextReplacement(void) {
     return IS_ENABLED(ReplacePrevNextButtons) && !IS_ENABLED(HideNextAndPrevButtons);
 }
 
-void YouModApplyPrevNextReplacement(YTMainAppControlsOverlayView *overlay);
-
 @interface YouModOverlayRefreshHandler : NSObject
 @property (nonatomic, weak) YTMainAppControlsOverlayView *overlay;
 - (void)refreshSoon;
