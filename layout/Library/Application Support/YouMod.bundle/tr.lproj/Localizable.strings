@@ -110,24 +110,18 @@
 "THUMBNAIL_OPTIONS" = "Küçük resmi indir";
 "COPY" = "Kopyala";
 "COPIED_TO_CLIPBOARD" = "Pano'ya kopyalandı";
-"CONNECTING_TO_SERVER" = "Sunucuya bağlanılıyor...";
-"DOWNLOADING_TO_SERVER" = "Sunucuya indiriliyor...";
 "COPY_COMMENT_TEXT" = "Yorum metnini kopyala";
 "SAVE_COMMENT_IMAGE" = "Yorumu görsel olarak kaydet";
 "COPY_COMMENT_IMAGE" = "Yorumu görsel olarak kopyala";
 "COPY_POST_TEXT" = "Gönderi metnini kopyala";
 "SAVE_POST_IMAGE" = "Gönderiyi görsel olarak kaydet";
 "COPY_POST_IMAGE" = "Gönderiyi görsel olarak kopyala";
-"DOWNLOAD_SERVER" = "İndirme sunucusu";
-"CHOOSE_DOWNLOAD_SERVER" = "İndirme sunucusunu seçin";
 "DOWNLOAD_COMMENT" = "Yorum bilgilerini kaydet";
 "DOWNLOAD_COMMENT_DESC" = "Üç nokta butonuna uzun basarak yorum metnini kopyalamaya ve yorumu görsel olarak kaydetmeye izin verir.";
 "DOWNLOAD_POST" = "Gönderi bilgilerini kaydet";
 "DOWNLOAD_POST_DESC" = "Uzun basarak gönderi metnini kopyalamaya ve gönderiyi görsel olarak kaydetmeye izin verir.";
 "TRANSLATE_COMMENT" = "Yorumu çevir";
 "TRANSLATE_POST" = "Gönderiyi çevir";
-"SERVER_EUROPRE1" = "Avrupa";
-"SERVER_ASIA1" = "Tayland - Asya";
 "SHOW_OPTIONS" = "Seçenekleri göster";
 "ENGLISH" = "İngilizce";
 "TRANSLATION" = "Çeviri";
@@ -140,7 +134,6 @@
 "DOWNLOAD_METHOD" = "İndirme yöntemi";
 "DOWNLOAD_METHOD_DESC" = "Videoların nasıl indirileceği. Cihaz içi yöntemi en son YouTube sürümlerinde çalışır.";
 "METHOD_DIRECT" = "Doğrudan";
-"METHOD_SERVER" = "Sunucu";
 "METHOD_ONDEVICE" = "Cihaz içi (SABR)";
 "AUDIO" = "Audio";
 
@@ -186,10 +179,6 @@
 "KEEP_SHORTS_SUBSCRIPT_DESC" = "Shorts'un Abonelikler sekmesinden kaldırılmasını engeller.";
 "HIDE_SEARCH_HISTORY" = "Arama geçmişini gizle";
 "HIDE_SEARCH_HISTORY_DESC" = "Arama çubuğunu kullanırken önceki arama geçmişini ve önerileri gizler.\\nNOT: Arama geçmişinize diğer YouTube istemcilerinizden erişilmeye devam edilebilir.";
-"REMOVE_CHANNEL_COMMUNITY_BUTTON" = "Topluluk butonunu kaldır";
-"REMOVE_CHANNEL_COMMUNITY_BUTTON_DESC" = "Kanal üst bilgilerindeki topluluk butonunu kaldırır.";
-"REMOVE_CHANNEL_SPONSOR_BUTTON" = "Katıl butonunu kaldır";
-"REMOVE_CHANNEL_SPONSOR_BUTTON_DESC" = "Akışlar, kanal üst bilgileri ve Shorts genelindeki sponsor / katıl butonunu kaldırır.";
 "HIDE_PLAYABLES" = "Oynatılabilirleri kaldır";
 "HIDE_PLAYABLES_DESC" = "Akıştaki oynatılabilirleri (mini oyunları) kaldırır.";
 "HIDE_RELATED_VIDEOS" = "İlgili videoları gizle";

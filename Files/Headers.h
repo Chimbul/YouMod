@@ -85,12 +85,10 @@
 #import <YouTubeHeader/YTUIUtils.h>
 
 #define DownloadFix @"YouModDownloadFix"
-#define DownloadServerIndex @"YouModDownloadServerIndex"
 #define SABRDownload @"YouModSABRDownload"
 #define DownloadMethod @"YouModDownloadMethod" // index into the "Download method" picker
 #define DownloadMethodDirect 0   // YouTube's built-in stream URLs
-#define DownloadMethodServer 1   // external server (triggerSilentDownload…)
-#define DownloadMethodOnDevice 2 // on-device SABR engine
+#define DownloadMethodOnDevice 1 // on-device SABR engine
 
 #define IS_ENABLED(k) [[NSUserDefaults standardUserDefaults] boolForKey:k]
 #define INTFORVAL(v) [[NSUserDefaults standardUserDefaults] integerForKey:v]
@@ -144,8 +142,6 @@
 #define HideSearchHis @"YouModHideSearchHistoryAndSuggestions"
 #define HideSurveys @"YouModHideSurveys"
 #define HideRelatedVideos @"YouModHideRelatedVideos"
-#define RemoveChannelCommunityButton @"YouModRemoveChannelCommunityButton"
-#define RemoveChannelSponsorAll @"YouModRemoveChannelSponsorAll"
 // Player
 #define WifiQualityIndex @"YouModWifiQualityIndex"
 #define CellQualityIndex @"YouModCellQualityIndex"
@@ -317,9 +313,6 @@
 @end
 
 @interface YTPageHeaderViewController : UIViewController
-@end
-
-@interface YTIPageHeaderRenderer : GPBMessage
 @end
 
 @interface YTDefaultSheetController (YouMod)
@@ -998,7 +991,6 @@ extern void YouModSetupDownloadGestures(_ASDisplayView *view, NSString *iden);
 extern void YouModHandleCommentLongPressAction(_ASDisplayView *view, UILongPressGestureRecognizer *sender);
 extern void YouModHandlePostLongPressAction(_ASDisplayView *view, UILongPressGestureRecognizer *sender);
 extern void YouModHandleDownloadButtonAction(_ASDisplayView *view, UITapGestureRecognizer *sender);
-extern void YouModFilterChannelButtons(_ASDisplayView *view, NSString *iden);
 extern void YouModFilterVideoButtons(_ASDisplayView *view, NSString *iden);
 extern void YouModFilterShortsDisplayView(_ASDisplayView *view, NSString *iden);
 extern void YouModRemoveShortsPausedButtons(_ASDisplayView *view, NSString *iden);

@@ -1774,36 +1774,33 @@ static UISlider *YouModVolumeSlider(void) {
 %end
 
 void YouModFilterNonScrollableVideoButtons(_ASDisplayView *view, NSString *iden) {
-    if ([view.accessibilityIdentifier isEqualToString:@"id.video.non_scrollable_action_bar"]) {
-        for (_ASDisplayView *sub in view.subviews) {
-            _ASDisplayView *removal = sub;
-            while (removal != nil && removal.subviews.count == 1 && removal.accessibilityIdentifier == nil) {
-                removal = removal.subviews[0];
+    if (![view.accessibilityIdentifier isEqualToString:@"id.video.non_scrollable_action_bar"]) return;
+    for (_ASDisplayView *sub in view.subviews) {
+        _ASDisplayView *removal = sub;
+        while (removal != nil && removal.subviews.count == 1 && removal.accessibilityIdentifier == nil) {
+            removal = removal.subviews[0];
+        }
+        BOOL shouldFilter = NO;
+        NSDictionary *buttonsList = @{
+            @"id.video.like.button": @(IS_ENABLED(RemoveVideoLikeButton)),
+            @"id.video.dislike.button": @(IS_ENABLED(RemoveVideoDislikeButton)),
+            @"id.video.share.button": @(IS_ENABLED(RemoveVideoShareButton)),
+            @"id.video.add_to.button": @(IS_ENABLED(RemoveVideoSaveButton)),
+            @"clip_button.eml": @(IS_ENABLED(RemoveVideoClipButton)),
+            @"id.video.remix.button": @(IS_ENABLED(RemoveVideoRemixButton)),
+            @"id.ui.add_to.offline.button": @(IS_ENABLED(RemoveVideoDownloadButton)),
+            @"id.player.chat.toggle.button" : @(IS_ENABLED(RemoveVideoLiveChatButton))
+        };
+        for (NSString *button in buttonsList) {
+            if ([removal.accessibilityIdentifier isEqualToString:button] && [buttonsList[button] boolValue]) {
+                shouldFilter = YES;
+                break;
             }
-            BOOL shouldFilter = NO;
-            NSDictionary *buttonsList = @{
-                @"id.video.like.button": @(IS_ENABLED(RemoveVideoLikeButton)),
-                @"id.video.dislike.button": @(IS_ENABLED(RemoveVideoDislikeButton)),
-                @"id.video.share.button": @(IS_ENABLED(RemoveVideoShareButton)),
-                @"id.video.add_to.button": @(IS_ENABLED(RemoveVideoSaveButton)),
-                @"clip_button.eml": @(IS_ENABLED(RemoveVideoClipButton)),
-                @"id.video.remix.button": @(IS_ENABLED(RemoveVideoRemixButton)),
-                @"id.ui.add_to.offline.button": @(IS_ENABLED(RemoveVideoDownloadButton)),
-                @"id.player.chat.toggle.button" : @(IS_ENABLED(RemoveVideoLiveChatButton))
-            };
-            for (NSString *button in buttonsList) {
-                if ([removal.accessibilityIdentifier isEqualToString:button] && [buttonsList[button] boolValue]) {
-                    shouldFilter = YES;
-                    break;
-                }
-            }
-            if (shouldFilter) {
-                ASDisplayNode *node = sub.keepalive_node;
-                for (id child in node.yogaChildren) {
-                    [node removeYogaChild:child];
-                }
-                [sub removeFromSuperview];
-            }
+        }
+        if (shouldFilter) {
+            ASDisplayNode *node = sub.keepalive_node;
+            [node removeYogaChild:node.yogaChildren.firstObject];
+            [sub removeFromSuperview];
         }
     }
 }

@@ -12,7 +12,6 @@ static const void *YouModASViewKey = &YouModASViewKey;
     YouModConfigureDownloadButton(self, iden);
     YouModSetupDownloadGestures(self, iden);
     YouModFilterAdsDisplayView(self, iden);
-    YouModFilterChannelButtons(self, iden);
     YouModFilterNonScrollableVideoButtons(self, iden);
     YouModFilterVideoButtons(self, iden);
     YouModFilterShortsDisplayView(self, iden);
