@@ -560,6 +560,9 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 - (BOOL)isExpanded;
 @end
 
+@interface YTTransportControlsButtonView : UIView
+@end
+
 @interface YTMainAppControlsOverlayView (YouMod)
 - (YTMainAppVideoPlayerOverlayViewController *)eventsDelegate;
 @end
@@ -901,6 +904,8 @@ extern UIViewController *YouModTopViewController(UIViewController *root);
 extern BOOL isDarkMode(UIView *view);
 extern BOOL isPad();
 extern void YouModConfigureSharePopover(UIActivityViewController *activityVC, UIView *sourceView);
+void YouModApplyPrevNextReplacement(YTMainAppControlsOverlayView *overlay);
+void YouModConfigureRemoteSkipCommands();
 
 #define LOC(x) [YouModBundle() localizedStringForKey:x value:nil table:nil]
 

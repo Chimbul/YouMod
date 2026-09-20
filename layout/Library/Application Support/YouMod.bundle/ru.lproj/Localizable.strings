@@ -332,9 +332,9 @@
 "PAUSE_TWO_FINGERS" = "Пауза двумя пальцами";
 "PAUSE_TWO_FINGERS_DESC" = "Ставит воспроизведение на паузу и возобновляет его касанием экрана двумя пальцами.";
 "SKIP_BACKWARD" = "Перемотка назад";
-"SKIP_BACKWARD_DESC" = "Заменяет кнопку предыдущего трека в Пункте управления на кнопку перемотки назад на заданное число секунд.";
+"SKIP_BACKWARD_DESC" = "Replaces the previous track button in Control Center, Lock Screen, Bluetooth, and CarPlay with a skip backward button by a set number of seconds.";
 "SKIP_FORWARD" = "Перемотка вперёд";
-"SKIP_FORWARD_DESC" = "Заменяет кнопку следующего трека в Пункте управления на кнопку перемотки вперёд на заданное число секунд.";
+"SKIP_FORWARD_DESC" = "Replaces the next track button in Control Center, Lock Screen, Bluetooth, and CarPlay with a skip forward button by a set number of seconds.";
 "REWIND_SECONDS" = "Секунды перемотки назад";
 "FORWARD_SECONDS" = "Секунды перемотки вперёд";
 "HIDE_COMMENTS_SECTION" = "Скрыть раздел комментариев";

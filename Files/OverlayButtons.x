@@ -325,6 +325,7 @@ static BOOL isRelatedVideosExpanded = NO;
 
 - (void)layoutSubviews {
     %orig;
+    YouModApplyPrevNextReplacement(self);
     NSArray<YMOverlayButtonSpec *> *allRegistered = YMRegisteredOverlayButtons();
     // Bottom-placed buttons live in YTInlinePlayerBarContainerView, not here.
     NSMutableArray<YMOverlayButtonSpec *> *specs = [NSMutableArray array];

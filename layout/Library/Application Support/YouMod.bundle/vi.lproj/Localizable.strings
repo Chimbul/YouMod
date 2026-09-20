@@ -332,9 +332,9 @@
 "PAUSE_TWO_FINGERS" = "Tạm dừng bằng hai ngón tay";
 "PAUSE_TWO_FINGERS_DESC" = "Tạm dừng/tiếp tục phát bằng cách chạm vào màn hình bằng hai ngón tay.";
 "SKIP_BACKWARD" = "Tua lùi";
-"SKIP_BACKWARD_DESC" = "Thay nút bài trước trong Trung tâm điều khiển bằng nút tua lùi theo số giây đã đặt.";
+"SKIP_BACKWARD_DESC" = "Replaces the previous track button in Control Center, Lock Screen, Bluetooth, and CarPlay with a skip backward button by a set number of seconds.";
 "SKIP_FORWARD" = "Tua tới";
-"SKIP_FORWARD_DESC" = "Thay nút bài sau trong Trung tâm điều khiển bằng nút tua tới theo số giây đã đặt.";
+"SKIP_FORWARD_DESC" = "Replaces the next track button in Control Center, Lock Screen, Bluetooth, and CarPlay with a skip forward button by a set number of seconds.";
 "REWIND_SECONDS" = "Số giây tua lùi";
 "FORWARD_SECONDS" = "Số giây tua tới";
 "HIDE_COMMENTS_SECTION" = "Ẩn phần bình luận";

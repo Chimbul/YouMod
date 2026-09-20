@@ -332,9 +332,9 @@
 "PAUSE_TWO_FINGERS" = "Pause avec deux doigts";
 "PAUSE_TWO_FINGERS_DESC" = "Met en pause/reprend la lecture en appuyant sur l'écran avec deux doigts.";
 "SKIP_BACKWARD" = "Saut arrière";
-"SKIP_BACKWARD_DESC" = "Remplace le bouton de piste précédente du Centre de contrôle par un bouton de retour arrière d'un nombre défini de secondes.";
+"SKIP_BACKWARD_DESC" = "Replaces the previous track button in Control Center, Lock Screen, Bluetooth, and CarPlay with a skip backward button by a set number of seconds.";
 "SKIP_FORWARD" = "Saut avant";
-"SKIP_FORWARD_DESC" = "Remplace le bouton de piste suivante du Centre de contrôle par un bouton d'avance rapide d'un nombre défini de secondes.";
+"SKIP_FORWARD_DESC" = "Replaces the next track button in Control Center, Lock Screen, Bluetooth, and CarPlay with a skip forward button by a set number of seconds.";
 "REWIND_SECONDS" = "Secondes de retour rapide";
 "FORWARD_SECONDS" = "Secondes d'avance rapide";
 "HIDE_COMMENTS_SECTION" = "Masquer la section commentaires";

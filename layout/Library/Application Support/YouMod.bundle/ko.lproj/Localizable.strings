@@ -332,9 +332,9 @@
 "PAUSE_TWO_FINGERS" = "두 손가락으로 일시정지";
 "PAUSE_TWO_FINGERS_DESC" = "화면을 두 손가락으로 탭하여 재생을 일시정지/재개합니다.";
 "SKIP_BACKWARD" = "뒤로 건너뛰기";
-"SKIP_BACKWARD_DESC" = "제어 센터의 이전 트랙 버튼을 지정한 초만큼 뒤로 건너뛰는 버튼으로 대체합니다.";
+"SKIP_BACKWARD_DESC" = "Replaces the previous track button in Control Center, Lock Screen, Bluetooth, and CarPlay with a skip backward button by a set number of seconds.";
 "SKIP_FORWARD" = "앞으로 건너뛰기";
-"SKIP_FORWARD_DESC" = "제어 센터의 다음 트랙 버튼을 지정한 초만큼 앞으로 건너뛰는 버튼으로 대체합니다.";
+"SKIP_FORWARD_DESC" = "Replaces the next track button in Control Center, Lock Screen, Bluetooth, and CarPlay with a skip forward button by a set number of seconds.";
 "REWIND_SECONDS" = "되감기 초";
 "FORWARD_SECONDS" = "빨리감기 초";
 "HIDE_COMMENTS_SECTION" = "댓글 섹션 숨기기";

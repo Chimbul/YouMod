@@ -2109,11 +2109,25 @@ static NSString *YouModExtractCommentText(UIView *cellView, BOOL isPost) {
                     resultText = current.accessibilityLabel;
                     break;
                 }
+                ASDisplayNode *node = [current performSelector:@selector(keepalive_node)];
+                if (![node isKindOfClass:%c(ELMTextNode)]) {
+                    for (id child in node.yogaChildren) {
+                        if ([child isKindOfClass:%c(ELMTextNode)]) {
+                            node = child;
+                            break;
+                        }
+                    }
+                }
+                if ([[node description] containsString:@"id.comment.content.label"]) {
+                    NSAttributedString *strings = [node valueForKey:@"_attributedText"];
+                    resultText = strings.string;
+                    break;
+                }
             } else {
                 ASDisplayNode *node = [current performSelector:@selector(keepalive_node)];
-                if (![node isKindOfClass:%c(ELMExpandableTextNode)] && ![node isKindOfClass:%c(ELMTextNode)]) {
+                if (![node isKindOfClass:%c(ELMTextNode)]) {
                     for (id child in node.yogaChildren) {
-                        if ([child isKindOfClass:%c(ELMExpandableTextNode)] || [child isKindOfClass:%c(ELMTextNode)]) {
+                        if ([child isKindOfClass:%c(ELMTextNode)]) {
                             node = child;
                             break;
                         }
@@ -2124,9 +2138,6 @@ static NSString *YouModExtractCommentText(UIView *cellView, BOOL isPost) {
                     desc = [[[[node performSelector:@selector(nodeController)] performSelector:@selector(parent)] performSelector:@selector(owningComponent)] description];
                 } @catch (id ex) {}
                 if (desc != nil && [desc containsString:@"post_text.eml"]) {
-                    if ([node isKindOfClass:%c(ELMExpandableTextNode)]) {
-                        node = [node performSelector:@selector(currentTextNode)];
-                    }
                     NSAttributedString *strings = [node valueForKey:@"_attributedText"];
                     resultText = strings.string;
                     break;
