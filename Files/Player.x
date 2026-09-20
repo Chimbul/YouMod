@@ -1474,9 +1474,8 @@ static UISlider *YouModVolumeSlider(void) {
 }
 
 - (void)setMuted:(BOOL)muted { 
-    if (![self isInlinePlaybackActive]) {
-        if (YMIsOverlayButtonEnabled(@"mute.video")) muted = IS_ENABLED(KeepMutedKey);
-    }
+    if ([self.activeVideoPlayerOverlay isKindOfClass:%c(YTMainAppVideoPlayerOverlayViewController)]
+        && YMIsOverlayButtonEnabled(@"mute.video")) muted = IS_ENABLED(KeepMutedKey);
     %orig(muted);
 }
 
