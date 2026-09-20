@@ -476,7 +476,6 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 - (void)didPressReplay;
 - (void)play;
 - (void)pause;
-- (void)YouModAutoMute;
 - (void)YouModAutoAudioTrack;
 - (void)YouModAutoCaptions;
 - (void)YouModLoopButton;

@@ -818,7 +818,6 @@ static void YouModAddEndTime(YTInlinePlayerBarContainerView *playerbar, YTPlayer
         YouModConfigureRemoteSkipCommands();
         if (INTFORVAL(AutoDRCAudioIndex) != 0) [playerviewController YouModAutoDRCAudio];
         if (INTFORVAL(AudioTrack) != 0) [playerviewController performSelector:@selector(YouModAutoAudioTrack) withObject:nil afterDelay:0.5];
-        if (YMIsOverlayButtonEnabled(@"mute.video")) [playerviewController performSelector:@selector(YouModAutoMute) withObject:nil afterDelay:0.1];
         if (IS_ENABLED(AutoFullScreen)) [playerviewController performSelector:@selector(YouModAutoFullscreen) withObject:nil afterDelay:0.5];
         if (INTFORVAL(CaptionTrack) != 0) [playerviewController performSelector:@selector(YouModAutoCaptions) withObject:nil afterDelay:0.5];
         if (INTFORVAL(AutoSpeedIndex) != 0) [playerviewController YouModSetAutoSpeed];
@@ -829,9 +828,7 @@ static void YouModAddEndTime(YTInlinePlayerBarContainerView *playerbar, YTPlayer
 // Disable Fullscreen Actions
 %hook YTFullscreenActionsView
 - (CGSize)sizeThatFits:(CGSize)size { 
-    if (IS_ENABLED(HideFullAction)) {
-        self.hidden = YES;
-    }
+    if (IS_ENABLED(HideFullAction)) self.hidden = YES;
     return IS_ENABLED(HideFullAction) ? CGSizeMake(1, 35) : %orig;
 }
 %end
@@ -1476,11 +1473,11 @@ static UISlider *YouModVolumeSlider(void) {
     [self setPlaybackRate:[speedLabels[INTFORVAL(AutoSpeedIndex)] floatValue]];
 }
 
-%new
-- (void)YouModAutoMute {
-    YTSingleVideoController *sgvid = self.activeVideo;
-    BOOL muted = [sgvid isMuted];
-    [sgvid setMuted:[self isInlinePlaybackActive] ? muted : IS_ENABLED(KeepMutedKey)];
+- (void)setMuted:(BOOL)muted { 
+    if (![self isInlinePlaybackActive]) {
+        if (YMIsOverlayButtonEnabled(@"mute.video")) muted = IS_ENABLED(KeepMutedKey);
+    }
+    %orig(muted);
 }
 
 %new
