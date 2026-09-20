@@ -304,8 +304,9 @@ static YTQTMButton *YMCreateOverlayButton(UIView *parent, YMOverlayButtonSpec *s
     } else {
         UIImage *icon = YMOverlayButtonIcon(spec.symbolName);
         button = [%c(YTQTMButton) iconButton];
-        [button setImage:[%c(QTMIcon) tintImage:icon color:[UIColor whiteColor]] forState:UIControlStateNormal];
+        [button setImage:icon forState:UIControlStateNormal];
         button.imageView.contentMode = UIViewContentModeScaleAspectFit;
+        [button setTintColor:[UIColor whiteColor]];
     }
 
     button.exclusiveTouch = YES;

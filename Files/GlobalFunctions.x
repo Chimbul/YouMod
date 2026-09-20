@@ -20,7 +20,7 @@ UIImage *YouModYTIconImage(NSInteger iconType, BOOL useCustomColor, UIColor *cus
     YTIIcon *icon = [%c(YTIIcon) new];
     icon.iconType = iconType;
     UIColor *targetColor = (useCustomColor && customColor) ? customColor : [UIColor labelColor];
-    return [%c(QTMIcon) tintImage:[icon iconImageWithColor:targetColor] color:targetColor];
+    return [[icon iconImageWithColor:targetColor] setTintColor:targetColor];
 }
 
 // Language list
