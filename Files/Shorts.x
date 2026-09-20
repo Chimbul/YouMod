@@ -175,7 +175,9 @@ void YouModRemoveShortsPausedButtons(_ASDisplayView *self, NSString *iden) {
 
 void YouModFilterShortsDisplayView(_ASDisplayView *view, NSString *iden) {
     if (!iden || iden.length == 0) return;
-    if ([iden isEqualToString:@"id.elements.components.suggested_action.button"] && IS_ENABLED(HideShortsRecbar)) {
+    if (([iden isEqualToString:@"product_sticker.main_target"] || [iden isEqualToString:@"product_sticker.secondary_target"]) && IS_ENABLED(HideShortsProducts)) {
+        [view removeFromSuperview];
+    } else if ([iden isEqualToString:@"id.elements.components.suggested_action"] && IS_ENABLED(HideShortsRecbar)) {
         [view.superview removeFromSuperview];
     } else if ([iden isEqualToString:@"eml.shorts-disclosures"] && IS_ENABLED(RemoveShortsDisclosure)) {
         _ASDisplayView *dpView = (_ASDisplayView *)view.superview;
@@ -269,8 +271,9 @@ void YouModFilterShortsDisplayView(_ASDisplayView *view, NSString *iden) {
 
 %hook YTReelContentView
 %property (nonatomic, retain) UILongPressGestureRecognizer *YouModExitShortsOnlyGesture;
-- (void)setPlaybackView:(YTPlayerView *)playerView {
+- (void)setPlaybackView:(UIView *)playbackView {
     %orig;
+    if (IS_ENABLED(HideShortsProducts) && self.stickerContainer) [self.stickerContainer removeFromSuperview];
     self.playbackOverlay.alpha = !isFullscreenEnabled;
     if (!IS_ENABLED(ShortsOnly)) return;
     if (isShortsOnlyOn) {
@@ -306,9 +309,5 @@ void YouModFilterShortsDisplayView(_ASDisplayView *view, NSString *iden) {
         return NO;
     }
     return YES;
-}
-- (void)layoutSubviews {
-    %orig;
-    if (IS_ENABLED(HideShortsProducts) && self.stickerContainer) [self.stickerContainer removeFromSuperview];
 }
 %end
