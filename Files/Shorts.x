@@ -176,8 +176,8 @@ void YouModRemoveShortsPausedButtons(_ASDisplayView *self, NSString *iden) {
 
 void YouModFilterShortsDisplayView(_ASDisplayView *view, NSString *iden) {
     if (!iden || iden.length == 0) return;
-    if ([iden isEqualToString:@"id.elements.components.suggested_action"] && IS_ENABLED(HideShortsRecbar)) {
-        [view removeFromSuperview];
+    if ([iden isEqualToString:@"id.elements.components.suggested_action.button"] && IS_ENABLED(HideShortsRecbar)) {
+        [view.superview removeFromSuperview];
     } else if ([iden isEqualToString:@"eml.reel_sponsor_button"] && IS_ENABLED(RemoveChannelSponsorAll)) {
         [view.superview removeFromSuperview];
     } else if ([iden isEqualToString:@"eml.shorts-disclosures"] && IS_ENABLED(RemoveShortsDisclosure)) {
