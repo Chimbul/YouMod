@@ -1846,7 +1846,7 @@ void YouModRemoveFullscreenActionsButtons(YTELMViewController *controller) {
 
 // Video buttons filtering
 void YouModFilterVideoButtons(_ASDisplayView *view, NSString *iden) {
-    if (!iden || iden.length == 0) return;
+    if (!iden || iden.length == 0 || !isPad()) return;
     BOOL shouldFilter = NO;
     if ([iden isEqualToString:@"id.video.share.button"] && IS_ENABLED(RemoveVideoShareButton)) {
         shouldFilter = YES;

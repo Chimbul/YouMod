@@ -47,6 +47,7 @@ void YouModFilterChannelButtons(_ASDisplayView *self, NSString *iden) {
     if ([sup isKindOfClass:%c(ASScrollView)]) {
         ASScrollView *scroll = (ASScrollView *)sup;
         ASDisplayNode *node = scroll.scrollNode;
+        if (node.yogaChildren.count == 1) node = node.yogaChildren[0];
         for (_ASDisplayView *view in node.yogaChildren) {
             if ([[view description] containsString:iden]) {
                 [node removeYogaChild:view];
@@ -63,10 +64,13 @@ void YouModFilterChannelButtons(_ASDisplayView *self, NSString *iden) {
         if ([con isKindOfClass:%c(YTPageHeaderViewController)]) {
             _ASDisplayView *dpv = (_ASDisplayView *)sup;
             ASDisplayNode *node = dpv.keepalive_node;
-            _ASDisplayView *maindpv = (_ASDisplayView *)dpv.superview;
-            ASDisplayNode *mainNode = maindpv.keepalive_node;
-            [mainNode removeYogaChild:node];
-            [dpv removeFromSuperview];
+            for (id child in node.yogaChildren) {
+                if ([[child description] containsString:iden]) {
+                    [node removeYogaChild:node];
+                    [dpv removeFromSuperview];
+                    break;
+                }
+            }
         } else if ([con isKindOfClass:%c(YTWatchNextResultsViewController)]) {
             _ASDisplayView *dpv = (_ASDisplayView *)sup;
             ASDisplayNode *node = dpv.keepalive_node;

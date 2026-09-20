@@ -2237,7 +2237,6 @@ void YouModSetupDownloadGestures(_ASDisplayView *view, NSString *iden) {
     }
 }
 
-
 void YouModHandleCommentLongPressAction(_ASDisplayView *view, UILongPressGestureRecognizer *sender) {
     if (sender.state != UIGestureRecognizerStateBegan) return;
 

@@ -150,25 +150,24 @@ static void YouModRemoveShortsOverlayButton(_ASDisplayView *dpView) {
 
 void YouModRemoveShortsPausedButtons(_ASDisplayView *self, NSString *iden) {
     if (!IS_ENABLED(RemoveShortsPausedSubButton) && !IS_ENABLED(RemoveShortsPausedLiveButton) && !IS_ENABLED(RemoveShortsPausedLensButton) && !IS_ENABLED(RemoveShortsPausedTrendsButton)) return;
+    if (![iden containsString:@"id.ui.shorts_paused_state."] && ![iden hasSuffix:@"_button"]) return;
     ASScrollView *view = (ASScrollView *)self.superview;
-    if (![self._viewControllerForAncestor isKindOfClass:%c(YTReelTopBarViewController)] || ![view isKindOfClass:%c(ASScrollView)]) return;
-    if ([iden containsString:@"id.ui.shorts_paused_state."] && [iden hasSuffix:@"_button"]) {
-        NSDictionary *buttonsList = @{
-            @"id.ui.shorts_paused_state.subscriptions_button": @(IS_ENABLED(RemoveShortsPausedSubButton)),
-            @"id.ui.shorts_paused_state.live_button": @(IS_ENABLED(RemoveShortsPausedLiveButton)),
-            @"id.ui.shorts_paused_state.lens_button": @(IS_ENABLED(RemoveShortsPausedLensButton)),
-            @"id.ui.shorts_paused_state.trends_button" : @(IS_ENABLED(RemoveShortsPausedTrendsButton))
-        };
-        for (NSString *button in buttonsList) {
-            if ([buttonsList[button] boolValue] && [iden isEqualToString:button]) {
-                ASDisplayNode *node = view.scrollNode;
-                for (id child in node.yogaChildren) {
-                    if ([[child description] containsString:button]) {
-                        [node removeYogaChild:child];
-                        break;
-                    }
+    if (![view isKindOfClass:%c(ASScrollView)]) return;
+    NSDictionary *buttonsList = @{
+        @"id.ui.shorts_paused_state.subscriptions_button": @(IS_ENABLED(RemoveShortsPausedSubButton)),
+        @"id.ui.shorts_paused_state.live_button": @(IS_ENABLED(RemoveShortsPausedLiveButton)),
+        @"id.ui.shorts_paused_state.lens_button": @(IS_ENABLED(RemoveShortsPausedLensButton)),
+        @"id.ui.shorts_paused_state.trends_button" : @(IS_ENABLED(RemoveShortsPausedTrendsButton))
+    };
+    for (NSString *button in buttonsList) {
+        if ([buttonsList[button] boolValue] && [iden isEqualToString:button]) {
+            ASDisplayNode *node = view.scrollNode;
+            for (id child in node.yogaChildren) {
+                if ([[child description] containsString:button]) {
+                    [node removeYogaChild:child];
+                    [self removeFromSuperview];
+                    break;
                 }
-                [self removeFromSuperview];
             }
         }
     }
