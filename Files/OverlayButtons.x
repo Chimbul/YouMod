@@ -489,7 +489,7 @@ static BOOL isRelatedVideosExpanded = NO;
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(ymUpdateBarButtonLabels:) name:YouModUpdateSpeedLabel object:nil];
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(ymUpdateBarButtonLabels:) name:YouModUpdateNotification object:nil];
         if (IS_ENABLED(SBShowButton)) {
-            [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(updateCurrentTimeTitleLabel) name:@"YouModUpdateTimeLabel" object:nil];
+            [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(updateTimeLabels) name:@"YouModUpdateTimeLabel" object:nil];
         }
     } 
     return self;
