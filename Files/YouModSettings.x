@@ -1938,6 +1938,28 @@ static const void *kYMOverlaySavedScrollEdgeAppearanceKey = &kYMOverlaySavedScro
     }
 
     [self.view addSubview:self.tableView];
+
+    // Hint lives above both sections so each section header can carry its title.
+    UIView *hintHeader = [[UIView alloc] init];
+    UILabel *hintLabel = [[UILabel alloc] init];
+    hintLabel.text = LOC(@"OVERLAY_BUTTON_REORDER_HINT");
+    hintLabel.textColor = [self ymSecondaryColor];
+    hintLabel.font = [UIFont systemFontOfSize:13];
+    hintLabel.numberOfLines = 0;
+    hintLabel.translatesAutoresizingMaskIntoConstraints = NO;
+    [hintHeader addSubview:hintLabel];
+    [NSLayoutConstraint activateConstraints:@[
+        [hintLabel.leadingAnchor constraintEqualToAnchor:hintHeader.leadingAnchor constant:16],
+        [hintLabel.trailingAnchor constraintEqualToAnchor:hintHeader.trailingAnchor constant:-16],
+        [hintLabel.topAnchor constraintEqualToAnchor:hintHeader.topAnchor constant:8],
+        [hintLabel.bottomAnchor constraintEqualToAnchor:hintHeader.bottomAnchor constant:-4]
+    ]];
+    CGFloat headerWidth = self.view.bounds.size.width > 0 ? self.view.bounds.size.width : 320;
+    CGSize headerFit = [hintHeader systemLayoutSizeFittingSize:CGSizeMake(headerWidth, 0)
+                                 withHorizontalFittingPriority:UILayoutPriorityRequired
+                                   verticalFittingPriority:UILayoutPriorityFittingSizeLevel];
+    hintHeader.frame = CGRectMake(0, 0, headerWidth, ceil(headerFit.height));
+    self.tableView.tableHeaderView = hintHeader;
 }
 
 - (void)traitCollectionDidChange:(UITraitCollection *)previousTraitCollection {
@@ -2052,17 +2074,56 @@ static const void *kYMOverlaySavedScrollEdgeAppearanceKey = &kYMOverlaySavedScro
 
 #pragma mark - UITableViewDataSource
 
-- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView { return 1; }
+// Section 0 = buttons on the top overlay row, section 1 = buttons on the
+// bottom bar. Both derive from the single buttonData array via the "bottom"
+// flag, so the saved format (and the player side) is unchanged.
+- (NSArray<NSNumber *> *)flatIndexesForSection:(NSInteger)section {
+    BOOL wantBottom = (section == 1);
+    NSMutableArray<NSNumber *> *indexes = [NSMutableArray array];
+    [self.buttonData enumerateObjectsUsingBlock:^(NSMutableDictionary *entry, NSUInteger idx, BOOL *stop) {
+        if ([entry[@"bottom"] boolValue] == wantBottom) [indexes addObject:@(idx)];
+    }];
+    return indexes;
+}
+
+- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView { return 2; }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    return self.buttonData.count;
+    NSInteger count = [self flatIndexesForSection:section].count;
+    return count > 0 ? count : 1; // empty section keeps one "no buttons" row
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    NSArray<NSNumber *> *flatIndexes = [self flatIndexesForSection:indexPath.section];
+
+    if (flatIndexes.count == 0) {
+        static NSString *emptyCellID = @"YMOverlayEmptyCell";
+        UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:emptyCellID];
+        if (!cell) {
+            cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:emptyCellID];
+            cell.backgroundColor = [UIColor clearColor];
+            cell.selectionStyle = UITableViewCellSelectionStyleNone;
+
+            UILabel *emptyLabel = [[UILabel alloc] init];
+            emptyLabel.tag = 996;
+            emptyLabel.text = LOC(@"OVERLAY_BUTTONS_EMPTY");
+            emptyLabel.textColor = [self ymSecondaryColor];
+            emptyLabel.font = [UIFont systemFontOfSize:14];
+            emptyLabel.textAlignment = NSTextAlignmentCenter;
+            emptyLabel.translatesAutoresizingMaskIntoConstraints = NO;
+            [cell.contentView addSubview:emptyLabel];
+            [NSLayoutConstraint activateConstraints:@[
+                [emptyLabel.centerXAnchor constraintEqualToAnchor:cell.contentView.centerXAnchor],
+                [emptyLabel.centerYAnchor constraintEqualToAnchor:cell.contentView.centerYAnchor]
+            ]];
+        }
+        return cell;
+    }
+
     static NSString *cellID = @"YMOverlayButtonCell";
     UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:cellID];
     UISwitch *sw;
-    UISegmentedControl *segment;
+    UIButton *moveButton;
 
     if (!cell) {
         cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:cellID];
@@ -2076,29 +2137,34 @@ static const void *kYMOverlaySavedScrollEdgeAppearanceKey = &kYMOverlaySavedScro
         sw.tag = 999;
         [cell.contentView addSubview:sw];
 
-        segment = [[UISegmentedControl alloc] initWithItems:@[LOC(@"TOP"), LOC(@"BOTTOM")]];
-        segment.backgroundColor = [UIColor secondarySystemBackgroundColor];
-        [segment addTarget:self action:@selector(placementChanged:) forControlEvents:UIControlEventValueChanged];
-        segment.translatesAutoresizingMaskIntoConstraints = NO;
-        segment.tag = 998;
-        segment.apportionsSegmentWidthsByContent = YES;
-        [cell.contentView addSubview:segment];
+        // Arrow button: moves the button to the other row (down from the top
+        // row, up from the bottom row) — replaces the old top/bottom segment.
+        moveButton = [UIButton buttonWithType:UIButtonTypeSystem];
+        moveButton.backgroundColor = [UIColor secondarySystemBackgroundColor];
+        moveButton.tintColor = [UIColor labelColor];
+        moveButton.layer.cornerRadius = 15;
+        moveButton.layer.masksToBounds = YES;
+        [moveButton addTarget:self action:@selector(moveButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
+        moveButton.translatesAutoresizingMaskIntoConstraints = NO;
+        moveButton.tag = 998;
+        [cell.contentView addSubview:moveButton];
 
         [NSLayoutConstraint activateConstraints:@[
             [sw.centerYAnchor constraintEqualToAnchor:cell.contentView.centerYAnchor],
             [sw.trailingAnchor constraintEqualToAnchor:cell.contentView.trailingAnchor constant:-16],
-            [segment.centerYAnchor constraintEqualToAnchor:cell.contentView.centerYAnchor],
-            [segment.trailingAnchor constraintEqualToAnchor:sw.leadingAnchor constant:-12]
+            [moveButton.centerYAnchor constraintEqualToAnchor:cell.contentView.centerYAnchor],
+            [moveButton.trailingAnchor constraintEqualToAnchor:sw.leadingAnchor constant:-12],
+            [moveButton.widthAnchor constraintEqualToConstant:30],
+            [moveButton.heightAnchor constraintEqualToConstant:30]
         ]];
     } else {
         sw = [cell.contentView viewWithTag:999];
-        segment = [cell.contentView viewWithTag:998];
+        moveButton = [cell.contentView viewWithTag:998];
     }
 
-    NSMutableDictionary *entry = self.buttonData[indexPath.row];
+    NSMutableDictionary *entry = self.buttonData[flatIndexes[indexPath.row].integerValue];
     NSString *buttonID = entry[@"id"];
     BOOL enabled = [entry[@"enabled"] boolValue];
-    BOOL bottom = [entry[@"bottom"] boolValue];
 
     cell.textLabel.text = [self localizedNameForButtonID:buttonID];
     cell.textLabel.textColor = [UIColor labelColor];
@@ -2117,8 +2183,10 @@ static const void *kYMOverlaySavedScrollEdgeAppearanceKey = &kYMOverlaySavedScro
     sw.on = enabled;
     objc_setAssociatedObject(sw, kYMSwitchKeyAssoc, buttonID, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 
-    segment.selectedSegmentIndex = bottom ? 1 : 0;
-    objc_setAssociatedObject(segment, kYMSwitchKeyAssoc, buttonID, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    UIImageSymbolConfiguration *arrowConfig = [UIImageSymbolConfiguration configurationWithPointSize:15 weight:UIImageSymbolWeightSemibold];
+    UIImage *arrow = [UIImage systemImageNamed:(indexPath.section == 0 ? @"arrow.down" : @"arrow.up") withConfiguration:arrowConfig];
+    [moveButton setImage:arrow forState:UIControlStateNormal];
+    objc_setAssociatedObject(moveButton, kYMSwitchKeyAssoc, buttonID, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 
     return cell;
 }
@@ -2137,7 +2205,7 @@ static const void *kYMOverlaySavedScrollEdgeAppearanceKey = &kYMOverlaySavedScro
     [self saveButtonData];
 }
 
-- (void)placementChanged:(UISegmentedControl *)sender {
+- (void)moveButtonTapped:(UIButton *)sender {
     NSString *buttonID = objc_getAssociatedObject(sender, kYMSwitchKeyAssoc);
     if (!buttonID) return;
 
@@ -2147,18 +2215,52 @@ static const void *kYMOverlaySavedScrollEdgeAppearanceKey = &kYMOverlaySavedScro
     }
     if (!entry) return;
 
-    entry[@"bottom"] = @(sender.selectedSegmentIndex == 1);
+    // Flip the side, then rebuild buttonData as top group followed by bottom
+    // group so the entry lands at the end of its new section. Relative order
+    // within each side (what the player renders) is preserved.
+    entry[@"bottom"] = @(![entry[@"bottom"] boolValue]);
+
+    NSMutableArray *top = [NSMutableArray array];
+    NSMutableArray *bottom = [NSMutableArray array];
+    for (NSMutableDictionary *d in self.buttonData) {
+        [([d[@"bottom"] boolValue] ? bottom : top) addObject:d];
+    }
+    [self.buttonData removeAllObjects];
+    [self.buttonData addObjectsFromArray:top];
+    [self.buttonData addObjectsFromArray:bottom];
+
     [self saveButtonData];
+    [self.tableView reloadData];
 }
 
 #pragma mark - Reordering
 
-- (BOOL)tableView:(UITableView *)tableView canMoveRowAtIndexPath:(NSIndexPath *)indexPath { return YES; }
+- (BOOL)tableView:(UITableView *)tableView canMoveRowAtIndexPath:(NSIndexPath *)indexPath {
+    // The lone row of an empty section is a placeholder, not draggable.
+    return [self flatIndexesForSection:indexPath.section].count > 0;
+}
+
+- (NSIndexPath *)tableView:(UITableView *)tableView targetIndexPathForMoveFromRowAtIndexPath:(NSIndexPath *)sourceIndexPath toProposedIndexPath:(NSIndexPath *)proposedIndexPath {
+    // Dragging only reorders within a section; switching sides is the arrow
+    // button's job, so redirect any cross-section drop back into the source.
+    if (proposedIndexPath.section == sourceIndexPath.section) return proposedIndexPath;
+    NSInteger rows = [self tableView:tableView numberOfRowsInSection:sourceIndexPath.section];
+    NSInteger row = MIN(proposedIndexPath.row, rows - 1);
+    if (row < 0) row = 0;
+    return [NSIndexPath indexPathForRow:row inSection:sourceIndexPath.section];
+}
 
 - (void)tableView:(UITableView *)tableView moveRowAtIndexPath:(NSIndexPath *)from toIndexPath:(NSIndexPath *)to {
-    NSMutableDictionary *item = self.buttonData[from.row];
-    [self.buttonData removeObjectAtIndex:from.row];
-    [self.buttonData insertObject:item atIndex:to.row];
+    if (from.section != to.section) return; // prevented by the clamp above
+    NSArray<NSNumber *> *fromFlat = [self flatIndexesForSection:from.section];
+    NSArray<NSNumber *> *toFlat = [self flatIndexesForSection:to.section];
+    if (from.row >= (NSInteger)fromFlat.count || to.row >= (NSInteger)toFlat.count) return;
+    NSInteger fromIndex = fromFlat[from.row].integerValue;
+    NSInteger toIndex = toFlat[to.row].integerValue;
+    if (fromIndex == toIndex) return;
+    NSMutableDictionary *item = self.buttonData[fromIndex];
+    [self.buttonData removeObjectAtIndex:fromIndex];
+    [self.buttonData insertObject:item atIndex:toIndex];
     [self saveButtonData];
 }
 
@@ -2170,7 +2272,12 @@ static const void *kYMOverlaySavedScrollEdgeAppearanceKey = &kYMOverlaySavedScro
     return NO;
 }
 
-#pragma mark - Section Header/Footer
+#pragma mark - Row & Section Heights
+
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
+    if ([self flatIndexesForSection:indexPath.section].count == 0) return 44; // "no buttons" row
+    return UITableViewAutomaticDimension;
+}
 
 - (CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section {
     return UITableViewAutomaticDimension;
@@ -2183,22 +2290,22 @@ static const void *kYMOverlaySavedScrollEdgeAppearanceKey = &kYMOverlaySavedScro
 - (UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section {
     UIView *headerView = [[UIView alloc] init];
     headerView.backgroundColor = [UIColor clearColor];
-    
-    UILabel *hintLabel = [[UILabel alloc] init];
-    hintLabel.text = LOC(@"OVERLAY_BUTTON_REORDER_HINT");
-    hintLabel.textColor = [self ymSecondaryColor];
-    hintLabel.font = [UIFont systemFontOfSize:13];
-    hintLabel.numberOfLines = 0;
-    hintLabel.translatesAutoresizingMaskIntoConstraints = NO;
-    [headerView addSubview:hintLabel];
-    
+
+    UILabel *titleLabel = [[UILabel alloc] init];
+    titleLabel.text = LOC(section == 0 ? @"OVERLAY_BUTTONS_TOP" : @"OVERLAY_BUTTONS_BOTTOM");
+    titleLabel.textColor = [self ymSecondaryColor];
+    titleLabel.font = [UIFont systemFontOfSize:15 weight:UIFontWeightSemibold];
+    titleLabel.numberOfLines = 0;
+    titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
+    [headerView addSubview:titleLabel];
+
     [NSLayoutConstraint activateConstraints:@[
-        [hintLabel.leadingAnchor constraintEqualToAnchor:headerView.leadingAnchor constant:16],
-        [hintLabel.trailingAnchor constraintEqualToAnchor:headerView.trailingAnchor constant:-16],
-        [hintLabel.topAnchor constraintEqualToAnchor:headerView.topAnchor constant:12],
-        [hintLabel.bottomAnchor constraintEqualToAnchor:headerView.bottomAnchor constant:-12]
+        [titleLabel.leadingAnchor constraintEqualToAnchor:headerView.leadingAnchor constant:16],
+        [titleLabel.trailingAnchor constraintEqualToAnchor:headerView.trailingAnchor constant:-16],
+        [titleLabel.topAnchor constraintEqualToAnchor:headerView.topAnchor constant:12],
+        [titleLabel.bottomAnchor constraintEqualToAnchor:headerView.bottomAnchor constant:-4]
     ]];
-    
+
     return headerView;
 }
 

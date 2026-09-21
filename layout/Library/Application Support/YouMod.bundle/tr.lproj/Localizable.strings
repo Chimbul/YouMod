@@ -182,7 +182,7 @@
 "HIDE_PLAYABLES" = "Oynatılabilirleri kaldır";
 "HIDE_PLAYABLES_DESC" = "Akıştaki oynatılabilirleri (mini oyunları) kaldırır.";
 "HIDE_RELATED_VIDEOS" = "İlgili videoları gizle";
-"HIDE_RELATED_VIDEOS_DESC" = "Oynatıcının altındaki ilgili videoları gizler. (Katman içinde değil)";
+"HIDE_RELATED_VIDEOS_DESC" = "Hem akışta hem de oynatıcıda ilgili videoları gizler";
 
 "PLAYER" = "Oynatıcı";
 "PLAYBACK_SPEED" = "Oynatma hızı";
@@ -221,7 +221,12 @@
 "SPONSORBLOCK_BUTTON" = "SponsorBlock";
 "MANAGE_OVERLAY_BUTTONS" = "Katman butonlarını yönet";
 "MANAGE_OVERLAY_BUTTONS_DESC" = "Katman butonlarını yeniden sıralayın ve açıp kapatın";
-"OVERLAY_BUTTON_REORDER_HINT" = "Katman butonlarını yeniden sıralamak için sürükleyin. Göstermek/gizlemek için anahtarı kullanın.";
+"OVERLAY_BUTTON_REORDER_HINT" = "Yeniden sıralamak için sürükleyin. Düğmeyi üst ve alt sıra arasında taşımak için oka dokunun. Göstermek veya gizlemek için açıp kapatın.";
+"OVERLAY_BUTTONS_TOP" = "Üstteki düğmeler";
+"OVERLAY_BUTTONS_BOTTOM" = "Alttaki düğmeler";
+"OVERLAY_BUTTONS_EMPTY" = "Düğme yok";
+"REMOVE_ADS" = "Reklamları kaldır";
+"REMOVE_ADS_DESC" = "Uygulamadaki reklamları kaldırır, oyunlar hariç";
 "HOLD_TO_SPEED" = "Hızlandırmak için basılı tut";
 "HOLD_TO_SPEED_DESC" = "Özel basılı tutarak hızlandırma oranını kullanır.";
 "HIDE_AUTOPLAY" = "Otomatik oynatma anahtarını gizle";

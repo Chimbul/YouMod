@@ -489,3 +489,8 @@ void YouModRemoveDrawerAds(YTELMViewController *self) {
 %hook YTSurveyController
 - (void)showSurveyWithRenderer:(id)arg1 surveyParentResponder:(id)arg2 {}
 %end
+
+%ctor {
+    if (!IS_ENABLED(RemoveAds)) return;
+    %init;
+}

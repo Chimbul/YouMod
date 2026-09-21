@@ -264,12 +264,14 @@ static UIFont *YMOverlayTextButtonFont(NSString *text, CGSize maxSize) {
 // Renders a symbol into an exact 24x24 canvas (aspect-fit, centered) so every
 // overlay button icon shares one uniform box regardless of the symbol's
 // natural proportions — same treatment as the SponsorBlock sheet icons.
+// White is baked into the bitmap (imageWithTintColor: yields AlwaysOriginal)
+// so YouTube resetting the button's tint can never recolor the icon.
 static UIImage *YMOverlayButtonIcon(NSString *symbolName) {
     UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:22 weight:UIImageSymbolWeightMedium];
     UIImage *symbol = [[UIImage systemImageNamed:symbolName withConfiguration:config] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
     UIGraphicsImageRendererFormat *format = [UIGraphicsImageRendererFormat defaultFormat];
     UIGraphicsImageRenderer *renderer = [[UIGraphicsImageRenderer alloc] initWithSize:CGSizeMake(24, 24) format:format];
-    return [renderer imageWithActions:^(UIGraphicsImageRendererContext *ctx) {
+    UIImage *canvas = [renderer imageWithActions:^(UIGraphicsImageRendererContext *ctx) {
         CGFloat width = symbol.size.width;
         CGFloat height = symbol.size.height;
         if (width <= 0 || height <= 0) return;
@@ -277,6 +279,7 @@ static UIImage *YMOverlayButtonIcon(NSString *symbolName) {
         CGSize fitted = CGSizeMake(width * scale, height * scale);
         [symbol drawInRect:CGRectMake((24.0 - fitted.width) / 2.0, (24.0 - fitted.height) / 2.0, fitted.width, fitted.height)];
     }];
+    return [canvas imageWithTintColor:[UIColor whiteColor]];
 }
 
 // Parent is the view that will own and receive taps for the button: either the
@@ -744,9 +747,7 @@ static NSString *getCompactQualityLabel(MLFormat *format) {
         BOOL muteStatus = ![sgvid isMuted];
         [[NSUserDefaults standardUserDefaults] setBool:muteStatus forKey:KeepMutedKey];
         [sgvid setMuted:muteStatus];
-        UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:20 weight:UIImageSymbolWeightMedium];
-        UIImage *newIcon = [UIImage systemImageNamed:muteStatus ? @"speaker.slash" : @"speaker.wave.2" withConfiguration:config];
-        [button setImage:newIcon forState:UIControlStateNormal];
+        [button setImage:YMOverlayButtonIcon(muteStatus ? @"speaker.slash" : @"speaker.wave.2") forState:UIControlStateNormal];
     };
     YMRegisterOverlayButton(mute);
     YMOverlayButtonSpec *speed = [[YMOverlayButtonSpec alloc] init];
@@ -807,9 +808,7 @@ static NSString *getCompactQualityLabel(MLFormat *format) {
     };
     loop.onTap = ^(YTPlayerViewController *player, YTQTMButton *button) {
         [player YouModLoopButton];
-        UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:20 weight:UIImageSymbolWeightMedium];
-        UIImage *newIcon = [UIImage systemImageNamed:IS_ENABLED(KeepLoopKey) ? @"repeat.1" : @"repeat" withConfiguration:config];
-        [button setImage:newIcon forState:UIControlStateNormal];
+        [button setImage:YMOverlayButtonIcon(IS_ENABLED(KeepLoopKey) ? @"repeat.1" : @"repeat") forState:UIControlStateNormal];
     };
     YMRegisterOverlayButton(loop);
     YMOverlayButtonSpec *caption = [[YMOverlayButtonSpec alloc] init];

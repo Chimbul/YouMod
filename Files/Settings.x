@@ -259,6 +259,7 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
     // Section 4
     // Feed
     NSArray<YMSettingsItem *> *feedItems = @[
+            YMToggle(YMLOC(@"REMOVE_ADS"), YMLOC(@"REMOVE_ADS_DESC"), RemoveAds),
             YMToggle(YMLOC(@"HIDE_SUBBAR"), YMLOC(@"HIDE_SUBBAR_DESC"), HideSubbar),
             YMToggle(YMLOC(@"HIDE_HORI_SHELF"), YMLOC(@"HIDE_HORI_SHELF_DESC"), HideHoriShelf),
             YMToggle(YMLOC(@"HIDE_MUSIC_PLAYLISTS"), YMLOC(@"HIDE_MUSIC_PLAYLISTS_DESC"), HideGenMusicShelf),
@@ -652,6 +653,7 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
         DisableHints: @YES,
         RewindSeconds: @10.0,
         ForwardSeconds: @10.0,
+        RemoveAds: @YES,
     }];
     %init;
 }

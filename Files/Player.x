@@ -951,7 +951,7 @@ static CGFloat YouModSpeedForHoldIndex(NSInteger index) {
     %orig(temp, arg2);
 }
 // Hide Watermarks
-- (BOOL)isWatermarkEnabled { return IS_ENABLED(HideWaterMark) ? NO : %orig; }
+- (BOOL)isWatermaSrkEnabled { return IS_ENABLED(HideWaterMark) ? NO : %orig; }
 - (void)setWatermarkEnabled:(BOOL)arg { 
     BOOL temp = IS_ENABLED(HideWaterMark) ? NO : arg;
     %orig(temp);
@@ -960,6 +960,11 @@ static CGFloat YouModSpeedForHoldIndex(NSInteger index) {
     %orig;
     if (IS_ENABLED(HideCastButtonPlayer) && self.playbackRouteButton != nil) self.playbackRouteButton.hidden = YES;
 }
+%end
+
+// Hide related videos in fullscreen
+%hook YTFullscreenEngagementOverlayController
+- (void)setEnabled:(BOOL)enabled { %orig(IS_ENABLED(HideRelatedVideos) ? NO : enabled); }
 %end
 
 %hook YTSingleVideoController
@@ -1845,6 +1850,10 @@ void YouModRemoveFullscreenActionsButtons(YTELMViewController *controller) {
                 if (found) break;
             }
         }
+    }
+    if (IS_ENABLED(HideRelatedVideos) && view.subviews.count > 1) {
+        view = view.subviews[1];
+        view.hidden = YES;
     }
 }
 

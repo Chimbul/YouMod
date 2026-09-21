@@ -23,7 +23,7 @@
 - (id)activeCache { return IS_ENABLED(HideSearchHis) ? nil : %orig; }
 %end
 
-// Hide related videos in the player
+// Hide related videos in the feed
 %hook YTWatchNextResultsViewController
 - (void)setVisibleSections:(NSInteger)sections {
     if ([self.parentViewController isKindOfClass:%c(YTWatchNextResponseViewController)] && IS_ENABLED(HideRelatedVideos)) {

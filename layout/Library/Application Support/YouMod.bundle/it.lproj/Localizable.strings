@@ -182,7 +182,7 @@
 "HIDE_PLAYABLES" = "Rimuovi Playables";
 "HIDE_PLAYABLES_DESC" = "Rimuove i Playables (mini-giochi) dal feed.";
 "HIDE_RELATED_VIDEOS" = "Nascondi video correlati";
-"HIDE_RELATED_VIDEOS_DESC" = "Nasconde i video correlati sotto il player. (Non nell'overlay)";
+"HIDE_RELATED_VIDEOS_DESC" = "Nasconde i video correlati sia nel feed che nel player";
 
 "PLAYER" = "Player";
 "PLAYBACK_SPEED" = "Velocità di riproduzione";
@@ -221,7 +221,12 @@
 "SPONSORBLOCK_BUTTON" = "SponsorBlock";
 "MANAGE_OVERLAY_BUTTONS" = "Gestisci pulsanti overlay";
 "MANAGE_OVERLAY_BUTTONS_DESC" = "Riordina e attiva/disattiva i pulsanti overlay";
-"OVERLAY_BUTTON_REORDER_HINT" = "Trascina per riordinare i pulsanti overlay. Attiva/disattiva per mostrarli/nasconderli.";
+"OVERLAY_BUTTON_REORDER_HINT" = "Trascina per riordinare. Tocca la freccia per spostare un pulsante tra la riga superiore e quella inferiore. Attiva o disattiva per mostrare o nascondere.";
+"OVERLAY_BUTTONS_TOP" = "Pulsanti in alto";
+"OVERLAY_BUTTONS_BOTTOM" = "Pulsanti in basso";
+"OVERLAY_BUTTONS_EMPTY" = "Nessun pulsante";
+"REMOVE_ADS" = "Rimuovi pubblicità";
+"REMOVE_ADS_DESC" = "Rimuove le pubblicità, tranne i giochi";
 "HOLD_TO_SPEED" = "Tieni premuto per velocizzare";
 "HOLD_TO_SPEED_DESC" = "Usa la velocità di riproduzione personalizzata quando tieni premuto per velocizzare.";
 "HIDE_AUTOPLAY" = "Nascondi interruttore riproduzione automatica";

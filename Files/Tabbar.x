@@ -240,14 +240,9 @@ static BOOL isGestureRegistered = NO;
         [self.navigationButton setTitle:@"" forState:UIControlStateNormal];
         [self.navigationButton setSizeWithPaddingAndInsets:NO];
     }
-    // Attach long-press gesture once per view; the action handler checks the
-    // current pivotIdentifier at fire time, so cell reuse / pivot bar refresh
-    // can rebind the same view to a different tab safely.
-    static const void *kYMContextMenuKey = &kYMContextMenuKey;
-    if (!objc_getAssociatedObject(self, kYMContextMenuKey) && !isGestureRegistered) {
+    if (!isGestureRegistered) {
         UIContextMenuInteraction *interaction = [[UIContextMenuInteraction alloc] initWithDelegate:(id<UIContextMenuInteractionDelegate>)self];
         [self addInteraction:interaction];
-        objc_setAssociatedObject(self, kYMContextMenuKey, interaction, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
         isGestureRegistered = YES;
     }
 }

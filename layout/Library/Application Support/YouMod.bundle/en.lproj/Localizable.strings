@@ -182,7 +182,7 @@
 "HIDE_PLAYABLES" = "Remove playables";
 "HIDE_PLAYABLES_DESC" = "Removes playables (mini-games) from the feed.";
 "HIDE_RELATED_VIDEOS" = "Hide related videos";
-"HIDE_RELATED_VIDEOS_DESC" = "Hide related videos below the player. (Not in the overlay)";
+"HIDE_RELATED_VIDEOS_DESC" = "Hide related videos in both the feed and the player";
 
 "PLAYER" = "Player";
 "PLAYBACK_SPEED" = "Playback speed";
@@ -221,7 +221,12 @@
 "SPONSORBLOCK_BUTTON" = "SponsorBlock";
 "MANAGE_OVERLAY_BUTTONS" = "Manage overlay buttons";
 "MANAGE_OVERLAY_BUTTONS_DESC" = "Reorder and toggle overlay buttons";
-"OVERLAY_BUTTON_REORDER_HINT" = "Drag to reorder overlay buttons. Toggle to show/hide.";
+"OVERLAY_BUTTON_REORDER_HINT" = "Drag to reorder. Tap the arrow to move a button between the top and bottom rows. Toggle to show/hide.";
+"OVERLAY_BUTTONS_TOP" = "Top buttons";
+"OVERLAY_BUTTONS_BOTTOM" = "Bottom buttons";
+"OVERLAY_BUTTONS_EMPTY" = "No buttons";
+"REMOVE_ADS" = "Remove ads";
+"REMOVE_ADS_DESC" = "Removes ads from the app, except Playables";
 "HOLD_TO_SPEED" = "Hold to speed";
 "HOLD_TO_SPEED_DESC" = "Uses custom hold to speed playback rate.";
 "HIDE_AUTOPLAY" = "Hide autoplay switch";

@@ -182,7 +182,7 @@
 "HIDE_PLAYABLES" = "Xóa Playables";
 "HIDE_PLAYABLES_DESC" = "Xóa Playables (trò chơi nhỏ) khỏi bảng tin.";
 "HIDE_RELATED_VIDEOS" = "Ẩn video liên quan";
-"HIDE_RELATED_VIDEOS_DESC" = "Ẩn video liên quan bên dưới trình phát. (Không áp dụng cho lớp phủ toàn màn hình)";
+"HIDE_RELATED_VIDEOS_DESC" = "Ẩn video liên quan ở cả nguồn cấp và trình phát";
 
 "PLAYER" = "Trình phát";
 "PLAYBACK_SPEED" = "Tốc độ phát";
@@ -221,7 +221,12 @@
 "SPONSORBLOCK_BUTTON" = "SponsorBlock";
 "MANAGE_OVERLAY_BUTTONS" = "Quản lý nút trên lớp phủ";
 "MANAGE_OVERLAY_BUTTONS_DESC" = "Sắp xếp lại và bật/tắt các nút trên lớp phủ";
-"OVERLAY_BUTTON_REORDER_HINT" = "Kéo để sắp xếp lại các nút trên lớp phủ. Bật/tắt để hiện/ẩn.";
+"OVERLAY_BUTTON_REORDER_HINT" = "Kéo để sắp xếp lại. Chạm mũi tên để di chuyển nút giữa hàng trên và hàng dưới. Bật hoặc tắt để hiển thị hoặc ẩn.";
+"OVERLAY_BUTTONS_TOP" = "Nút phía trên";
+"OVERLAY_BUTTONS_BOTTOM" = "Nút phía dưới";
+"OVERLAY_BUTTONS_EMPTY" = "Không có nút";
+"REMOVE_ADS" = "Xóa quảng cáo";
+"REMOVE_ADS_DESC" = "Xóa quảng cáo khỏi ứng dụng, trừ trò chơi";
 "HOLD_TO_SPEED" = "Giữ để tăng tốc";
 "HOLD_TO_SPEED_DESC" = "Dùng tốc độ phát tùy chỉnh khi giữ để tăng tốc.";
 "HIDE_AUTOPLAY" = "Ẩn nút chuyển tự động phát";

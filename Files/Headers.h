@@ -132,6 +132,7 @@
 #define HideCastButtonNav @"YouModHideCastButtonNavigationBar"
 #define HideMessages @"YouModHideMessagesButton"
 // Feed
+#define RemoveAds @"YouModRemoveAds"
 #define HideSubbar @"YouModHideSubbar"
 #define HideHoriShelf @"YouModHideHoriShelf"
 #define HideGenMusicShelf @"YouModHideGenMusicShelf"

@@ -182,7 +182,7 @@
 "HIDE_PLAYABLES" = "Supprimer les Jeux";
 "HIDE_PLAYABLES_DESC" = "Supprime les Jeux (mini-jeux) du flux.";
 "HIDE_RELATED_VIDEOS" = "Masquer les vidéos suggérées";
-"HIDE_RELATED_VIDEOS_DESC" = "Masque les vidéos suggérées sous le lecteur. (Pas en superposition)";
+"HIDE_RELATED_VIDEOS_DESC" = "Masque les vidéos suggérées à la fois dans le fil et le lecteur";
 
 "PLAYER" = "Lecteur";
 "PLAYBACK_SPEED" = "Vitesse de lecture";
@@ -221,7 +221,12 @@
 "SPONSORBLOCK_BUTTON" = "SponsorBlock";
 "MANAGE_OVERLAY_BUTTONS" = "Gérer les boutons de superposition";
 "MANAGE_OVERLAY_BUTTONS_DESC" = "Réordonner et activer/désactiver les boutons en superposition";
-"OVERLAY_BUTTON_REORDER_HINT" = "Faites glisser pour réordonner les boutons de superposition. Activez/désactivez pour afficher/masquer.";
+"OVERLAY_BUTTON_REORDER_HINT" = "Faites glisser pour réorganiser. Touchez la flèche pour déplacer un bouton entre la rangée du haut et la rangée du bas. Activez ou désactivez pour afficher ou masquer.";
+"OVERLAY_BUTTONS_TOP" = "Boutons du haut";
+"OVERLAY_BUTTONS_BOTTOM" = "Boutons du bas";
+"OVERLAY_BUTTONS_EMPTY" = "Aucun bouton";
+"REMOVE_ADS" = "Supprimer les publicités";
+"REMOVE_ADS_DESC" = "Supprime les publicités, sauf les jeux";
 "HOLD_TO_SPEED" = "Maintenir pour accélérer";
 "HOLD_TO_SPEED_DESC" = "Utilise une vitesse de lecture personnalisée lors d'un appui long.";
 "HIDE_AUTOPLAY" = "Masquer le commutateur de lecture automatique";

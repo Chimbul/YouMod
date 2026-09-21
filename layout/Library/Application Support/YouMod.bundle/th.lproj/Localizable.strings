@@ -181,7 +181,7 @@
 "HIDE_PLAYABLES" = "ซ่อนมินิเกม";
 "HIDE_PLAYABLES_DESC" = "ซ่อนมินิเกมออกจากหน้าฟีด";
 "HIDE_RELATED_VIDEOS" = "ซ่อนวิดีโอที่เกี่ยวข้อง";
-"HIDE_RELATED_VIDEOS_DESC" = "ซ่อนวิดีโอที่เกี่ยวข้องใต้เครื่องเล่น (ไม่ใช่ในโอเวอร์เลย์)";
+"HIDE_RELATED_VIDEOS_DESC" = "ซ่อนวิดีโอที่เกี่ยวข้องทั้งในฟีดและเครื่องเล่น";
 
 "PLAYER" = "เครื่องเล่น";
 "PLAYBACK_SPEED" = "ความเร็ววิดีโอ";
@@ -220,7 +220,12 @@
 "SPONSORBLOCK_BUTTON" = "SponsorBlock";
 "MANAGE_OVERLAY_BUTTONS" = "จัดการปุ่มบนโอเวอร์เลย์";
 "MANAGE_OVERLAY_BUTTONS_DESC" = "จัดเรียงและเปิด/ปิดใช้งานปุ่มบนโอเวอร์เลย์";
-"OVERLAY_BUTTON_REORDER_HINT" = "ลากเพื่อจัดเรียงปุ่มบนโอเวอร์เลย์ เปิด/ปิดเพื่อแสดงหรือซ่อนปุ่ม";
+"OVERLAY_BUTTON_REORDER_HINT" = "ลากเพื่อจัดเรียง แตะลูกศรเพื่อย้ายปุ่มระหว่างแถวบนกับแถวล่าง เปิด/ปิดเพื่อแสดงหรือซ่อนปุ่ม";
+"OVERLAY_BUTTONS_TOP" = "ปุ่มด้านบน";
+"OVERLAY_BUTTONS_BOTTOM" = "ปุ่มด้านล่าง";
+"OVERLAY_BUTTONS_EMPTY" = "ไม่มีปุ่ม";
+"REMOVE_ADS" = "ลบโฆษณา";
+"REMOVE_ADS_DESC" = "ลบโฆษณาออกจากแอป ยกเว้นเกม";
 "HOLD_TO_SPEED" = "ความเร็วเมื่อกดค้าง";
 "HOLD_TO_SPEED_DESC" = "ใช้ความเร็วในการเล่นวิดีโอแบบกำหนดเองเมื่อกดค้างที่หน้าจอ";
 "HIDE_AUTOPLAY" = "ซ่อนสวิตซ์เล่นอัตโนมัติ";

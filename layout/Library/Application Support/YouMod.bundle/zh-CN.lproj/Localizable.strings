@@ -182,7 +182,7 @@
 "HIDE_PLAYABLES" = "移除小游戏";
 "HIDE_PLAYABLES_DESC" = "从信息流中移除小游戏。";
 "HIDE_RELATED_VIDEOS" = "隐藏相关视频";
-"HIDE_RELATED_VIDEOS_DESC" = "隐藏播放器下方的相关视频。（不包括播放界面中的）";
+"HIDE_RELATED_VIDEOS_DESC" = "Hide related videos in both the feed and the player";
 
 "PLAYER" = "播放器";
 "PLAYBACK_SPEED" = "播放速度";
@@ -221,7 +221,12 @@
 "SPONSORBLOCK_BUTTON" = "SponsorBlock";
 "MANAGE_OVERLAY_BUTTONS" = "管理播放界面按钮";
 "MANAGE_OVERLAY_BUTTONS_DESC" = "重新排列和开关播放界面按钮";
-"OVERLAY_BUTTON_REORDER_HINT" = "拖拽以重新排列播放界面按钮。开关以显示/隐藏。";
+"OVERLAY_BUTTON_REORDER_HINT" = "拖动以重新排序。点按箭头可在顶部与底部之间移动按钮。开关用于显示或隐藏。";
+"OVERLAY_BUTTONS_TOP" = "顶部按钮";
+"OVERLAY_BUTTONS_BOTTOM" = "底部按钮";
+"OVERLAY_BUTTONS_EMPTY" = "无按钮";
+"REMOVE_ADS" = "移除广告";
+"REMOVE_ADS_DESC" = "移除应用内的广告，游戏除外";
 "HOLD_TO_SPEED" = "长按加速";
 "HOLD_TO_SPEED_DESC" = "使用自定义长按加速播放倍速。";
 "HIDE_AUTOPLAY" = "隐藏自动播放开关";
