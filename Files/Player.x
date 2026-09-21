@@ -951,7 +951,7 @@ static CGFloat YouModSpeedForHoldIndex(NSInteger index) {
     %orig(temp, arg2);
 }
 // Hide Watermarks
-- (BOOL)isWatermaSrkEnabled { return IS_ENABLED(HideWaterMark) ? NO : %orig; }
+- (BOOL)isWatermarkEnabled  { return IS_ENABLED(HideWaterMark) ? NO : %orig; }
 - (void)setWatermarkEnabled:(BOOL)arg { 
     BOOL temp = IS_ENABLED(HideWaterMark) ? NO : arg;
     %orig(temp);
