@@ -283,7 +283,7 @@ static BOOL isAdsReelContentModel(YTReelContentModel *model) {
 // setReels: moved here from YTReelInfinitePlaybackDataSource, which is 19.x only.
 - (void)setReels:(NSMutableOrderedSet <YTReelContentModel *> *)reels {
     [reels removeObjectsAtIndexes:[reels indexesOfObjectsPassingTest:^BOOL(YTReelContentModel *obj, NSUInteger idx, BOOL *stop) {
-        if (isAdsReelContentModel(model)) return YES;
+        if (isAdsReelContentModel(obj)) return YES;
         else if ([obj respondsToSelector:@selector(videoType)] && ((YTReelModel *)obj).videoType == 10 && IS_ENABLED(RemoveShortsPosts)) return YES;
         else if ([obj respondsToSelector:@selector(videoType)] && (((YTReelModel *)obj).videoType == 4 || ((YTReelModel *)obj).videoType == 7) && IS_ENABLED(RemoveShortsLive)) return YES;
         return NO;
@@ -312,7 +312,7 @@ static BOOL isAdsReelContentModel(YTReelContentModel *model) {
 }
 - (void)setReels:(NSMutableOrderedSet <YTReelContentModel *> *)reels {
     [reels removeObjectsAtIndexes:[reels indexesOfObjectsPassingTest:^BOOL(YTReelContentModel *obj, NSUInteger idx, BOOL *stop) {
-        if (isAdsReelContentModel(model)) return YES;
+        if (isAdsReelContentModel(obj)) return YES;
         else if ([obj respondsToSelector:@selector(videoType)] && ((YTReelModel *)obj).videoType == 10 && IS_ENABLED(RemoveShortsPosts)) return YES;
         else if ([obj respondsToSelector:@selector(videoType)] && (((YTReelModel *)obj).videoType == 4 || ((YTReelModel *)obj).videoType == 7) && IS_ENABLED(RemoveShortsLive)) return YES;
         return NO;
