@@ -2096,9 +2096,7 @@ void YouModSetupDownloadGestures(_ASDisplayView *view, NSString *iden) {
     }
 }
 
-void YouModHandleCommentLongPressAction(_ASDisplayView *view, UILongPressGestureRecognizer *sender) {
-    if (sender.state != UIGestureRecognizerStateBegan) return;
-
+void YouModHandleCommentLongPressAction(_ASDisplayView *view) {
     NSMutableArray *items = [NSMutableArray array];
     NSString *commentText = YouModExtractCommentText(view, NO);
 
@@ -2134,9 +2132,7 @@ void YouModHandleCommentLongPressAction(_ASDisplayView *view, UILongPressGesture
     YouModPresentMenu(nil, items, presenter, view);
 }
 
-void YouModHandlePostLongPressAction(_ASDisplayView *view, UILongPressGestureRecognizer *sender) {
-    if (sender.state != UIGestureRecognizerStateBegan) return;
-
+void YouModHandlePostLongPressAction(_ASDisplayView *view) {
     NSMutableArray *items = [NSMutableArray array];
     NSString *postText = YouModExtractCommentText(view, YES);
 
@@ -2172,7 +2168,7 @@ void YouModHandlePostLongPressAction(_ASDisplayView *view, UILongPressGestureRec
     YouModPresentMenu(nil, items, presenter, view);
 }
 
-void YouModHandleDownloadButtonAction(_ASDisplayView *view, UITapGestureRecognizer *sender) {
+void YouModHandleDownloadButtonAction(_ASDisplayView *view) {
     UIViewController *presenter = view._viewControllerForAncestor;
     parentResponder = [presenter valueForKey:@"_parentResponder"];
     YouModShowDownloadManager(YouModCurrentPlayerViewController, presenter, view, NO);

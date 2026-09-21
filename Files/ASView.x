@@ -16,16 +16,18 @@
 }
 %new
 - (void)YouModHandleCommentLongPress:(UILongPressGestureRecognizer *)sender {
-    YouModHandleCommentLongPressAction(self, sender);
+    if (sender.state != UIGestureRecognizerStateBegan) return;
+    YouModHandleCommentLongPressAction(self);
 }
 %new
 - (void)YouModHandlePostLongPress:(UILongPressGestureRecognizer *)sender {
-    YouModHandlePostLongPressAction(self, sender);
+    if (sender.state != UIGestureRecognizerStateBegan) return;
+    YouModHandlePostLongPressAction(self);
 }
 %new
 - (void)YouModDownloadButtonTapped:(UITapGestureRecognizer *)sender {
     if (sender.state != UIGestureRecognizerStateEnded) return;
-    YouModHandleDownloadButtonAction(self, sender);
+    YouModHandleDownloadButtonAction(self);
 }
 %new
 - (void)YouModHandleNewDownloadButtonTapped:(UITapGestureRecognizer *)sender {
@@ -33,7 +35,7 @@
     YTDefaultSheetController *sheetController = [self.currentDownloadButton._viewControllerForAncestor valueForKey:@"_delegate"];
     _ASDisplayView *moreButton = [sheetController valueForKey:@"_sourceView"];
     [sheetController dismissViewControllerAnimated:YES completion:^{
-        YouModHandleDownloadButtonAction(moreButton, sender);
+        YouModHandleDownloadButtonAction(moreButton);
     }];
 }
 %end
