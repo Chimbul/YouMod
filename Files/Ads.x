@@ -277,7 +277,7 @@ static BOOL isAdsReelContentModel(YTReelContentModel *model) {
     YTReelContentModel *model = %orig;
     if (isAdsReelContentModel(model)) return nil;
     else if ([model respondsToSelector:@selector(videoType)] && ((YTReelModel *)model).videoType == 10 && IS_ENABLED(RemoveShortsPosts)) return nil;
-    else if ([model respondsToSelector:@selector(videoType)] && ((YTReelModel *)model).videoType == 4 || ((YTReelModel *)model).videoType == 7) && IS_ENABLED(RemoveShortsLive)) return nil;
+    else if ([model respondsToSelector:@selector(videoType)] && (((YTReelModel *)model).videoType == 4 || ((YTReelModel *)model).videoType == 7) && IS_ENABLED(RemoveShortsLive)) return nil;
     return model;
 }
 // setReels: moved here from YTReelInfinitePlaybackDataSource, which is 19.x only.
@@ -297,7 +297,7 @@ static BOOL isAdsReelContentModel(YTReelContentModel *model) {
     YTReelContentModel *model = %orig;
     if (isAdsReelContentModel(model)) return nil;
     else if ([model respondsToSelector:@selector(videoType)] && ((YTReelModel *)model).videoType == 10 && IS_ENABLED(RemoveShortsPosts)) return nil;
-    else if ([model respondsToSelector:@selector(videoType)] && ((YTReelModel *)model).videoType == 4 || ((YTReelModel *)model).videoType == 7) && IS_ENABLED(RemoveShortsLive)) return nil;
+    else if ([model respondsToSelector:@selector(videoType)] && (((YTReelModel *)model).videoType == 4 || ((YTReelModel *)model).videoType == 7) && IS_ENABLED(RemoveShortsLive)) return nil;
     return model;
 }
 %end
