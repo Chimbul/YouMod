@@ -652,8 +652,7 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
         SBButtonKey: @YES,
         DisableHints: @YES,
         RewindSeconds: @10.0,
-        ForwardSeconds: @10.0,
-        RemoveAds: @YES,
+        ForwardSeconds: @10.0
     }];
     %init;
 }

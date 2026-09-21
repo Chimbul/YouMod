@@ -73,6 +73,7 @@
 #import <YouTubeHeader/ELMNodeController.h>
 #import <objc/runtime.h>
 #import <YouTubeHeader/ELMTouchCommandPropertiesHandler.h>
+#import <YouTubeHeader/YTReelNonVideoContentModel.h>
 
 // For Settings.x and SponsorBlockSettings.x
 #import <roothide.h>

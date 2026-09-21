@@ -2215,22 +2215,48 @@ static const void *kYMOverlaySavedScrollEdgeAppearanceKey = &kYMOverlaySavedScro
     }
     if (!entry) return;
 
-    // Flip the side, then rebuild buttonData as top group followed by bottom
-    // group so the entry lands at the end of its new section. Relative order
-    // within each side (what the player renders) is preserved.
-    entry[@"bottom"] = @(![entry[@"bottom"] boolValue]);
-
-    NSMutableArray *top = [NSMutableArray array];
-    NSMutableArray *bottom = [NSMutableArray array];
-    for (NSMutableDictionary *d in self.buttonData) {
-        [([d[@"bottom"] boolValue] ? bottom : top) addObject:d];
+    NSInteger fromSection = [entry[@"bottom"] boolValue] ? 1 : 0;
+    NSInteger toSection = 1 - fromSection;
+    NSArray<NSNumber *> *fromFlat = [self flatIndexesForSection:fromSection];
+    NSArray<NSNumber *> *toFlat = [self flatIndexesForSection:toSection];
+    NSInteger fromRow = -1;
+    for (NSInteger i = 0; i < (NSInteger)fromFlat.count; i++) {
+        if (self.buttonData[fromFlat[i].integerValue] == entry) { fromRow = i; break; }
     }
-    [self.buttonData removeAllObjects];
-    [self.buttonData addObjectsFromArray:top];
-    [self.buttonData addObjectsFromArray:bottom];
+    if (fromRow < 0) return;
+    // The moved entry is appended to its new section, so its new row equals
+    // the target section's current row count (0 when that section was empty).
+    NSInteger toRow = (NSInteger)toFlat.count;
+    BOOL fromBecomesEmpty = (fromFlat.count == 1);
+    BOOL toWasEmpty = (toFlat.count == 0);
 
-    [self saveButtonData];
-    [self.tableView reloadData];
+    [self.tableView performBatchUpdates:^{
+        // Rebuild buttonData as top group followed by bottom group so the
+        // entry lands at the end of its new section; relative order within
+        // each side (what the player renders) is preserved.
+        entry[@"bottom"] = @(toSection == 1);
+        NSMutableArray *top = [NSMutableArray array];
+        NSMutableArray *bottom = [NSMutableArray array];
+        for (NSMutableDictionary *d in self.buttonData) {
+            [([d[@"bottom"] boolValue] ? bottom : top) addObject:d];
+        }
+        [self.buttonData removeAllObjects];
+        [self.buttonData addObjectsFromArray:top];
+        [self.buttonData addObjectsFromArray:bottom];
+
+        // Slide in from the direction of the move; placeholders swap with a fade.
+        UITableViewRowAnimation rowAnim = (toSection == 1) ? UITableViewRowAnimationBottom : UITableViewRowAnimationTop;
+        [self.tableView deleteRowsAtIndexPaths:@[[NSIndexPath indexPathForRow:fromRow inSection:fromSection]] withRowAnimation:UITableViewRowAnimationFade];
+        if (fromBecomesEmpty) {
+            [self.tableView insertRowsAtIndexPaths:@[[NSIndexPath indexPathForRow:0 inSection:fromSection]] withRowAnimation:UITableViewRowAnimationFade];
+        }
+        if (toWasEmpty) {
+            [self.tableView deleteRowsAtIndexPaths:@[[NSIndexPath indexPathForRow:0 inSection:toSection]] withRowAnimation:UITableViewRowAnimationFade];
+        }
+        [self.tableView insertRowsAtIndexPaths:@[[NSIndexPath indexPathForRow:toRow inSection:toSection]] withRowAnimation:rowAnim];
+
+        [self saveButtonData];
+    } completion:nil];
 }
 
 #pragma mark - Reordering
