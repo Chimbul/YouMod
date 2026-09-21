@@ -1851,7 +1851,7 @@ void YouModRemoveFullscreenActionsButtons(YTELMViewController *controller) {
             }
         }
     }
-    if (IS_ENABLED(HideRelatedVideos) && view.subviews.count > 1) {
+    if (IS_ENABLED(HideRelatedVideos) && view.superview.subviews.count > 1) {
         view = view.superview.subviews[1];
         view.hidden = YES;
     }
