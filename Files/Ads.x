@@ -276,16 +276,16 @@ static BOOL isAdsReelContentModel(YTReelContentModel *model) {
 - (YTReelContentModel *)makeContentModelForEntry:(id)entry {
     YTReelContentModel *model = %orig;
     if (isAdsReelContentModel(model)) return nil;
-    else if ([model respondsToSelector:@selector(videoType)] && (YTReelModel *)model.videoType == 10 && IS_ENABLED(RemoveShortsPosts)) return nil;
-    else if ([model respondsToSelector:@selector(videoType)] && ((YTReelModel *)model.videoType == 4 || (YTReelModel *)model.videoType == 7) && IS_ENABLED(RemoveShortsLive)) return nil;
+    else if ([model respondsToSelector:@selector(videoType)] && ((YTReelModel *)model).videoType == 10 && IS_ENABLED(RemoveShortsPosts)) return nil;
+    else if ([model respondsToSelector:@selector(videoType)] && ((YTReelModel *)model).videoType == 4 || ((YTReelModel *)model).videoType == 7) && IS_ENABLED(RemoveShortsLive)) return nil;
     return model;
 }
 // setReels: moved here from YTReelInfinitePlaybackDataSource, which is 19.x only.
 - (void)setReels:(NSMutableOrderedSet <YTReelContentModel *> *)reels {
     [reels removeObjectsAtIndexes:[reels indexesOfObjectsPassingTest:^BOOL(YTReelContentModel *obj, NSUInteger idx, BOOL *stop) {
         if (isAdsReelContentModel(model)) return YES;
-        else if ([obj respondsToSelector:@selector(videoType)] && (YTReelModel *)obj.videoType == 10 && IS_ENABLED(RemoveShortsPosts)) return YES;
-        else if ([obj respondsToSelector:@selector(videoType)] && ((YTReelModel *)obj.videoType == 4 || (YTReelModel *)obj.videoType == 7) && IS_ENABLED(RemoveShortsLive)) return YES;
+        else if ([obj respondsToSelector:@selector(videoType)] && ((YTReelModel *)obj).videoType == 10 && IS_ENABLED(RemoveShortsPosts)) return YES;
+        else if ([obj respondsToSelector:@selector(videoType)] && (((YTReelModel *)obj).videoType == 4 || ((YTReelModel *)obj).videoType == 7) && IS_ENABLED(RemoveShortsLive)) return YES;
         return NO;
     }]];
     %orig;
@@ -296,8 +296,8 @@ static BOOL isAdsReelContentModel(YTReelContentModel *model) {
 + (YTReelContentModel *)makeContentModelForEntry:(id)entry {
     YTReelContentModel *model = %orig;
     if (isAdsReelContentModel(model)) return nil;
-    else if ([model respondsToSelector:@selector(videoType)] && (YTReelModel *)model.videoType == 10 && IS_ENABLED(RemoveShortsPosts)) return nil;
-    else if ([model respondsToSelector:@selector(videoType)] && ((YTReelModel *)model.videoType == 4 || (YTReelModel *)model.videoType == 7) && IS_ENABLED(RemoveShortsLive)) return nil;
+    else if ([model respondsToSelector:@selector(videoType)] && ((YTReelModel *)model).videoType == 10 && IS_ENABLED(RemoveShortsPosts)) return nil;
+    else if ([model respondsToSelector:@selector(videoType)] && ((YTReelModel *)model).videoType == 4 || ((YTReelModel *)model).videoType == 7) && IS_ENABLED(RemoveShortsLive)) return nil;
     return model;
 }
 %end
@@ -306,15 +306,15 @@ static BOOL isAdsReelContentModel(YTReelContentModel *model) {
 - (YTReelContentModel *)makeContentModelForEntry:(id)entry {
     YTReelContentModel *model = %orig;
     if (isAdsReelContentModel(model)) return nil;
-    else if ([model respondsToSelector:@selector(videoType)] && (YTReelModel *)model.videoType == 10 && IS_ENABLED(RemoveShortsPosts)) return nil;
-    else if ([model respondsToSelector:@selector(videoType)] && ((YTReelModel *)model.videoType == 4 || (YTReelModel *)model.videoType == 7) && IS_ENABLED(RemoveShortsLive)) return nil;
+    else if ([model respondsToSelector:@selector(videoType)] && ((YTReelModel *)model).videoType == 10 && IS_ENABLED(RemoveShortsPosts)) return nil;
+    else if ([model respondsToSelector:@selector(videoType)] && (((YTReelModel *)model).videoType == 4 || ((YTReelModel *)model).videoType == 7) && IS_ENABLED(RemoveShortsLive)) return nil;
     return model;
 }
 - (void)setReels:(NSMutableOrderedSet <YTReelContentModel *> *)reels {
     [reels removeObjectsAtIndexes:[reels indexesOfObjectsPassingTest:^BOOL(YTReelContentModel *obj, NSUInteger idx, BOOL *stop) {
         if (isAdsReelContentModel(model)) return YES;
-        else if ([obj respondsToSelector:@selector(videoType)] && (YTReelModel *)obj.videoType == 10 && IS_ENABLED(RemoveShortsPosts)) return YES;
-        else if ([obj respondsToSelector:@selector(videoType)] && ((YTReelModel *)obj.videoType == 4 || (YTReelModel *)obj.videoType == 7) && IS_ENABLED(RemoveShortsLive)) return YES;
+        else if ([obj respondsToSelector:@selector(videoType)] && ((YTReelModel *)obj).videoType == 10 && IS_ENABLED(RemoveShortsPosts)) return YES;
+        else if ([obj respondsToSelector:@selector(videoType)] && (((YTReelModel *)obj).videoType == 4 || ((YTReelModel *)obj).videoType == 7) && IS_ENABLED(RemoveShortsLive)) return YES;
         return NO;
     }]];
     %orig;
