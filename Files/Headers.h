@@ -388,6 +388,9 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 @interface YTVideoFreeZoomOverlayView : UIView
 @end
 
+@interface YTFullscreenActionsView : UIView
+@end
+
 @interface YTMainAppVideoPlayerOverlayView (YouMod)
 @property (nonatomic, weak, readwrite) YTMainAppVideoPlayerOverlayViewController *delegate;
 @property (nonatomic, strong) YTQTMButton *playbackRouteButton;
@@ -490,9 +493,6 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 @end
 
 @interface YTFullscreenEngagementOverlayView : UIView
-@end
-
-@interface YTFullscreenActionsView : UIView
 @end
 
 @interface YTAnnotationsViewController : UIViewController
