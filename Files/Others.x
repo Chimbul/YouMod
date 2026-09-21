@@ -33,7 +33,6 @@
 - (BOOL)uiSystemsClientGlobalConfigIosEnableActionSheetViewLayoutRefactor { return NO; }
 // Remove the new contextual dialog layout styles
 - (BOOL)crossPlatformCoreClientGlobalConfigIosEnableBottomSheetPaddingFix { return NO; }
-- (BOOL)crossPlatformCoreClientGlobalConfigIosEnableContextualSheetsOnAllScreenSizes { return NO; }
 %end
 
 %hook YTHotConfig

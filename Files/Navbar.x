@@ -3,17 +3,15 @@
 // YouTube Premium logo
 %hook YTHeaderLogoController
 - (void)setTopbarLogoRenderer:(YTITopbarLogoRenderer *)renderer {
-    if (INTFORVAL(YTLogoIndex) == 0) {
-        %orig;
-        return;
-    }
-    // Modify the type of the icon before setting the renderer
-    YTIIcon *icon = renderer.iconImage;
-    if (icon) {
-        if (INTFORVAL(YTLogoIndex) == 1) {
-            icon.iconType = 537;
-        } else if (INTFORVAL(YTLogoIndex) == 2) {
-            icon.iconType = 158;
+    if (INTFORVAL(YTLogoIndex) == 1 || INTFORVAL(YTLogoIndex) == 2) {
+        // Modify the type of the icon before setting the renderer
+        YTIIcon *icon = renderer.iconImage;
+        if (icon) {
+            if (INTFORVAL(YTLogoIndex) == 1) {
+                icon.iconType = 537;
+            } else if (INTFORVAL(YTLogoIndex) == 2) {
+                icon.iconType = 158;
+            }
         }
     }
     %orig(renderer);
@@ -39,17 +37,15 @@
 
 %hook YTHeaderLogoControllerImpl
 - (void)setTopbarLogoRenderer:(YTITopbarLogoRenderer *)renderer {
-    if (INTFORVAL(YTLogoIndex) == 0) {
-        %orig;
-        return;
-    }
-    // Modify the type of the icon before setting the renderer
-    YTIIcon *icon = renderer.iconImage;
-    if (icon) {
-        if (INTFORVAL(YTLogoIndex) == 1) {
-            icon.iconType = 537;
-        } else if (INTFORVAL(YTLogoIndex) == 2) {
-            icon.iconType = 158;
+    if (INTFORVAL(YTLogoIndex) == 1 || INTFORVAL(YTLogoIndex) == 2) {
+        // Modify the type of the icon before setting the renderer
+        YTIIcon *icon = renderer.iconImage;
+        if (icon) {
+            if (INTFORVAL(YTLogoIndex) == 1) {
+                icon.iconType = 537;
+            } else if (INTFORVAL(YTLogoIndex) == 2) {
+                icon.iconType = 158;
+            }
         }
     }
     %orig(renderer);

@@ -392,6 +392,7 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 @property (nonatomic, strong) YTQTMButton *playbackRouteButton;
 - (YTVideoFreeZoomOverlayView *)videoFreeZoomOverlayView;
 - (BOOL)isFullscreen;
+- (void)setFullscreenActionsView:(YTFullscreenActionsView *)view;
 @end
 
 @interface YTQTMButton (YouMod)
@@ -417,7 +418,7 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 @end
 
 @interface YTPivotBarViewController : UIViewController
-- (void)selectItemWithPivotIdentifier:(id)pivotIndentifier;
+- (void)selectItemWithPivotIdentifier:(NSString *)pivotIndentifier;
 - (void)YouModReloadTabBar:(id)arg;
 @end
 
@@ -428,7 +429,6 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 @interface YTReelContentView (YouMod) <UIGestureRecognizerDelegate>
 @property (nonatomic, retain) UILongPressGestureRecognizer *YouModExitShortsOnlyGesture;
 - (YTReelWatchPlaybackOverlayView *)playbackOverlay;
-- (UIView *)stickerContainer;
 @end
 
 @interface YTLanguages : NSObject

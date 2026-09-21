@@ -1,7 +1,5 @@
 #import "Headers.h"
 
-static const void *kOLEDKey = &kOLEDKey;
-
 %group OLEDTheme
 %hook YTColor
 + (UIColor *)black0 { return [UIColor blackColor]; }
@@ -83,13 +81,12 @@ void YouModApplyOLEDCollectionView(ASCollectionView *self, NSString *iden) {
 %hook MDCInkView
 - (void)didMoveToWindow {
     %orig;
-    if (objc_getAssociatedObject(self, kOLEDKey) || ![self.superview isKindOfClass:%c(GOODialogActionMDCButton)]) return;
+    if (![self.superview isKindOfClass:%c(GOODialogActionMDCButton)]) return;
     UIViewController *controller = self._viewControllerForAncestor;
     if ([controller isKindOfClass:%c(YTBottomSheetController)] || [controller isKindOfClass:%c(GOOModalWindowViewController)]) return;
     self.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor * _Nonnull(UITraitCollection * _Nonnull traitCollection) {
         return isDarkMode(self) ? [UIColor blackColor] : [UIColor clearColor];
     }];
-    objc_setAssociatedObject(self, kOLEDKey, @YES, OBJC_ASSOCIATION_ASSIGN);
 }
 %end
 
@@ -97,11 +94,9 @@ void YouModApplyOLEDCollectionView(ASCollectionView *self, NSString *iden) {
 - (void)viewWillAppear:(BOOL)animated {
     %orig;
     UIView *mainView = self.view;
-    if (objc_getAssociatedObject(mainView, kOLEDKey)) return;
     mainView.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor * _Nonnull(UITraitCollection * _Nonnull traitCollection) {
         return isDarkMode(mainView) ? [UIColor blackColor] : [UIColor whiteColor];
     }];
-    objc_setAssociatedObject(mainView, kOLEDKey, @YES, OBJC_ASSOCIATION_ASSIGN);
 }
 %end
 
@@ -109,11 +104,9 @@ void YouModApplyOLEDCollectionView(ASCollectionView *self, NSString *iden) {
 - (void)viewWillAppear:(BOOL)animated {
     %orig;
     UIView *mainView = self.view;
-    if (objc_getAssociatedObject(mainView, kOLEDKey)) return;
     mainView.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor * _Nonnull(UITraitCollection * _Nonnull traitCollection) {
         return isDarkMode(mainView) ? [UIColor blackColor] : [UIColor whiteColor];
     }];
-    objc_setAssociatedObject(mainView, kOLEDKey, @YES, OBJC_ASSOCIATION_ASSIGN);
 }
 %end
 
@@ -122,11 +115,9 @@ void YouModApplyOLEDCollectionView(ASCollectionView *self, NSString *iden) {
     %orig;
     if (!view) return;
     UIView *sub = view.subviews.firstObject;
-    if (objc_getAssociatedObject(sub, kOLEDKey)) return;
     sub.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor * _Nonnull(UITraitCollection * _Nonnull traitCollection) {
         return isDarkMode(sub) ? [UIColor blackColor] : [UIColor clearColor];
     }];
-    objc_setAssociatedObject(sub, kOLEDKey, @YES, OBJC_ASSOCIATION_ASSIGN);
 }
 %end
 %end
@@ -135,11 +126,9 @@ void YouModApplyOLEDCollectionView(ASCollectionView *self, NSString *iden) {
 %hook UIKeyboard
 - (void)displayLayer:(id)arg1 {
     %orig;
-    if (objc_getAssociatedObject(self, kOLEDKey)) return;
     self.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor * _Nonnull(UITraitCollection * _Nonnull traitCollection) {
         return isDarkMode(self) ? [UIColor blackColor] : [UIColor clearColor];
     }];
-    objc_setAssociatedObject(self, kOLEDKey, @YES, OBJC_ASSOCIATION_ASSIGN);
 }
 %end
 
@@ -147,13 +136,11 @@ void YouModApplyOLEDCollectionView(ASCollectionView *self, NSString *iden) {
 - (id)_currentTextSuggestions {
     UIKeyboard *keyboard = [%c(UIKeyboard) activeKeyboard];
     UIView *mainView = self.view;
-    if (objc_getAssociatedObject(mainView, kOLEDKey)) return %orig;
     UIColor *dynamicColor = [UIColor colorWithDynamicProvider:^UIColor * _Nonnull(UITraitCollection * _Nonnull traitCollection) {
         return isDarkMode(mainView) ? [UIColor blackColor] : [UIColor clearColor];
     }];
     [mainView setBackgroundColor:dynamicColor];
     keyboard.backgroundColor = dynamicColor;
-    objc_setAssociatedObject(mainView, kOLEDKey, @YES, OBJC_ASSOCIATION_ASSIGN);
     return %orig;
 }
 %end
@@ -214,12 +201,10 @@ void YouModApplyOLEDCollectionView(ASCollectionView *self, NSString *iden) {
 %hook UIInputView
 - (void)layoutSubviews {
     %orig;
-    if (objc_getAssociatedObject(self, kOLEDKey)) return;
     if (![self isKindOfClass:NSClassFromString(@"TUIEmojiSearchInputView")] && ![self isKindOfClass:NSClassFromString(@"_SFAutoFillInputView")]) return;
     self.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor * _Nonnull(UITraitCollection * _Nonnull traitCollection) {
         return isDarkMode(self) ? [UIColor blackColor] : [UIColor clearColor];
     }];
-    objc_setAssociatedObject(self, kOLEDKey, @YES, OBJC_ASSOCIATION_ASSIGN);
 }
 %end
 

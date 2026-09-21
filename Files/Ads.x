@@ -393,9 +393,7 @@ void YouModFilterAdsDisplayView(_ASDisplayView *view, NSString *iden) {
     } else if ([view.accessibilityLabel containsString:@"Premium"] && [view._viewControllerForAncestor isKindOfClass:%c(YTPageHeaderViewController)]) {
         _ASDisplayView *spview = (_ASDisplayView *)view.superview;
         ASDisplayNode *node = spview.keepalive_node;
-        if (node.yogaChildren.count == 1) {
-            node = node.yogaChildren[0];
-        }
+        if (node.yogaChildren.count == 1) node = node.yogaChildren[0];
         [node removeYogaChild:node.yogaChildren.lastObject];
         [view removeFromSuperview];
     }

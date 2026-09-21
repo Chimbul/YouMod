@@ -388,7 +388,7 @@ static void YouModTranslateText(NSString *text, NSString *targetLang, void (^com
     }
 }
 
-- (void)shareTapped:(id)sender {
+- (void)shareTapped:(UIView *)sender {
     if (self.translationState != YouModTranslationStateSuccess || self.resultTextView.text.length == 0) return;
     
     UIActivityViewController *activityVC = [[UIActivityViewController alloc] initWithActivityItems:@[self.resultTextView.text] applicationActivities:nil];
