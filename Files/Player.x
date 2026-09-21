@@ -756,7 +756,7 @@ static void YouModAddEndTime(YTInlinePlayerBarContainerView *playerbar, YTPlayer
 - (void)viewWillAppear:(BOOL)animated {
     %orig;
     if (!IS_ENABLED(HideFullAction)) return;
-    YTMainAppVideoPlayerOverlayView *mainov = self.view;
+    YTMainAppVideoPlayerOverlayView *mainov = (YTMainAppVideoPlayerOverlayView *)self.view;
     YTFullscreenActionsView *fullactionview = [%c(YTFullscreenActionsView) new];
     [mainov setFullscreenActionsView:fullactionview];
 }
