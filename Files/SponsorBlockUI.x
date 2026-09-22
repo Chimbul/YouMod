@@ -719,10 +719,6 @@ static BOOL SBGetDecorationViewTimeRange(UIView *view, CGFloat *outStart, CGFloa
 // overlay view, so a view that does not answer it counts as not fullscreen.
 static BOOL SBDecorationViewIsInFullscreenMainPlayer(UIView *view) {
     if (![view respondsToSelector:@selector(enableRoundedCorners)] || ![view isKindOfClass:%c(YTPlayerBarProgressDecorationView)]) return NO;
-    YTIPlayerBarDecorationModel *model = [view valueForKey:@"_model"];
-    YTIPlayerBarItemData *itemData = [model itemData];
-    YTIPlayerBarPlayingState *state = model.playingState;
-    if (itemData.endTimeSec != state.totalTimeSec) return NO;
     UIView *currentView = view.superview;
     while (currentView != nil && currentView.superview != nil && ![currentView isKindOfClass:%c(YTMainAppVideoPlayerOverlayView)]) {
         currentView = currentView.superview;
