@@ -8,7 +8,7 @@ include $(THEOS)/makefiles/common.mk
 
 TWEAK_NAME = YouMod
 $(TWEAK_NAME)_FRAMEWORKS = UIKit Foundation AudioToolbox MediaPlayer
-$(TWEAK_NAME)_CFLAGS = -fobjc-arc -Wno-unguarded-availability-new
+$(TWEAK_NAME)_CFLAGS = -fobjc-arc -Wno-unguarded-availability-new -Wformat-security
 $(TWEAK_NAME)_FILES = $(wildcard Files/*.x)
 
 include $(THEOS_MAKE_PATH)/tweak.mk
