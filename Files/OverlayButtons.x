@@ -268,9 +268,6 @@ static UIImage *YMOverlayButtonIcon(NSString *symbolName) {
 static YTQTMButton *YMCreateOverlayButton(UIView *parent, YMOverlayButtonSpec *spec) {
     YTQTMButton *button;
     if (spec.title.length > 0) {
-        // Text button: a label instead of an icon. customTitleColor is YTQTMButton's
-        // own text-colour channel; sizeWithPaddingAndInsets is disabled so the width
-        // stays fixed rather than expanding to fit the text.
         button = [%c(YTQTMButton) textButton];
         [button setTitle:spec.title forState:UIControlStateNormal];
         button.titleLabel.font = YMOverlayTextButtonFont(spec.title, CGSizeMake(25, 25));
@@ -294,7 +291,6 @@ static YTQTMButton *YMCreateOverlayButton(UIView *parent, YMOverlayButtonSpec *s
 
     button.exclusiveTouch = YES;
     button.tag = spec.viewTag;
-    // The row's frame is assigned authoritatively in layoutSubviews.
     button.frame = CGRectMake(0, 0, YMOverlayButtonSize, YMOverlayButtonSize);
     [button addTarget:parent action:@selector(ymOverlayButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
     [parent addSubview:button];

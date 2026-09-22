@@ -836,7 +836,8 @@ static void YouModAddEndTime(YTInlinePlayerBarContainerView *playerbar, YTPlayer
 
 // Disable Ambiant mode (Hide the lights)
 %hook YTWatchView
-- (void)setCinematicContainerView:(id)arg { if (!IS_ENABLED(RemoveAmbiant)) %orig; }
+- (void)setCinematicContainerView:(UIView *)view { if (!IS_ENABLED(RemoveAmbiant)) %orig; }
+- (void)setPlaylistMiniBarView:(UIView *)view { if (!IS_ENABLED(HideRelatedVideos)) %orig; }
 %end
 
 // Disable Autoplay 
