@@ -238,8 +238,6 @@ static CGRect YMGearFrameInOverlay(YTMainAppControlsOverlayView *overlay) {
     return bestFrame;
 }
 
-// The font for a text button's label, in YouTube Sans to match native controls,
-// with a plain system-font fallback on versions lacking the YouTube Sans style API.
 static UIFont *YMOverlayTextButtonFont(NSString *text, CGSize maxSize) {
     if (text.length == 0) return [UIFont systemFontOfSize:15 weight:UIFontWeightSemibold];
     
@@ -261,30 +259,12 @@ static UIFont *YMOverlayTextButtonFont(NSString *text, CGSize maxSize) {
     return hasYTFont ? [typeStyle ytSansFontOfSize:(CGFloat)bestSize weight:UIFontWeightSemibold] : [UIFont systemFontOfSize:(CGFloat)bestSize weight:UIFontWeightSemibold];
 }
 
-// Renders a symbol into an exact 24x24 canvas (aspect-fit, centered) so every
-// overlay button icon shares one uniform box regardless of the symbol's
-// natural proportions — same treatment as the SponsorBlock sheet icons.
-// White is baked into the bitmap (imageWithTintColor: yields AlwaysOriginal)
-// so YouTube resetting the button's tint can never recolor the icon.
 static UIImage *YMOverlayButtonIcon(NSString *symbolName) {
-    UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:22 weight:UIImageSymbolWeightMedium];
-    UIImage *symbol = [[UIImage systemImageNamed:symbolName withConfiguration:config] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
-    UIGraphicsImageRendererFormat *format = [UIGraphicsImageRendererFormat defaultFormat];
-    UIGraphicsImageRenderer *renderer = [[UIGraphicsImageRenderer alloc] initWithSize:CGSizeMake(24, 24) format:format];
-    UIImage *canvas = [renderer imageWithActions:^(UIGraphicsImageRendererContext *ctx) {
-        CGFloat width = symbol.size.width;
-        CGFloat height = symbol.size.height;
-        if (width <= 0 || height <= 0) return;
-        CGFloat scale = MIN(24.0 / width, 24.0 / height);
-        CGSize fitted = CGSizeMake(width * scale, height * scale);
-        [symbol drawInRect:CGRectMake((24.0 - fitted.width) / 2.0, (24.0 - fitted.height) / 2.0, fitted.width, fitted.height)];
-    }];
-    return [canvas imageWithTintColor:[UIColor whiteColor]];
+    UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:20 weight:UIImageSymbolWeightMedium];
+    UIImage *symbol = [UIImage systemImageNamed:symbolName withConfiguration:config];
+    return [symbol imageWithTintColor:[UIColor whiteColor]];
 }
 
-// Parent is the view that will own and receive taps for the button: either the
-// controls overlay (top row) or the inline player bar (bottom row). Both classes
-// implement ymOverlayButtonTapped:.
 static YTQTMButton *YMCreateOverlayButton(UIView *parent, YMOverlayButtonSpec *spec) {
     YTQTMButton *button;
     if (spec.title.length > 0) {
@@ -567,10 +547,6 @@ static BOOL isRelatedVideosExpanded = NO;
     }
 }
 
-// Follow YouTube's auto-hide for the bar: when the controls fade and the bar
-// peeks, hide our buttons along with the native ones (and bring them back on
-// the reverse transition). Player.x also hooks this method; Logos chains the
-// two via %orig.
 - (void)setPeekableViewVisible:(BOOL)visible {
     %orig;
     if (![self._viewControllerForAncestor isKindOfClass:%c(YTMainAppVideoPlayerOverlayViewController)]) return;
@@ -593,8 +569,6 @@ static BOOL isRelatedVideosExpanded = NO;
     if (player) matched.onTap(player, sender);
 }
 
-// Mirror of the overlay's updateSpeedButton:/updateQualityButton: for text
-// buttons (speed, quality) that were moved to the bottom bar.
 %new
 - (void)ymUpdateBarButtonLabels:(id)arg {
     for (YMOverlayButtonSpec *spec in YMRegisteredOverlayButtons()) {

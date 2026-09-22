@@ -55,25 +55,25 @@
 // Disable Hints
 %hook YTSettings
 - (BOOL)areHintsDisabled { return IS_ENABLED(DisableHints) ? YES : %orig; }
-- (void)setHintsDisabled:(BOOL)arg1 {
-    BOOL temp = IS_ENABLED(DisableHints) ? YES : arg1;
-    %orig(temp);
+- (void)setHintsDisabled:(BOOL)arg {
+    if (IS_ENABLED(DisableHints)) arg = YES;
+    %orig(arg);
 }
 %end
 
 %hook YTSettingsImpl
 - (BOOL)areHintsDisabled { return IS_ENABLED(DisableHints) ? YES : %orig; }
-- (void)setHintsDisabled:(BOOL)arg1 {
-    BOOL temp = IS_ENABLED(DisableHints) ? YES : arg1;
-    %orig(temp);
+- (void)setHintsDisabled:(BOOL)arg {
+    if (IS_ENABLED(DisableHints)) arg = YES;
+    %orig(arg);
 }
 %end
 
 %hook YTUserDefaults
 - (BOOL)areHintsDisabled { return IS_ENABLED(DisableHints) ? YES : %orig; }
-- (void)setHintsDisabled:(BOOL)arg1 {
-    BOOL temp = IS_ENABLED(DisableHints) ? YES : arg1;
-    %orig(temp);
+- (void)setHintsDisabled:(BOOL)arg {
+    if (IS_ENABLED(DisableHints)) arg = YES;
+    %orig(arg);
 }
 %end
 
@@ -181,10 +181,11 @@
 // YTSlientVote (https://github.com/PoomSmart/YTSilentVote)
 %hook YTInnerTubeResponseWrapper
 - (id)initWithResponse:(id)response cacheContext:(id)arg2 requestStatistics:(id)arg3 mutableSharedData:(id)arg4 {
-    if (!IS_ENABLED(HideLikeDislikeVotes)) return %orig;
-    if ([response isKindOfClass:%c(YTILikeResponse)]
-        || [response isKindOfClass:%c(YTIDislikeResponse)]
-        || [response isKindOfClass:%c(YTIRemoveLikeResponse)]) return nil;
+    if (IS_ENABLED(HideLikeDislikeVotes)) {
+        if ([response isKindOfClass:%c(YTILikeResponse)]
+            || [response isKindOfClass:%c(YTIDislikeResponse)]
+            || [response isKindOfClass:%c(YTIRemoveLikeResponse)]) return nil;
+    }
     return %orig;
 }
 %end

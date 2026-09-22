@@ -239,15 +239,15 @@ static NSMutableArray <YTIItemSectionRenderer *> *filteredArray(NSArray <YTIItem
 
 %hook YTAdsInnerTubeContextDecorator
 - (void)decorateContext:(id)context { 
-    id temp = nil;
-    %orig(temp);
+    context = nil;
+    %orig(context);
 }
 %end
 
 %hook YTAccountScopedAdsInnerTubeContextDecorator
 - (void)decorateContext:(id)context { 
-    id temp = nil;
-    %orig(temp);
+    context = nil;
+    %orig(context);
 }
 %end
 
@@ -449,8 +449,7 @@ void YouModRemoveDrawerAds(YTELMViewController *self) {
 
 %hook YTIShowFullscreenInterstitialCommand
 - (BOOL)shouldThrottleInterstitial {
-    if (self.hasModalClientThrottlingRules)
-        self.modalClientThrottlingRules.oncePerTimeWindow = YES;
+    if (self.hasModalClientThrottlingRules) self.modalClientThrottlingRules.oncePerTimeWindow = YES;
     return %orig;
 }
 %end
@@ -482,6 +481,9 @@ void YouModRemoveDrawerAds(YTELMViewController *self) {
 %end
 
 %ctor {
+    [[NSUserDefaults standardUserDefaults] registerDefaults:@{
+        RemoveAds: @YES
+    }];
     if (!IS_ENABLED(RemoveAds)) return;
     %init;
 }

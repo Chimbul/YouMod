@@ -3,9 +3,9 @@
 // Hide Subbar
 %hook YTHeaderContentComboView
 - (void)enableSubheaderBarWithView:(id)arg1 { if (!IS_ENABLED(HideSubbar)) %orig; }
-- (void)setFeedHeaderScrollMode:(int)arg1 { 
-    int temp = IS_ENABLED(HideSubbar) ? 0 : arg1;
-    %orig(temp);
+- (void)setFeedHeaderScrollMode:(int)arg { 
+    if (IS_ENABLED(HideSubbar)) arg = 0;
+    %orig(arg);
 }
 %end
 

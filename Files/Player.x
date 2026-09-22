@@ -469,8 +469,6 @@ void YouModApplyPrevNextReplacement(YTMainAppControlsOverlayView *overlay) {
 }
 
 static void YouModAddEndTime(YTInlinePlayerBarContainerView *playerbar, YTPlayerViewController *self, YTMainAppVideoPlayerOverlayViewController *con) {
-    if (!IS_ENABLED(ShowExtraTimeRemaining) && !IS_ENABLED(SBShowDuration)) return;
-
     CGFloat rate = [con currentPlaybackRate] != 0 ? [con currentPlaybackRate] : 1.0;
     CGFloat totalVideo = self.currentVideoTotalMediaTime;
     NSTimeInterval remainingSeconds = (lround(totalVideo) - lround(self.currentVideoMediaTime)) / rate;
@@ -479,25 +477,23 @@ static void YouModAddEndTime(YTInlinePlayerBarContainerView *playerbar, YTPlayer
     NSString *SBTimeRemaining = nil;
     NSTimeInterval SBTotalTimeRemaining = 0.0;
     
-    if (IS_ENABLED(SBShowDuration)) {
-        if (self.sbSegments && self.sbSegments.count > 0 && IS_ENABLED(SBButtonKey)) {
-            for (SBSegment *segment in self.sbSegments) {
-                SBSegmentAction action = [segment configuredAction];
-                if (action == SBSegmentActionDisable) continue;
+    if (IS_ENABLED(SBShowDuration) && self.sbSegments && self.sbSegments.count > 0 && IS_ENABLED(SBButtonKey)) {
+        for (SBSegment *segment in self.sbSegments) {
+            SBSegmentAction action = [segment configuredAction];
+            if (action == SBSegmentActionDisable) continue;
 
-                CGFloat timeValue = segment.endTime - segment.startTime;
-                SBTotalTimeRemaining = SBTotalTimeRemaining + timeValue;
-            }
-            if (SBTotalTimeRemaining != 0.0) { 
-                NSTimeInterval SBRemaining = totalVideo - SBTotalTimeRemaining;
-                int hours = (int)(SBRemaining / 3600);
-                int minutes = (int)(((int)SBRemaining % 3600) / 60);
-                int seconds = (int)((int)SBRemaining % 60);
-                if (hours > 0) {
-                    SBTimeRemaining = [NSString stringWithFormat:@"%d:%02d:%02d", hours, minutes, seconds];
-                } else {
-                    SBTimeRemaining = [NSString stringWithFormat:@"%d:%02d", minutes, seconds];
-                }
+            CGFloat timeValue = segment.endTime - segment.startTime;
+            SBTotalTimeRemaining = SBTotalTimeRemaining + timeValue;
+        }
+        if (SBTotalTimeRemaining != 0.0) { 
+            NSTimeInterval SBRemaining = totalVideo - SBTotalTimeRemaining;
+            int hours = (int)(SBRemaining / 3600);
+            int minutes = (int)(((int)SBRemaining % 3600) / 60);
+            int seconds = (int)((int)SBRemaining % 60);
+            if (hours > 0) {
+                SBTimeRemaining = [NSString stringWithFormat:@"%d:%02d:%02d", hours, minutes, seconds];
+            } else {
+                SBTimeRemaining = [NSString stringWithFormat:@"%d:%02d", minutes, seconds];
             }
         }
     }
@@ -604,26 +600,23 @@ static void YouModAddEndTime(YTInlinePlayerBarContainerView *playerbar, YTPlayer
     }
 }
 // Disable toggle time remaining - @bhackel
-- (void)setShouldDisplayTimeRemaining:(BOOL)arg1 {
-    BOOL temp;
+- (void)setShouldDisplayTimeRemaining:(BOOL)arg {
     if (IS_ENABLED(DisablesShowRemaining)) {
-        temp = NO;
+        arg = NO;
     } else if (IS_ENABLED(AlwaysShowRemaining)) {
-        temp = YES;
-    } else {
-        temp = arg1;
+        arg = YES;
     }
-    %orig(temp);
+    %orig(arg);
 }
 // Always show seekbar
 - (void)setPlayerBarAlpha:(CGFloat)alpha { 
-    CGFloat temp = IS_ENABLED(AlwaysShowSeekbar) ? 1.0 : alpha;
-    %orig(temp);
+    if (IS_ENABLED(AlwaysShowSeekbar)) alpha = 1.0;
+    %orig(alpha);
 }
 // Disables snap to chapter
 - (void)inlinePlayerBarView:(id)arg1 didScrubToChapteredTime:(CGFloat)arg2 shouldSnap:(BOOL)arg3 { 
-    BOOL temp = IS_ENABLED(DontSnapToChapter) ? NO : arg3;
-    %orig(arg1, arg2, temp);
+    if (IS_ENABLED(DontSnapToChapter)) arg3 = NO;
+    %orig(arg1, arg2, arg3);
 }
 - (void)setPeekableViewVisible:(BOOL)visible {
     %orig;
@@ -639,6 +632,7 @@ static void YouModAddEndTime(YTInlinePlayerBarContainerView *playerbar, YTPlayer
 }
 - (void)updateCurrentTimeTitleLabel {
     %orig;
+    if (!IS_ENABLED(ShowExtraTimeRemaining) && !IS_ENABLED(SBShowDuration)) return;
     YTMainAppVideoPlayerOverlayViewController *ovcon = (YTMainAppVideoPlayerOverlayViewController *)self._viewControllerForAncestor;
     if (![ovcon isKindOfClass:%c(YTMainAppVideoPlayerOverlayViewController)]) return;
     YTPlayerViewController *pvc = (YTPlayerViewController *)ovcon.parentViewController;
@@ -690,8 +684,8 @@ static void YouModAddEndTime(YTInlinePlayerBarContainerView *playerbar, YTPlayer
 %hook YTAutonavEndscreenController
 - (void)showEndscreen { if (!IS_ENABLED(HideSuggestedVideo)) %orig; }
 - (void)showEndscreenControlsInPlayerBar:(BOOL)arg {
-    BOOL temp = IS_ENABLED(HideSuggestedVideo) ? NO : arg;
-    %orig(temp);
+    if (IS_ENABLED(HideSuggestedVideo)) arg = NO;
+    %orig(arg);
 }
 %end
 
@@ -714,13 +708,13 @@ static void YouModAddEndTime(YTInlinePlayerBarContainerView *playerbar, YTPlayer
 
 // No Endscreen Cards
 %hook YTCreatorEndscreenView
-- (void)setHidden:(BOOL)arg1 { 
-    BOOL temp = IS_ENABLED(HideEndScreenCards) ? YES : arg1;
-    %orig(temp);
+- (void)setHidden:(BOOL)arg { 
+    if (IS_ENABLED(HideEndScreenCards)) arg = YES;
+    %orig(arg);
 }
 - (void)setHoverCardHidden:(BOOL)arg { 
-    BOOL temp = IS_ENABLED(HideEndScreenCards) ? YES : arg;
-    %orig(temp);
+    if (IS_ENABLED(HideEndScreenCards)) arg = YES;
+    %orig(arg);
 }
 - (void)setHoverCardRenderer:(id)arg { if (!IS_ENABLED(HideEndScreenCards)) %orig; }
 %end
@@ -786,7 +780,7 @@ static void YouModAddEndTime(YTInlinePlayerBarContainerView *playerbar, YTPlayer
         [self setValue:nil forKey:@"_watermarkView"];
         return;
     }
-    %orig(arg1, arg2);
+    %orig;
 }
 %end
 
@@ -848,9 +842,9 @@ static void YouModAddEndTime(YTInlinePlayerBarContainerView *playerbar, YTPlayer
 // Disable Autoplay 
 %hook YTPlaybackConfig
 - (BOOL)startPlayback { return IS_ENABLED(StopAutoplayVideo) ? NO : %orig; }
-- (void)setStartPlayback:(BOOL)arg1 { 
-    BOOL temp = IS_ENABLED(StopAutoplayVideo) ? NO : arg1;
-    %orig(temp);
+- (void)setStartPlayback:(BOOL)arg { 
+    if (IS_ENABLED(StopAutoplayVideo)) arg = NO;
+    %orig(arg);
 }
 %end
 
@@ -947,14 +941,14 @@ static CGFloat YouModSpeedForHoldIndex(NSInteger index) {
 }
 // Remove Dark Background in Overlay
 - (void)setBackgroundVisible:(BOOL)arg1 isGradientBackground:(BOOL)arg2 {
-    BOOL temp = IS_ENABLED(RemoveDarkOverlay) ? NO : arg1;
-    %orig(temp, arg2);
+    if (IS_ENABLED(RemoveDarkOverlay)) arg1 = NO;
+    %orig(arg1, arg2);
 }
 // Hide Watermarks
 - (BOOL)isWatermarkEnabled { return IS_ENABLED(HideWaterMark) ? NO : %orig; }
 - (void)setWatermarkEnabled:(BOOL)arg { 
-    BOOL temp = IS_ENABLED(HideWaterMark) ? NO : arg;
-    %orig(temp);
+    if (IS_ENABLED(HideWaterMark)) arg = NO;
+    %orig(arg);
 }
 - (void)layoutSubviews {
     %orig;
@@ -964,7 +958,10 @@ static CGFloat YouModSpeedForHoldIndex(NSInteger index) {
 
 // Hide related videos in fullscreen
 %hook YTFullscreenEngagementOverlayController
-- (void)setEnabled:(BOOL)enabled { %orig(IS_ENABLED(HideRelatedVideos) ? NO : enabled); }
+- (void)setEnabled:(BOOL)enabled { 
+    if (IS_ENABLED(HideRelatedVideos)) enabled = NO;
+    %orig(enabled);
+}
 %end
 
 %hook YTSingleVideoController
@@ -1561,7 +1558,7 @@ static UISlider *YouModVolumeSlider(void) {
             break;
         }
     }
-    if (matchedTrack && ([matchedTrack.VSSID hasPrefix:@"a."] || [matchedTrack.VSSID hasPrefix:@"ta."]) && IS_ENABLED(DisablesCaptionTrack)) {
+    if (matchedTrack && ([matchedTrack.VSSID hasPrefix:@"a."] || [matchedTrack.VSSID hasPrefix:@"ta."] || [matchedTrack.VSSID hasPrefix:@"t."]) && IS_ENABLED(DisablesCaptionTrack)) {
         matchedTrack = nil;
         [self setActiveCaptionTrack:nil source:0];
         return;

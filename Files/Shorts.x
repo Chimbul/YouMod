@@ -133,18 +133,10 @@ static void YouModRemoveShortsOverlayButton(_ASDisplayView *dpView) {
 %hook YTReelTopBarView
 - (void)didMoveToWindow {
     %orig;
-    if (IS_ENABLED(HideShortsTopbar)) {
-        if (self.superview) {
-            [self removeFromSuperview];
-        }
-        return;
-    } else if (IS_ENABLED(HideShortsSubbar)) {
+    if (IS_ENABLED(HideShortsTopbar)) [self removeFromSuperview];
+    else if (IS_ENABLED(HideShortsSubbar)) 
         UIView *subbar = [self valueForKey:@"_pausedStateCarouselView"];
-        if (subbar && subbar.superview) {
-            [subbar removeFromSuperview];
-        }
-        return;
-    }
+        if (subbar) [subbar removeFromSuperview];
 }
 %end
 

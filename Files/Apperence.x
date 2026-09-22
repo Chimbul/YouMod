@@ -78,6 +78,16 @@ void YouModApplyOLEDCollectionView(ASCollectionView *self, NSString *iden) {
     }];
 }
 
+%hook YTContextualWrapView
+- (void)didMoveToWindow {
+    %orig;
+    if (![self.superview isKindOfClass:%c(YTContextualSheetView)]) return;
+    self.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor * _Nonnull(UITraitCollection * _Nonnull traitCollection) {
+        return isDarkMode(self) ? [UIColor blackColor] : [UIColor whiteColor];
+    }];
+}
+%end
+
 %hook MDCInkView
 - (void)didMoveToWindow {
     %orig;

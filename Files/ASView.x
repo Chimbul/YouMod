@@ -8,7 +8,7 @@
     YouModApplyOLEDToDisplayView(self, iden);
     YouModConfigureDownloadButton(self, iden);
     YouModSetupDownloadGestures(self, iden);
-    YouModFilterAdsDisplayView(self, iden);
+    if (IS_ENABLED(RemoveAds)) YouModFilterAdsDisplayView(self, iden);
     YouModFilterNonScrollableVideoButtons(self, iden);
     YouModFilterVideoButtons(self, iden);
     YouModFilterShortsDisplayView(self, iden);
@@ -56,7 +56,7 @@
     if (IS_ENABLED(HideWaterMark) && [desc containsString:@"featured_channel_watermark_overlay.eml"]) {
         self.view.hidden = YES;
     } else if ([desc containsString:@"more_drawer.eml"]) {
-        YouModRemoveDrawerAds(self);
+        if (IS_ENABLED(RemoveAds)) YouModRemoveDrawerAds(self);
         if (IS_ENABLED(OLEDTheme)) {
             self.view.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor * _Nonnull(UITraitCollection * _Nonnull traitCollection) {
                 return isDarkMode(self.view) ? [UIColor blackColor] : [UIColor whiteColor];

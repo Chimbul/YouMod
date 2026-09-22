@@ -719,6 +719,10 @@ static BOOL SBGetDecorationViewTimeRange(UIView *view, CGFloat *outStart, CGFloa
 // overlay view, so a view that does not answer it counts as not fullscreen.
 static BOOL SBDecorationViewIsInFullscreenMainPlayer(UIView *view) {
     if (![view respondsToSelector:@selector(enableRoundedCorners)] || ![view isKindOfClass:%c(YTPlayerBarProgressDecorationView)]) return NO;
+    YTIPlayerBarDecorationModel *model = [view valueForKey:@"_model"];
+    YTIPlayerBarItemData *itemData = [model itemData];
+    YTIPlayerBarPlayingState *state = model.playingState;
+    if (itemData.endTimeSec != state.totalTimeSec) return NO;
     UIView *currentView = view.superview;
     while (currentView != nil && currentView.superview != nil && ![currentView isKindOfClass:%c(YTMainAppVideoPlayerOverlayView)]) {
         currentView = currentView.superview;
@@ -728,8 +732,6 @@ static BOOL SBDecorationViewIsInFullscreenMainPlayer(UIView *view) {
 }
 
 static void SBRebuildMarkersInDecorationView(UIView *view) {
-    if (!view) return;
-
     for (CALayer *layer in [view.layer.sublayers copy]) {
         if ([layer.name isEqualToString:SBSegmentMarkerLayerName]) {
             [layer removeFromSuperlayer];
@@ -801,7 +803,6 @@ static void SBRebuildMarkersInDecorationView(UIView *view) {
 }
 
 static void SBRenderMarkersInDecorationView(UIView *view) {
-    if (!view) return;
     CGFloat barWidth = view.bounds.size.width;
     CGFloat barHeight = view.bounds.size.height;
     if (barWidth <= 0 || barHeight <= 0) return;

@@ -72,7 +72,7 @@ static NSString *accessGroupID() {
 + (NSBundle *)bundleWithIdentifier:(NSString *)identifier {
     if ([identifier isEqualToString:YT_BUNDLE_ID])
         return NSBundle.mainBundle;
-    return %orig(identifier);
+    return %orig;
 }
 - (NSString *)bundleIdentifier {
     return [self isEqual:NSBundle.mainBundle] ? YT_BUNDLE_ID : %orig;
