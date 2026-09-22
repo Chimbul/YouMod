@@ -9,7 +9,7 @@ NSBundle *YouModBundle() {
         if (tweakBundlePath) {
             bundle = [NSBundle bundleWithPath:tweakBundlePath];
         } else {
-            bundle = [NSBundle bundleWithPath:[NSString stringWithFormat:jbroot(@"/Library/Application Support/YouMod.bundle")]];
+            bundle = [NSBundle bundleWithPath:[NSString stringWithFormat:PS_ROOT_PATH_NS(@"/Library/Application Support/YouMod.bundle")]];
         }
     });
     return bundle;

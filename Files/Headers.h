@@ -77,7 +77,7 @@
 #import <YouTubeHeader/YTIPlayerBarPlayingState.h>
 
 // For Settings.x and SponsorBlockSettings.x
-#import <roothide.h>
+#import <PSHeader/Misc.h>
 #import <YouTubeHeader/YTSettingsGroupData.h>
 #import <YouTubeHeader/YTSettingsSectionItem.h>
 #import <YouTubeHeader/YTSettingsSectionItemManager.h>
