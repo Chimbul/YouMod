@@ -398,7 +398,6 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 @property (nonatomic, strong) YTQTMButton *playbackRouteButton;
 - (YTVideoFreeZoomOverlayView *)videoFreeZoomOverlayView;
 - (BOOL)isFullscreen;
-- (void)setFullscreenActionsView:(YTFullscreenActionsView *)view;
 @end
 
 @interface YTQTMButton (YouMod)

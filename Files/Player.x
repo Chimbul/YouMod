@@ -747,13 +747,6 @@ static void YouModAddEndTime(YTInlinePlayerBarContainerView *playerbar, YTPlayer
     return %orig; 
 }
 - (void)setPaidContentWithPlayerData:(id)data { if (!IS_ENABLED(HidePaidPromoOverlay)) %orig; }
-- (void)viewWillAppear:(BOOL)animated {
-    %orig;
-    if (!IS_ENABLED(HideFullAction)) return;
-    YTMainAppVideoPlayerOverlayView *mainov = (YTMainAppVideoPlayerOverlayView *)self.view;
-    YTFullscreenActionsView *fullactionview = [%c(YTFullscreenActionsView) new];
-    [mainov setFullscreenActionsView:fullactionview];
-}
 %end
 
 // YTNoPaidPromo (https://github.com/PoomSmart/YTNoPaidPromo)
@@ -954,6 +947,10 @@ static CGFloat YouModSpeedForHoldIndex(NSInteger index) {
 - (void)layoutSubviews {
     %orig;
     if (IS_ENABLED(HideCastButtonPlayer) && self.playbackRouteButton != nil) self.playbackRouteButton.hidden = YES;
+}
+- (void)setFullscreenActionsView:(YTFullscreenActionsView *)actionsView {
+    if (IS_ENABLED(HideFullAction) && actionsView == nil) actionsView = [%c(YTFullscreenActionsView) new];
+    %orig(actionsView);
 }
 %end
 
