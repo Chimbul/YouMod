@@ -122,8 +122,6 @@
 "DOWNLOAD_POST_DESC" = "길게 눌러 게시물 텍스트를 복사하거나 게시물을 이미지로 저장할 수 있습니다.";
 "TRANSLATE_COMMENT" = "댓글 번역";
 "TRANSLATE_POST" = "게시물 번역";
-"SHOW_OPTIONS" = "옵션 보기";
-"ENGLISH" = "영어";
 "TRANSLATION" = "번역";
 "LANGUAGE" = "언어";
 "TRANSLATING" = "번역 중...";
@@ -616,4 +614,3 @@
 "SB_ID_INVALID" = "ID must be at least 30 characters";
 "SB_ID_SAVE" = "Save";
 "SB_ID_CANCEL" = "Cancel";
-

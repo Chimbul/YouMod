@@ -122,8 +122,6 @@
 "DOWNLOAD_POST_DESC" = "Consente di copiare il testo del post e di salvare il post come immagine tenendo premuto a lungo.";
 "TRANSLATE_COMMENT" = "Traduci commento";
 "TRANSLATE_POST" = "Traduci post";
-"SHOW_OPTIONS" = "Mostra opzioni";
-"ENGLISH" = "Inglese";
 "TRANSLATION" = "Traduzione";
 "LANGUAGE" = "Lingua";
 "TRANSLATING" = "Traduzione in corso...";
@@ -616,4 +614,3 @@
 "SB_ID_INVALID" = "ID must be at least 30 characters";
 "SB_ID_SAVE" = "Save";
 "SB_ID_CANCEL" = "Cancel";
-

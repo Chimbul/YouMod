@@ -122,8 +122,6 @@
 "DOWNLOAD_POST_DESC" = "长按可复制帖子文字或保存帖子图片。";
 "TRANSLATE_COMMENT" = "翻译评论";
 "TRANSLATE_POST" = "翻译帖子";
-"SHOW_OPTIONS" = "显示选项";
-"ENGLISH" = "英语";
 "TRANSLATION" = "翻译";
 "LANGUAGE" = "语言";
 "TRANSLATING" = "翻译中…";
@@ -616,4 +614,3 @@
 "SB_ID_INVALID" = "ID must be at least 30 characters";
 "SB_ID_SAVE" = "Save";
 "SB_ID_CANCEL" = "Cancel";
-

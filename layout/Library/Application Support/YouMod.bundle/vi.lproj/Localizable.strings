@@ -122,8 +122,6 @@
 "DOWNLOAD_POST_DESC" = "Cho phép sao chép nội dung bài đăng và lưu bài đăng dưới dạng hình ảnh bằng cách nhấn giữ lâu.";
 "TRANSLATE_COMMENT" = "Dịch bình luận";
 "TRANSLATE_POST" = "Dịch bài đăng";
-"SHOW_OPTIONS" = "Hiện tùy chọn";
-"ENGLISH" = "Tiếng Anh";
 "TRANSLATION" = "Dịch thuật";
 "LANGUAGE" = "Ngôn ngữ";
 "TRANSLATING" = "Đang dịch...";
@@ -616,4 +614,3 @@
 "SB_ID_INVALID" = "ID must be at least 30 characters";
 "SB_ID_SAVE" = "Save";
 "SB_ID_CANCEL" = "Cancel";
-

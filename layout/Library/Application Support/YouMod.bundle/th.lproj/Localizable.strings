@@ -122,8 +122,6 @@
 "DOWNLOAD_POST_DESC" = "อนุญาตให้คัดลอกข้อความโพสต์และบันทึกโพสต์เป็นรูปภาพโดยการแตะค้างไว้";
 "TRANSLATE_COMMENT" = "แปลคอมเมนต์";
 "TRANSLATE_POST" = "แปลโพสต์";
-"SHOW_OPTIONS" = "แสดงตัวเลือก";
-"ENGLISH" = "อังกฤษ";
 "TRANSLATION" = "แปลภาษา";
 "LANGUAGE" = "ภาษา";
 "TRANSLATING" = "กำลังแปล...";

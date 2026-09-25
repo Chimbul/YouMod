@@ -122,8 +122,6 @@
 "DOWNLOAD_POST_DESC" = "Позволяет скопировать текст публикации и сохранить публикацию как изображение долгим нажатием.";
 "TRANSLATE_COMMENT" = "Перевести комментарий";
 "TRANSLATE_POST" = "Перевести публикацию";
-"SHOW_OPTIONS" = "Показать параметры";
-"ENGLISH" = "Английский";
 "TRANSLATION" = "Перевод";
 "LANGUAGE" = "Язык";
 "TRANSLATING" = "Перевод...";
@@ -616,4 +614,3 @@
 "SB_ID_INVALID" = "ID must be at least 30 characters";
 "SB_ID_SAVE" = "Save";
 "SB_ID_CANCEL" = "Cancel";
-

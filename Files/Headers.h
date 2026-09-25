@@ -87,12 +87,44 @@
 #import <YouTubeHeader/YTSettingsSectionController.h>
 #import <YouTubeHeader/YTSearchableSettingsViewController.h>
 #import <YouTubeHeader/YTUIUtils.h>
+#import <YouTubeHeader/YTResponderEvent.h>
+
+// Real initializer (confirmed via decompile), not in the reverse-engineered
+// header: accountID may be nil (just stored, resolved elsewhere), but
+// parentResponder needs to be a real UIResponder-chain object.
+//
+// appearance: read by -setSectionControllers (confirmed via decompile) —
+// 1 = grouped/drill-down categories (General as one tappable row), 2 = a
+// single detail category only, anything else = flat inline list (every
+// category's rows shown directly, matching the real Settings screen). Plain
+// stored ivar, no side effects setting it, so it's safe to force before the
+// view loads.
+@interface YTSettingsViewController (YouMod)
+- (instancetype)initWithAccountID:(id)accountID parentResponder:(id)parentResponder;
+@property (nonatomic, assign) NSInteger appearance;
+@end
+
+// The two pieces -[YTHeaderViewController didPressAccountPanelButton:] uses
+// to present a full-screen internal page (confirmed via decompile) — wrap in
+// YTNavigationController (not a system UINavigationController) and hand it
+// off through a YTPresentModalResponderEvent rather than a raw
+// presentViewController:, matching how YouTube's own header buttons do it.
+@interface YTNavigationController : UINavigationController
+- (instancetype)initWithParentResponder:(id)parentResponder;
+@end
+
+@interface YTPresentModalResponderEvent : YTResponderEvent
++ (instancetype)eventWithViewController:(UIViewController *)viewController animated:(BOOL)animated firstResponder:(id)firstResponder;
+@end
+
+// YouTube's own theme palette — full official header, already declares
+// +lightPalette/+darkPalette and .baseBackground/.raisedBackground (used in
+// YMLibrary.x to match native tab chrome instead of iOS system colors; also
+// what Apperence.x's existing OLED hook overrides).
+#import <YouTubeHeader/YTCommonColorPalette.h>
 
 #define DownloadFix @"YouModDownloadFix"
 #define SABRDownload @"YouModSABRDownload"
-#define DownloadMethod @"YouModDownloadMethod" // index into the "Download method" picker
-#define DownloadMethodDirect 0   // YouTube's built-in stream URLs
-#define DownloadMethodOnDevice 1 // on-device SABR engine
 
 #define IS_ENABLED(k) [[NSUserDefaults standardUserDefaults] boolForKey:k]
 #define INTFORVAL(v) [[NSUserDefaults standardUserDefaults] integerForKey:v]
@@ -114,12 +146,9 @@
 #define DownloadButtonPositionUnderPlayer 0
 #define DownloadButtonPositionOverlay 1
 #define DownloadButtonPositionBoth 2
-#define PostDownloadAction @"YouModPostDownloadAction"
-#define PostDownloadActionSaveToPhotos 0
-#define PostDownloadActionShare 1
-#define PostDownloadActionAsk 2
 #define AddDownloadToShorts @"YouModAddDownloadToShorts"
-#define AudioPreferIndex @"YouModAudioPreferIndex"
+#define HideAutoDubbedDownloads @"YouModHideAutoDubbedDownloads"
+#define DownloadLibraryTab @"YouModDownloadLibraryTab"
 #define DownloadComment @"YouModDownloadComment"
 #define DownloadPost @"YouModDownloadPost"
 // Cache
@@ -425,8 +454,28 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 @end
 
 @interface YTPivotBarViewController : UIViewController
-- (void)selectItemWithPivotIdentifier:(NSString *)pivotIndentifier;
+- (void)selectItemWithPivotIdentifier:(id)pivotIndentifier;
+// The real tap sink: selectItemWithPivotIdentifier: just resolves an id to a
+// renderer and forwards here (didTapItemWithRenderer: forwards here too), so
+// this is the one place that has to be caught before it starts a browse
+// fetch for a made-up pivotIdentifier.
+- (void)selectItemWithPivotBarItem:(id)item;
+// Everything below is what selectItemWithPivotBarItem: itself calls, in
+// order, for a tab it recognizes — replicated here so our fake tab gets the
+// exact same treatment (outgoing tab's nav stack cached, internal selected-
+// tab bookkeeping updated, real tab bar highlight moved) instead of skipping
+// it and leaving those in a stale state.
+- (void)cacheCurrentViewControllers;
+- (void)updateViewsWithSelectedPivotIdentifier:(id)pivotIdentifier;
+- (id)delegate;
 - (void)YouModReloadTabBar:(id)arg;
+@end
+
+// Informal delegate protocol implemented by YTAppPivotBarController — the
+// last leg of a tab switch (-[YTPivotBarViewController delegate]) that
+// actually swaps the navigation controller's view controllers.
+@interface NSObject (YouModPivotBarDelegate)
+- (void)didTapPivotBarItem:(id)renderer withViewControllers:(NSArray *)viewControllers animated:(BOOL)animated;
 @end
 
 @interface YTReelWatchPlaybackOverlayView : UIView <UIGestureRecognizerDelegate>
@@ -665,9 +714,14 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 - (NSInteger)contentLength;
 - (NSUInteger)approxDurationMs;
 - (int)height;
+- (int)width;
 - (int)fps;
+- (int)bitrate;
 - (YTIAudioTrack *)audioTrack;
 - (int)itag;
+// Colour transfer function. The only reliable HDR signal: qualityLabel carries an
+// "HDR" suffix on some builds and not others.
+- (YTIColorInfo *)colorInfo;
 // Format qualifier that distinguishes same-itag variants of a stream (soundtrack
 // language, DRC). The SABR FormatId carries the same value, so it — not the itag — is
 // what names a specific audio track on the wire.
@@ -902,6 +956,159 @@ extern BOOL isPad();
 extern void YouModConfigureSharePopover(UIActivityViewController *activityVC, UIView *sourceView);
 extern void YouModApplyPrevNextReplacement(YTMainAppControlsOverlayView *overlay);
 extern void YouModConfigureRemoteSkipCommands();
+
+// One adaptive format, built from the host app's player response (YMFormats.x).
+// Deliberately unfiltered: every codec, resolution and HDR variant YouTube offers
+// is represented, and choosing between them is the picker's job.
+//
+// urlString is empty until a download starts — the app's response carries no URLs
+// (it is SABR-only), so they are fetched separately and matched on itag.
+@interface YMFormat : NSObject
+@property (nonatomic, assign) int itag;
+@property (nonatomic, copy) NSString *mimeType;
+@property (nonatomic, copy) NSString *codec;        // avc1 / av01 / vp09 / opus / mp4a
+@property (nonatomic, copy) NSString *qualityLabel; // "1080p60"
+@property (nonatomic, copy) NSString *xtags;
+@property (nonatomic, assign) int height, width, fps;
+@property (nonatomic, assign) long long contentLength, bitrate;
+@property (nonatomic, assign) unsigned long long durationMs;
+@property (nonatomic, assign) BOOL isVideo, isHDR;
+@property (nonatomic, copy) NSString *audioTrackID, *audioTrackName;
+@property (nonatomic, assign) BOOL audioIsDefault;
+// Dubbed rather than the original soundtrack, per the format's xtags (acont=dubbed).
+@property (nonatomic, assign) BOOL isDubbed;
+// Soundtrack identity, from the format's xtags acont value.
+//   isOriginal   the creator's own audio (acont=original, or no xtags)
+//   isDubbed     an alternate soundtrack of any kind
+//   isAutoDubbed auto-dubbed variant (acont=dubbed-auto)
+//   isDRC        dynamic-range-compressed variant (xtags drc=1)
+@property (nonatomic, assign) BOOL isOriginal, isAutoDubbed, isDRC;
+@property (nonatomic, copy) NSString *urlString;
+@property (nonatomic, readonly) BOOL isAudio;
+@property (nonatomic, readonly) NSString *displayLabel;
+// The stream this was built from. SABR needs it to name a soundtrack: every dub
+// shares audio itag 140 and differs only in the FormatId's xtags, so the itag alone
+// cannot identify a track (see YMSABR, and issue #145).
+@property (nonatomic, strong) YTIFormatStream *source;
+@end
+
+// One subtitle track on offer. Embedding happens at mux time (issue #152).
+@interface YMCaptionTrack : NSObject
+@property (nonatomic, copy) NSString *name;          // "English (US)"
+@property (nonatomic, copy) NSString *languageCode;  // "en"
+@property (nonatomic, copy) NSString *vttURL;        // fetched just before muxing
+@property (nonatomic, strong) NSURL *localURL;       // set once fetched
+@end
+extern NSArray<YMCaptionTrack *> *YMCaptionTracksFromPlayer(YTPlayerViewController *player);
+
+extern NSArray<YMFormat *> *YMFormatsFromPlayer(YTPlayerViewController *player);
+// Use this from inside a hook on -contentPlayerResponse: the player-taking variant
+// calls that getter, so it would recurse into the hook and blow the stack.
+extern NSArray<YMFormat *> *YMFormatsFromResponse(YTPlayerResponse *response);
+extern NSArray<NSString *> *YMVideoCodecsInFormats(NSArray<YMFormat *> *formats);
+extern NSArray<YMFormat *> *YMVideoFormatsForCodec(NSArray<YMFormat *> *formats, NSString *codec);
+extern NSArray<YMFormat *> *YMAudioTracksInFormats(NSArray<YMFormat *> *formats);
+extern NSArray<NSString *> *YMAudioCodecsInFormats(NSArray<YMFormat *> *formats);
+extern NSArray<YMFormat *> *YMAudioTracksForCodec(NSArray<YMFormat *> *formats, NSString *codec);
+
+extern NSUInteger YMAttachURLs(NSArray<YMFormat *> *formats, NSArray *innerTubeFormats);
+
+// Container policy. MP4 only for H.264 + AAC, which is the pair Photos can ingest
+// AND play; everything else (AV1, VP9, Opus) goes to Matroska rather than being
+// wrapped in an MP4 that imports and then refuses to play.
+// Friendly codec names. "av01" is a wire id, not something to show a user:
+// YMCodecDisplayName gives "AV1", YMCodecFriendlyName "AV1 (most efficient)".
+extern NSString *YMCodecDisplayName(NSString *codec);
+extern NSString *YMCodecQualifier(NSString *codec);
+extern NSString *YMCodecFriendlyName(NSString *codec);
+
+extern BOOL YMCodecIsApplePlayable(NSString *codec, BOOL isVideo);
+extern BOOL YMFormatsArePhotosCompatible(YMFormat *video, YMFormat *audio);
+extern NSString *YMContainerExtensionFor(YMFormat *video, YMFormat *audio);
+// Narrow the list to what Photos can actually play, for when that is the chosen
+// destination. Saving to Files has no such limit.
+extern NSArray<YMFormat *> *YMPhotosCompatibleFormats(NSArray<YMFormat *> *formats);
+
+// Muxing (YMFFmpeg.x). Stream copy only — no decode, no re-encode. Replaces
+// AVAssetExportSession, whose MP4-family-only limitation is why the old extractor
+// discarded AV1/VP9/Opus/1440p/2160p/HDR before the user ever saw them.
+//
+// Any number of subtitle tracks may be embedded, each tagged with its language
+// (see issue #152). Pass an empty array for none.
+// completion runs on a background queue.
+extern BOOL YMFFmpegIsAvailable(void);
+extern NSString *YMFFmpegUnavailableReason(void);
+extern void YMFFmpegMux(NSURL *videoURL, NSURL *audioURL, NSArray<YMCaptionTrack *> *subtitles,
+                        NSURL *outputURL, void (^completion)(BOOL success, NSString *failure));
+extern void YMFFmpegMuxTracks(NSURL *videoURL, NSArray<NSURL *> *audioURLs,
+                              NSArray<YMCaptionTrack *> *subtitles, NSURL *outputURL,
+                              void (^completion)(BOOL success, NSString *failure));
+
+// The download path and its shared helpers (YMDownload.x). These were file-local
+// statics in Download.x; they moved out when the coordinator was replaced.
+//
+// YMDownloadStart takes formats straight from YMFormats: SABR fetches the bytes over
+// the host app's own playback session, FFmpeg muxes, then the post-download action
+// runs. Pass video == nil for audio-only, subtitleURL == nil for no subtitles.
+// Where a download is headed. Chosen at the root menu, BEFORE the picker opens, so
+// it can shape what the picker offers rather than being a setting underneath it —
+// and it's also the ONLY say in where the finished file ends up: no second
+// "what do you want to do with it" prompt after the fact.
+typedef NS_ENUM(NSInteger, YMDownloadDestination) {
+    YMDownloadDestinationPhotos, // video required; only formats Photos can play
+    YMDownloadDestinationFiles,  // the full ladder, incl. audio-only
+};
+
+extern void YMDownloadStart(YMFormat *video, NSArray<YMFormat *> *audioTracks, NSArray<YMCaptionTrack *> *captions,
+                            NSString *fileName, YMDownloadDestination destination, NSURL *thumbnailURL, UIViewController *presenter);
+
+// The download picker (YMDownloadSheet.x): a single custom sheet styled
+// like the settings pages (grouped table, no separators, clear cells) —
+// codec section, quality rows with sizes, soundtrack, and a running total.
+@interface YMDownloadSheet : UIViewController
++ (void)presentForPlayer:(YTPlayerViewController *)player
+            destination:(YMDownloadDestination)destination
+              presenter:(UIViewController *)presenter;
+@end
+
+extern NSString *YouModTitleForPlayer(YTPlayerViewController *player);
+extern NSString *YouModAuthorForPlayer(YTPlayerViewController *player);
+extern NSString *YouModVideoIDForPlayer(YTPlayerViewController *player);
+extern NSURL *YouModThumbnailURL(YTPlayerViewController *player);
+
+extern void YouModSendToast(NSString *message);
+extern void YouModSendSuccess(NSString *message);
+extern void YouModSendError(NSString *message);
+
+extern NSString *YouModSanitizedFileName(NSString *name);
+extern NSURL *YouModDownloadsDirectoryURL(void);
+extern NSURL *YouModUniqueFileURL(NSString *fileName, NSString *extension);
+extern NSURL *YouModTemporaryFileURL(NSString *extension);
+
+extern void YouModRequestPhotoAccess(void (^completion)(BOOL granted));
+extern void YouModSaveVideoToPhotos(NSURL *fileURL, UIViewController *presenter, void (^completion)(BOOL success, NSError *error));
+extern void YouModShareItem(id item, UIViewController *presenter);
+extern void YouModShareFile(NSURL *fileURL, UIViewController *presenter);
+// Photos accepts an MP4 container but not every codec in one. Now that AV1/VP9 are
+// downloadable, the extension alone is not a sufficient test.
+extern BOOL YouModFileIsPhotosCompatible(NSURL *fileURL);
+// Routes straight off the destination already chosen in the download sheet — no
+// second "what do you want to do with it" prompt after the fact.
+extern void YouModHandlePostDownloadFile(NSURL *fileURL, BOOL isVideo, YMDownloadDestination destination, UIViewController *presenter);
+extern void YouModHandlePostDownloadImage(UIImage *image, UIViewController *presenter);
+
+// The always-on-by-default "Download Library" tab (YMLibrary.x): lists every
+// file sitting in YouModDownloadsDirectoryURL() with a thumbnail and size,
+// tap-to-share, swipe-to-delete.
+// hostParentResponder: YouTube's own responder-chain node (e.g. the
+// YTPivotBarViewController that's swapping us in) — needed so features that
+// walk that chain (like opening Settings) don't hit our plain UIViewController
+// and crash on an unimplemented -parentResponder.
+extern UIViewController *YouModDownloadLibraryViewController(id hostParentResponder);
+
+// Set from the app's OAuth stack (Download.x). Declared here rather than
+// re-externed inside function bodies, per CODE_QUALITY.md §5.
+extern NSString *YouModGlobalAuthHeader;
 
 #define LOC(x) [YouModBundle() localizedStringForKey:x value:nil table:nil]
 

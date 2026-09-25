@@ -199,13 +199,8 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
             YMToggle(YMLOC(@"DOWNLOAD_MANAGER"), YMLOC(@"DOWNLOAD_MANAGER_DESC"), DownloadManager),
             [YMTextSegment(YMLOC(@"DOWNLOAD_BUTTON_POSITION"), DownloadButtonPosition, (@[YMLOC(@"UNDER_THE_PLAYER"), YMLOC(@"OVERLAY"), YMLOC(@"BOTH")]), 0) visibleWhenBoolKey:DownloadManager],
             YMToggle(YMLOC(@"ADD_SHORTS_DOWNLOAD"), YMLOC(@"ADD_SHORTS_DOWNLOAD_DESC"), AddDownloadToShorts),
-            [YMTextSegment(YMLOC(@"POST_DOWNLOAD_ACTION"), PostDownloadAction, (@[YMLOC(@"POST_ACTION_SAVE_PHOTOS"), YMLOC(@"POST_ACTION_SHARE"), YMLOC(@"POST_ACTION_ASK")]), 0) visibleWhenAnyBoolKey:@[DownloadManager, AddDownloadToShorts, DownloadComment, DownloadPost]],
-            // Shown for every method that can actually honour a soundtrack choice. The
-            // filter this drives (YouModMediaFormatFromStream) is not gated on the
-            // method, so hiding the row while it still applies would leave the list
-            // silently filtered with no visible control.
-            [[YMTextSegment(YMLOC(@"AUDIO_TRACK"), AudioPreferIndex, (@[YMLOC(@"SHOW_OPTIONS"), YMLOC(@"ORIGINAL"), YMLOC(@"ENGLISH")]), 0) visibleWhenKey:DownloadMethod inValues:@[@(DownloadMethodDirect), @(DownloadMethodOnDevice)]] visibleWhenAnyBoolKey:@[DownloadManager, AddDownloadToShorts]],
-            [YMPicker(YMLOC(@"DOWNLOAD_METHOD"), YMLOC(@"DOWNLOAD_METHOD_DESC"), DownloadMethod, (@[YMLOC(@"METHOD_DIRECT"), YMLOC(@"METHOD_ONDEVICE")]), 0) visibleWhenAnyBoolKey:@[DownloadManager, AddDownloadToShorts]],
+            [YMToggle(YMLOC(@"HIDE_AUTO_DUBBED_DOWNLOADS"), YMLOC(@"HIDE_AUTO_DUBBED_DOWNLOADS_DESC"), HideAutoDubbedDownloads) visibleWhenAnyBoolKey:@[DownloadManager, AddDownloadToShorts]],
+            YMToggle(YMLOC(@"DOWNLOAD_LIBRARY_TAB"), YMLOC(@"DOWNLOAD_LIBRARY_TAB_DESC"), DownloadLibraryTab),
             YMToggle(YMLOC(@"DOWNLOAD_COMMENT"), YMLOC(@"DOWNLOAD_COMMENT_DESC"), DownloadComment),
             YMToggle(YMLOC(@"DOWNLOAD_POST"), YMLOC(@"DOWNLOAD_POST_DESC"), DownloadPost),
     ];
@@ -288,7 +283,7 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
             YMPicker(YMLOC(@"QUALITY_LOW_POWER"), YMLOC(@"QUALITY_LOW_POWER_DESC"), LowPowerQualityIndex, (@[YMLOC(@"DEFAULT"), YMLOC(@"BEST"), @"2160p", @"1440p", @"1080p", @"720p", @"480p", @"360p", @"240p", @"144p"]), 0),
             YMTextSegment(YMLOC(@"AUDIO_TRACK"), AudioTrack, (@[YMLOC(@"DEFAULT"), YMLOC(@"ORIGINAL"), YMLOC(@"SELECT_MANUALLY")]), 0),
             [YMPicker(YMLOC(@"AUDIO_TRACK_SELECT"), YMLOC(@"AUDIO_TRACK_SELECT_DESC"), AudioTrackLangIndex, getAllSystemLanguageTitles(), 0) visibleWhenKey:AudioTrack equals:2],
-            [YMToggle(YMLOC(@"NO_AUTO_DUBBED"), YMLOC(@"NO_AUTO_DUBBED_DESC"), NoDubbedAudioTrack) visibleWhenKey:AudioTrack equals:2],
+            YMToggle(YMLOC(@"NO_AUTO_DUBBED"), YMLOC(@"NO_AUTO_DUBBED_DESC"), NoDubbedAudioTrack),
             YMTextSegment(YMLOC(@"CAPTION_TRACK"), CaptionTrack, (@[YMLOC(@"DEFAULT"), YMLOC(@"DISABLED"), YMLOC(@"SELECT_MANUALLY")]), 0),
             [YMPicker(YMLOC(@"CAPTION_TRACK_SELECT"), YMLOC(@"CAPTION_TRACK_SELECT_DESC"), CaptionTrackLangIndex, getAllSystemLanguageTitles(), 0) visibleWhenKey:CaptionTrack equals:2],
             [YMToggle(YMLOC(@"DISABLES_CAPTION_TRACK"), YMLOC(@"DISABLES_CAPTION_TRACK_DESC"), DisablesCaptionTrack) visibleWhenKey:CaptionTrack equals:2],
@@ -645,10 +640,10 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
 %ctor {
     [[NSUserDefaults standardUserDefaults] registerDefaults:@{
         AutoClearCache: @YES,
-        DownloadMethod: @1,
         YTLogoIndex: @1,
         BackgroundPlayback: @YES,
         DownloadManager: @YES,
+        DownloadLibraryTab: @YES,
         SBButtonKey: @YES,
         DisableHints: @YES,
         RewindSeconds: @10.0,

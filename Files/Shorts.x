@@ -81,7 +81,7 @@ static void YouModRemoveShortsOverlayButton(_ASDisplayView *dpView) {
     YTPlayerViewController *main = self.player;
     if (INTFORVAL(CaptionTrack) != 0) [main performSelector:@selector(YouModAutoCaptions) withObject:nil afterDelay:0.5];
     if (INTFORVAL(AutoSpeedIndex) != 0) [main performSelector:@selector(YouModSetAutoSpeed) withObject:nil afterDelay:0.5];
-    if (INTFORVAL(AudioTrack) != 0) [self performSelector:@selector(YouModAutoAudioTrack:) withObject:main afterDelay:0.5];
+    if (INTFORVAL(AudioTrack) != 0 || IS_ENABLED(NoDubbedAudioTrack)) [self performSelector:@selector(YouModAutoAudioTrack:) withObject:main afterDelay:0.5];
 }
 %new
 - (void)YouModAutoAudioTrack:(YTPlayerViewController *)pv {
@@ -114,6 +114,19 @@ static void YouModRemoveShortsOverlayButton(_ASDisplayView *dpView) {
         if (matchedTrack && [matchedTrack isAutoDubbed] && IS_ENABLED(NoDubbedAudioTrack)) matchedTrack = nil;
 
         if (!matchedTrack && IS_ENABLED(NoDubbedAudioTrack)) {
+            for (YTIAudioTrack *track in availableTracks) {
+                if ([track.id_p hasSuffix:@".4"]) {
+                    matchedTrack = track;
+                    break;
+                }
+            }
+        }
+    } else if (IS_ENABLED(NoDubbedAudioTrack)) {
+        // Default mode doesn't otherwise run this method at all; only step in when
+        // YouTube's own pick (audioIsDefault) is itself an auto-dub.
+        YTIAudioTrack *defaultTrack = nil;
+        for (YTIAudioTrack *track in availableTracks) if (track.audioIsDefault) { defaultTrack = track; break; }
+        if (defaultTrack && [defaultTrack isAutoDubbed]) {
             for (YTIAudioTrack *track in availableTracks) {
                 if ([track.id_p hasSuffix:@".4"]) {
                     matchedTrack = track;

@@ -63,6 +63,27 @@
 "POST_ACTION_ASK" = "Ask";
 "ADD_SHORTS_DOWNLOAD" = "Adds a download button to Shorts";
 "ADD_SHORTS_DOWNLOAD_DESC" = "Adds a download button to Shorts video overlay.";
+"HIDE_AUTO_DUBBED_DOWNLOADS" = "Hide auto-dubbed audio tracks";
+"HIDE_AUTO_DUBBED_DOWNLOADS_DESC" = "Hides AI auto-dubbed audio tracks from the download sheet's soundtrack picker.";
+"DOWNLOAD_LIBRARY_TAB" = "Downloads";
+"DOWNLOAD_LIBRARY_TAB_DESC" = "Adds a tab that lists every downloaded video with thumbnails and sizes.";
+"DOWNLOAD_LIBRARY_EMPTY" = "No downloads yet";
+"LIBRARY_OPEN_VIDEO" = "Open Video on YouTube";
+"LIBRARY_NO_VIDEO_ID" = "Couldn't find this video's ID";
+"LIBRARY_SHARE" = "Share";
+"LIBRARY_SAVE_THUMBNAIL" = "Save Thumbnail to Photos";
+"LIBRARY_VIEW_INFO" = "View Info";
+"LIBRARY_DELETE" = "Delete";
+"OK" = "OK";
+"LIBRARY_INFO_SIZE" = "Size";
+"LIBRARY_INFO_DURATION" = "Duration";
+"LIBRARY_INFO_CONTAINER" = "Container";
+"LIBRARY_INFO_RESOLUTION" = "Resolution";
+"LIBRARY_INFO_FRAMERATE" = "Frame Rate";
+"LIBRARY_INFO_VIDEO_CODEC" = "Video Codec";
+"LIBRARY_INFO_VIDEO_BITRATE" = "Video Bitrate";
+"LIBRARY_INFO_AUDIO_CODEC" = "Audio Codec";
+"LIBRARY_INFO_AUDIO_BITRATE" = "Audio Bitrate";
 "DOWNLOAD_SHORTS" = "Download Shorts";
 "COPY_VID_INFO" = "Copy video informations";
 "COPY_TITLE" = "Copy title";
@@ -122,8 +143,6 @@
 "DOWNLOAD_POST_DESC" = "Allows to copy post text and save post as image by long tap.";
 "TRANSLATE_COMMENT" = "Translate comment";
 "TRANSLATE_POST" = "Translate post";
-"SHOW_OPTIONS" = "Show options";
-"ENGLISH" = "English";
 "TRANSLATION" = "Translation";
 "LANGUAGE" = "Language";
 "TRANSLATING" = "Translating...";
@@ -617,3 +636,35 @@
 "SB_ID_SAVE" = "Save";
 "SB_ID_CANCEL" = "Cancel";
 
+/* Download sheet */
+"DOWNLOAD_TO_PHOTOS" = "Download to Photos";
+"DOWNLOAD_TO_FILES" = "Download to Library";
+"DOWNLOAD_TO_FILES_DESC" = "Supports more formats, but some need a player like VLC";
+"DOWNLOAD_THUMBNAIL" = "Download thumbnail";
+"QUALITY" = "Quality";
+"SOUNDTRACK" = "Audio track";
+"AUDIO_ONLY" = "Audio only";
+
+/* Codec names — shown instead of raw wire ids (av01, vp09, mp4a) */
+"CODEC_AV1" = "AV1";
+"CODEC_VP9" = "VP9";
+"CODEC_H264" = "H.264";
+"CODEC_HEVC" = "HEVC";
+"CODEC_AAC" = "AAC";
+"CODEC_OPUS" = "Opus";
+"CODEC_MOST_EFFICIENT" = "most efficient";
+"CODEC_EFFICIENT" = "efficient";
+"CODEC_BEST_COMPATIBILITY" = "best compatibility";
+"AUDIO_CODEC" = "Audio codec";
+"VIDEO_CODEC" = "Video codec";
+"SUBTITLES" = "Subtitles";
+"NO_SUBTITLES" = "No subtitles";
+"PHOTOS_CODEC_NOTE" = "Due to the codecs that Apple supports, only H.264 video and AAC audio can be downloaded. If you want better quality or more efficient codecs, you have to download the video to files and then open it in a player like VLC.";
+"FILES_HINT_BOTH" = "%@ video and %@ audio are more efficient and higher quality, but the built-in iOS player cannot play them. Use a player like VLC.";
+"FILES_HINT_VIDEO" = "%@ video is more efficient and higher quality, but the built-in iOS player cannot play it. Use a player like VLC.";
+"FILES_HINT_AUDIO" = "%@ audio is more efficient, but the built-in iOS player cannot play it. Use a player like VLC.";
+"FILES_HINT_COMPATIBLE" = "H.264 video with AAC audio — plays in the built-in iOS player.";
+"AUDIO_ORIGINAL" = "Original";
+"AUDIO_ORIGINAL_LANG" = "%@ [Original]";
+"AUDIO_AUTO_DUBBED" = "%@ [AI]";
+"AUDIO_DUBBED" = "%@";
