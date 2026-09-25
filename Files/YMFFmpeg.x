@@ -3,14 +3,6 @@
 #import <os/log.h>
 #import <dlfcn.h>
 
-// YMFFmpeg.x — muxing, via FFmpegKit loaded at runtime.
-//
-// Rebuilt from the 12:48 reference binary. Load order, dlopen flags,
-// failure strings and the mux command below all mirror the reference.
-// The frameworks live in the tweak bundle and are dlopened rather than
-// linked, so a build without them still runs: YMFFmpegIsAvailable reports
-// the truth and callers degrade instead of crashing.
-
 static os_log_t YMFFmpegLogHandle(void) {
     static os_log_t handle; static dispatch_once_t once;
     dispatch_once(&once, ^{ handle = os_log_create("dev.water888.youmod", "ffmpeg"); });
@@ -25,7 +17,6 @@ static BOOL gFFmpegInitDone = NO;
 
 #pragma mark - Loading
 
-// avformat needs avcodec, and ffmpegkit needs all of them.
 static NSArray<NSString *> *YMFFmpegLibraries(void) {
     return @[@"libavutil", @"libswresample", @"libswscale",
              @"libavcodec", @"libavformat", @"libavfilter", @"libavdevice"];
@@ -86,7 +77,6 @@ NSString *YMFFmpegUnavailableReason(void) {
 
 #pragma mark - Running
 
-// Run one ffmpeg invocation synchronously. Caller is already off the main thread.
 static BOOL YMFFmpegRunSync(NSArray<NSString *> *arguments, NSString **failureOut) {
     if (!YMFFmpegIsAvailable()) {
         if (failureOut) *failureOut = YMFFmpegUnavailableReason();

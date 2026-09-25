@@ -1,9 +1,6 @@
 #import "Headers.h"
 #import <stdarg.h>
 
-// Temporary drop-point diagnostics: every format parsed plus every filter
-// decision lands in the app tmp youmod-formats.log. Pull it after opening
-// the picker and the missing rows point at the exact stage that eats them.
 static NSString *YMFormatsLogPath(void) {
     static NSString *path = nil; static dispatch_once_t o;
     dispatch_once(&o, ^{
@@ -29,24 +26,6 @@ static void YMFormatsLogMsg(NSString *format, ...) {
     } @catch (id e) {}
 }
 #define YMFormatsLog(fmt, ...) YMFormatsLogMsg(@"" fmt, ##__VA_ARGS__)
-
-// YMFormats.x — the format model: what YouTube offers, unfiltered.
-//
-// Rebuilt from the 12:48 reference binary. Every function here mirrors a
-// reference implementation one to one: YMFormatsFromResponse walks
-// playerData.streamingData.adaptiveFormatsArray and builds one YMFormat per
-// stream, reading codec from the mime type, HDR from colorInfo or the quality
-// label, and the soundtrack flags from the xtags protobuf.
-//
-// Two deliberate deviations from the reference, both extension-only:
-// - YMFormat gains nothing here; the three soundtrack flags it needs
-//   (isOriginal, isAutoDubbed, isDRC) are added to its Headers.h interface.
-// - YMFormatsArePhotosCompatible has no reference implementation (it is only
-//   declared in Headers.h), so it is implemented from its documented meaning.
-// - The two codec preference orders below could not be read back exactly
-//   (they live in unresolvable fixup data), so they follow efficiency order:
-//   AV1, VP9, H.264 for video and Opus, AAC for audio. They only decide tab
-//   order in the picker; unknown codecs are appended after them in all cases.
 
 @implementation YMFormat
 
@@ -96,9 +75,6 @@ static void YMFormatsLogMsg(NSString *format, ...) {
 @implementation YMCaptionTrack
 @end
 
-// Reader protocols pin exact signatures for YouTube response objects.
-// Several of these selectors are declared by unrelated headers with
-// conflicting types, so calling them on plain id does not compile.
 @protocol YMFormatStreamReading <NSObject>
 - (int)itag;
 - (NSString *)mimeType;
@@ -130,10 +106,6 @@ static void YMFormatsLogMsg(NSString *format, ...) {
 - (id)name;
 @end
 
-// Reads one named field out of the base64url protobuf in a format's xtags.
-// Wire walk: outer records open with tag 10, inner fields are tag/length
-// pairs where field 1 is the key and field 2 the value. Returns the value
-// whose key matches, or nil when absent or malformed.
 static NSString *YMFormatValueForXtagsKey(NSString *xtags, NSString *key) {
     if (xtags.length == 0) return nil;
     NSMutableString *b64 = [xtags mutableCopy];

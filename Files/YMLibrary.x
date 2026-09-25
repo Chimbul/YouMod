@@ -5,13 +5,6 @@
 #import <Photos/Photos.h>
 #import <math.h>
 
-// YMLibrary.x — the Download Library tab: a YouTube-feed-style grid of
-// everything sitting in YouModDownloadsDirectoryURL() (every file a download
-// already lands in, regardless of destination). A UICollectionView with a
-// width-driven column count (YMLibraryGridLayout) — 1 column on iPhone, 2 on
-// iPad portrait, 3 on iPad landscape, and anything in between for Split View/
-// Stage Manager, since it reacts to actual width rather than device idiom.
-
 static NSSet<NSString *> *ymLibraryMediaExtensions(void) {
     static NSSet<NSString *> *exts;
     static dispatch_once_t once;
@@ -24,8 +17,6 @@ static BOOL ymIsAudioOnlyExtension(NSString *extension) {
     return [lower isEqualToString:@"m4a"] || [lower isEqualToString:@"mka"];
 }
 
-// Strips the " [videoID]" suffix YMDownload.x appends to every filename for
-// uniqueness — the file on disk keeps it, the feed just shouldn't show it.
 static NSString *ymDisplayTitleForFileName(NSString *baseName) {
     NSRange range = [baseName rangeOfString:@" \\[[A-Za-z0-9_-]{11}\\]$" options:NSRegularExpressionSearch];
     if (range.location != NSNotFound) {
@@ -34,8 +25,6 @@ static NSString *ymDisplayTitleForFileName(NSString *baseName) {
     return baseName;
 }
 
-// The other half of the above: pulls the video ID back out instead of
-// stripping it. nil for anything downloaded before the ID suffix existed.
 static NSString *ymVideoIDForFileName(NSString *baseName) {
     NSRange range = [baseName rangeOfString:@" \\[[A-Za-z0-9_-]{11}\\]$" options:NSRegularExpressionSearch];
     if (range.location == NSNotFound) return nil;
@@ -68,10 +57,6 @@ static NSArray<NSURL *> *ymLibraryFileURLsNewestFirst(void) {
 
 #pragma mark - Thumbnails
 
-// The real thumbnail YMDownload.x saves alongside the video (same basename,
-// .jpg) wins when present; a video downloaded before this existed, or one
-// whose thumbnail fetch failed, falls back to a frame grabbed from the video
-// itself, cached to Caches/YouMod_Thumbs so it isn't re-decoded every time.
 static NSURL *ymSiblingThumbnailURL(NSURL *fileURL) {
     return [[fileURL URLByDeletingPathExtension] URLByAppendingPathExtension:@"jpg"];
 }
@@ -234,10 +219,6 @@ static NSString *ymMediaInfoStringForFile(NSURL *fileURL, unsigned long long byt
 
 #pragma mark - Grid layout
 
-// Column count follows actual width, not device idiom — 1 column under
-// 600pt (every iPhone, a narrow iPad Split View slice), 2 under 900pt (iPad
-// portrait), 3 above that (iPad landscape) — so it also does the right thing
-// in Split View / Stage Manager sizes nobody explicitly asked for.
 @interface YMLibraryGridLayout : UICollectionViewFlowLayout
 @end
 
@@ -259,7 +240,7 @@ static NSString *ymMediaInfoStringForFile(NSURL *fileURL, unsigned long long byt
     NSInteger columns = width < 600 ? 1 : (width < 900 ? 2 : 3);
     CGFloat spacing = self.minimumInteritemSpacing * (columns - 1) + self.sectionInset.left + self.sectionInset.right;
     CGFloat itemWidth = floor((width - spacing) / columns);
-    CGFloat itemHeight = (itemWidth * 9.0 / 16.0) + 80; // thumbnail aspect + title/size text area
+    CGFloat itemHeight = (itemWidth * 9.0 / 16.0) + 80; // thumbnail aspect + text area
     self.itemSize = CGSizeMake(itemWidth, itemHeight);
 }
 
@@ -269,10 +250,6 @@ static NSString *ymMediaInfoStringForFile(NSURL *fileURL, unsigned long long byt
 
 @end
 
-// Real YouTube theme colors (see YTCommonColorPalette in Headers.h) instead
-// of iOS system colors, so this screen's chrome actually matches native
-// tabs — dynamic so it tracks light/dark (and OLED, via Apperence.x's
-// existing hook on these same selectors) automatically.
 static UIColor *ymYouTubeBackgroundColor(void) {
     return [UIColor colorWithDynamicProvider:^UIColor * _Nonnull(UITraitCollection *traitCollection) {
         id palette = traitCollection.userInterfaceStyle == UIUserInterfaceStyleDark
@@ -302,16 +279,7 @@ static UIColor *ymYouTubeBackgroundColor(void) {
     self.allRows = [NSMutableArray array];
     self.rows = [NSMutableArray array];
 
-    // Matches the real YTHeaderView's background and height (106pt, measured
-    // off-device) so the tab reads as consistent chrome with Home/Shorts/
-    // Subscriptions/You rather than a bespoke settings-style screen. Anchored
-    // to the true top of the view (not the safe area) since the real header's
-    // frame starts at y=0 too — its background runs behind the status bar,
-    // only its content is safe-area-inset.
     UIView *topBar = [UIView new];
-    // baseBackground, not raisedBackground: the real header sits flush with
-    // the body color (confirmed against a screenshot of the real You tab),
-    // it isn't visually elevated/lighter.
     topBar.backgroundColor = ymYouTubeBackgroundColor();
     topBar.translatesAutoresizingMaskIntoConstraints = NO;
     [self.view addSubview:topBar];
@@ -327,9 +295,6 @@ static UIColor *ymYouTubeBackgroundColor(void) {
     _searchBar.searchBarStyle = UISearchBarStyleMinimal;
     _searchBar.translatesAutoresizingMaskIntoConstraints = NO;
 
-    // YT_SETTINGS (44) — the real gear glyph YouTube itself uses (YTIcon.h),
-    // via the same YouModYTIconImage helper other menus already use, instead
-    // of an SF Symbol approximation.
     UIButton *settingsButton = [UIButton buttonWithType:UIButtonTypeSystem];
     [settingsButton setImage:YouModYTIconImage(44, NO, nil) forState:UIControlStateNormal];
     settingsButton.tintColor = [UIColor labelColor];
@@ -339,9 +304,6 @@ static UIColor *ymYouTubeBackgroundColor(void) {
     [topBar addSubview:_searchBar];
     [topBar addSubview:settingsButton];
 
-    // The row of controls (search bar, settings button) has to sit below the
-    // status bar even though topBar's own background starts above it — this
-    // guide marks that safe sub-region within topBar's fixed 106pt height.
     UILayoutGuide *headerContentGuide = [UILayoutGuide new];
     [topBar addLayoutGuide:headerContentGuide];
 
@@ -401,35 +363,15 @@ static UIColor *ymYouTubeBackgroundColor(void) {
     [self reload];
 }
 
-// Replicates -[YTHeaderViewController didPressAccountPanelButton:]'s non-
-// incognito, non-iPad branch (confirmed via decompile), just with
-// YTSettingsViewController pushed instead of YTAccountPanelViewController —
-// the same wrapper class and the same responder-event based presentation the
-// real header button uses, rather than a raw presentViewController: (which
-// left the tab bar visible and no working close button).
 - (void)openSettingsTapped {
     id parentResponder = self.hostParentResponder ?: self;
 
-    // %c(): these classes only exist in the host YouTube binary at runtime,
-    // not in anything we link against — a bare class reference fails at link
-    // time ("_OBJC_CLASS_$_YTSettingsViewController" undefined).
-    //
-    // parentResponder must be a real node in YouTube's own responder-chain
-    // (it implements -parentResponder itself, walked internally by settings/
-    // DI code) — passing self here crashes with "unrecognized selector
-    // parentResponder" the moment that walk reaches our plain UIViewController.
-    // hostParentResponder is the YTPivotBarViewController that swapped us in,
-    // which already implements this correctly.
     YTSettingsViewController *settingsVC = [[%c(YTSettingsViewController) alloc] initWithAccountID:nil parentResponder:parentResponder];
     if (!settingsVC) return;
-    // Force the grouped layout (General/YouMod etc. as single tap-through
-    // rows) — confirmed against screenshots: 1 = grouped (what's wanted), a
-    // fresh instance otherwise renders flat/inline (every row expanded
-    // directly into the list, not what's wanted).
     settingsVC.appearance = 1;
 
     YTNavigationController *nav = [[%c(YTNavigationController) alloc] initWithParentResponder:parentResponder];
-    nav.modalPresentationStyle = UIModalPresentationFormSheet; // value 2, matching the real button
+    nav.modalPresentationStyle = UIModalPresentationFormSheet;
     [nav pushViewController:settingsVC animated:NO];
 
     YTPresentModalResponderEvent *event = [%c(YTPresentModalResponderEvent) eventWithViewController:nav animated:YES firstResponder:parentResponder];
@@ -494,8 +436,6 @@ static UIColor *ymYouTubeBackgroundColor(void) {
     return cell;
 }
 
-// Single tap: try the built-in player, fall back to sharing if the file
-// isn't natively playable (e.g. mkv/mka, which need something like VLC).
 - (void)collectionView:(UICollectionView *)collectionView didSelectItemAtIndexPath:(NSIndexPath *)indexPath {
     [collectionView deselectItemAtIndexPath:indexPath animated:YES];
     YMLibraryRow *row = self.rows[indexPath.item];
@@ -513,11 +453,6 @@ static UIColor *ymYouTubeBackgroundColor(void) {
     }
 }
 
-// Long press: native context menu (shows live while held, with the system
-// blur/scale preview) instead of a UILongPressGestureRecognizer + presented
-// UIAlertController — that combination only visibly animates in after the
-// touch ends, since the alert's presentation gets deferred until the current
-// touch-tracking run loop finishes.
 - (UIContextMenuConfiguration *)collectionView:(UICollectionView *)collectionView contextMenuConfigurationForItemAtIndexPath:(NSIndexPath *)indexPath point:(CGPoint)point {
     return [UIContextMenuConfiguration configurationWithIdentifier:nil previewProvider:nil actionProvider:^UIMenu * _Nullable(NSArray<UIMenuElement *> * _Nonnull suggestedActions) {
         return [self contextMenuForRowAtIndexPath:indexPath];
@@ -548,9 +483,6 @@ static UIColor *ymYouTubeBackgroundColor(void) {
     return [UIMenu menuWithTitle:row.title children:@[share, saveThumbnail, openVideo, viewInfo, delete]];
 }
 
-// Reuses the youtube:// scheme handoff YMOpenLinkFromClipboard (Tabbar.x)
-// already relies on, with the ID pulled straight from the filename instead
-// of parsed out of a pasted URL.
 - (void)openOriginalVideoForRow:(YMLibraryRow *)row {
     NSString *videoID = ymVideoIDForFileName(row.path.lastPathComponent.stringByDeletingPathExtension);
     NSURL *youtubeURL = videoID ? [NSURL URLWithString:[NSString stringWithFormat:@"youtube://%@", videoID]] : nil;

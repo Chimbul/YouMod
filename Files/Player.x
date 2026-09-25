@@ -1525,8 +1525,6 @@ static UISlider *YouModVolumeSlider(void) {
             }
         }
     } else if (IS_ENABLED(NoDubbedAudioTrack)) {
-        // Default mode doesn't otherwise run this method at all; only step in when
-        // YouTube's own pick (audioIsDefault) is itself an auto-dub.
         YTIAudioTrack *defaultTrack = nil;
         for (YTIAudioTrack *track in availableTracks) if (track.audioIsDefault) { defaultTrack = track; break; }
         if (defaultTrack && [defaultTrack isAutoDubbed]) {

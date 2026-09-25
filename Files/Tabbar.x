@@ -1,8 +1,5 @@
 #import "Headers.h"
 
-// Sentinel pivotIdentifier for the injected Download Library tab — not a real
-// YouTube browseId, so selectItemWithPivotIdentifier: below must intercept it
-// before %orig ever tries to fetch content for it.
 static NSString * const kYMLibraryPivotIdentifier = @"YouModDownloadLibrary";
 static const NSInteger kYMLibraryIconType = 18;
 
@@ -10,8 +7,6 @@ static const NSInteger kYMLibraryIconType = 18;
 %hook YTAppPivotBarItemStyle
 - (UIImage *)pivotBarItemIconImageWithIconType:(int)type color:(UIColor *)color useNewIcons:(BOOL)isNew selected:(BOOL)isSelected {
     if (type == kYMLibraryIconType) {
-        // Other tab icons are 24pt bundle PNGs (72x72@3x) — match that size
-        // since this one comes from an SF Symbol instead of a bundle asset.
         UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:24 weight:UIImageSymbolWeightMedium];
         return [UIImage systemImageNamed:(isSelected ? @"arrow.down.circle.fill" : @"arrow.down.circle") withConfiguration:config];
     }
@@ -298,18 +293,6 @@ static BOOL isGestureRegistered = NO;
 // Startup Tab
 static BOOL isTabSelected = NO;
 %hook YTPivotBarViewController
-// A manual tap never goes through selectItemWithPivotIdentifier: — it flows
-// YTPivotBarItemView.doTap -> didTapItemWithRenderer: -> here, passing the
-// renderer straight through. selectItemWithPivotIdentifier: only resolves an
-// id to a renderer and forwards here too, so this is the single choke point
-// for both. %orig's own "never selected this tab before" branch hands the
-// delegate a nil view-controllers array and leans on a real browse fetch to
-// fill it in later — which is what produced the "Error loading. Tap to
-// retry." card, since there's no real browseId behind our fake tab. So for
-// our sentinel we replicate %orig's bookkeeping (cache the outgoing tab,
-// flip the selected-tab state, hand the delegate the SAME array shape a real
-// tab hands it) but supply our own view controller instead of nil — a real
-// swapped-in tab, not a popup.
 - (void)selectItemWithPivotBarItem:(id)item {
     if ([[item pivotIdentifier] isEqualToString:kYMLibraryPivotIdentifier]) {
         [self cacheCurrentViewControllers];

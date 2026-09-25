@@ -1,15 +1,5 @@
 #!/usr/bin/env bash
-# Build the FFmpegKitNext iOS frameworks YouMod's muxer links against.
-#
-# Upstream arthenica/ffmpeg-kit is retired; this tracks its official
-# continuation, arthenica/ffmpeg-kit-next, which ships SOURCE ONLY — there are
-# no prebuilt binaries to download, so this really does compile FFmpeg.
-# Expect 30-90 minutes on a first run. Output is cached; re-runs are instant
-# unless --force is passed or the build arguments change.
-#
-# Only the ios-arm64 slice is built and installed, into modules/ffmpegkit/.
-# That directory is deliberately NOT committed (see .gitignore) — it is ~30 MB
-# of build output that anyone can reproduce from this script.
+# FFmpegKitNext iOS frameworks builder
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -20,18 +10,13 @@ SRC_DIR="$CACHE_DIR/ffmpeg-kit-next"
 MARKER="$MODULES_DIR/.youmod-source-build"
 
 REPO_URL="https://github.com/arthenica/ffmpeg-kit-next.git"
-# Pinned: a build this long should never move under us silently.
 REPO_TAG="${YOUMOD_FFMPEG_TAG:-v9.0.0}"
 
 HOMEBREW_PREFIX="${HOMEBREW_PREFIX:-/opt/homebrew}"
 export PATH="$HOMEBREW_PREFIX/bin:$HOMEBREW_PREFIX/sbin:$PATH"
 
-# The frameworks ffmpeg-kit produces. ffmpegkit is the ObjC facade YouMod calls;
-# the rest are FFmpeg's own libraries, which it dlopens as siblings.
 FRAMEWORKS=(ffmpegkit libavcodec libavdevice libavfilter libavformat libavutil libswresample libswscale)
 
-# Deployment target must not exceed the tweak's own (see Makefile: iphone:clang:latest:14.0),
-# or the frameworks won't load on the oldest supported device.
 BUILD_ARGS=(
   --arch=arm64
   --xcframework
@@ -43,8 +28,6 @@ BUILD_ARGS=(
 die()  { printf '\033[31merror:\033[0m %s\n' "$*" >&2; exit 1; }
 info() { printf '\033[36m==>\033[0m %s\n' "$*"; }
 
-# ffmpeg-kit's build scripts need GNU sed; macOS ships BSD sed, which it rejects
-# outright. Homebrew's gnu-sed installs it as `gsed`.
 resolve_gnu_sed() {
   [[ -n "${SED:-}" ]] && return 0
   local candidate
@@ -78,8 +61,6 @@ fetch_source() {
   git clone --quiet --depth=1 --branch "$REPO_TAG" "$REPO_URL" "$SRC_DIR"
 }
 
-# ffmpeg-kit suffixes the output dir with the deployment target when --target is
-# passed (bundle-apple-xcframework-ios-14.0), so glob rather than hardcode.
 xcframework_dir() {
   find "$SRC_DIR/prebuilt" -maxdepth 1 -type d -name 'bundle-apple-xcframework-ios*' 2>/dev/null | sort | head -n 1
 }
@@ -101,8 +82,6 @@ install_frameworks() {
     cp -R "$slice/$name.framework" "$MODULES_DIR/"
   done
 
-  # The frameworks are loaded from inside YouMod.bundle rather than an app's
-  # Frameworks dir, so each needs to find its siblings one level up.
   for f in "${FRAMEWORKS[@]}"; do
     local bin="$MODULES_DIR/$f.framework/$f"
     [[ -f "$bin" ]] || continue

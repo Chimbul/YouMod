@@ -4,17 +4,6 @@
 #import <os/log.h>
 #import <dlfcn.h>
 
-// YMDownload.x — the download path: pick formats, fetch bytes, mux, hand off.
-//
-// Rebuilt from the 12:48 reference binary. Structure, order of operations,
-// user-facing strings and even the localization-key typo below all mirror
-// the reference one to one. Two notes on fidelity:
-// - YouModSaveVideoToPhotos keeps its Headers.h signature
-//   (fileURL, presenter, completion), but like the reference it ignores the
-//   presenter: the reference passes a dead register in that slot and routes
-//   everything through the completion block.
-// - YMProgressMeter lives here file-locally; nothing outside this file uses it.
-
 static os_log_t YMDownloadLogHandle(void) {
     static os_log_t handle; static dispatch_once_t once;
     dispatch_once(&once, ^{ handle = os_log_create("dev.water888.youmod", "download"); });
@@ -189,10 +178,6 @@ BOOL YouModFileIsPhotosCompatible(NSURL *fileURL) {
     return NO;
 }
 
-// The file is already sitting in YouModDownloadsDirectoryURL() by the time this
-// runs (YMDownloadMuxAndFinish wrote it there) — the Download Library tab is now
-// the one place to share/open/delete it, so this just reports success instead of
-// popping a share sheet on every single download.
 void YouModHandlePostDownloadFile(NSURL *fileURL, BOOL isVideo, YMDownloadDestination destination, UIViewController *presenter) {
     if (!fileURL) return;
     BOOL wantsPhotos = destination == YMDownloadDestinationPhotos && isVideo && YouModFileIsPhotosCompatible(fileURL);
@@ -209,9 +194,6 @@ void YouModHandlePostDownloadFile(NSURL *fileURL, BOOL isVideo, YMDownloadDestin
     }
 }
 
-// No destination to route off here (thumbnail/comment/post image saves have no
-// picker beforehand) — straight to Photos, matching what "save this image" means
-// everywhere else in iOS.
 void YouModHandlePostDownloadImage(UIImage *image, UIViewController *presenter) {
     if (!image) return;
     YouModRequestPhotoAccess(^(BOOL granted) {
@@ -248,9 +230,6 @@ static void YMDownloadFail(NSString *message, NSArray<NSURL *> *temporaries) {
     });
 }
 
-// Best-effort, fire-and-forget: the video is the thing that matters, a
-// missing thumbnail just means the library falls back to generating one from
-// the video frame itself.
 static void YMSaveThumbnailAlongsideVideo(NSURL *thumbnailURL, NSURL *videoOutputURL) {
     if (!thumbnailURL || !videoOutputURL) return;
     NSURL *dest = [[videoOutputURL URLByDeletingPathExtension] URLByAppendingPathExtension:@"jpg"];

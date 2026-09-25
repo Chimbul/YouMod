@@ -1,14 +1,5 @@
 #import "Headers.h"
 
-// YMDownloadSheet.x — the download picker: codec tabs, quality rows with
-// sizes, soundtrack, and a running total.
-//
-// Rebuilt from the 12:48 reference binary. Model, sections, row content,
-// layout numbers, strings and the mux handoff all mirror the reference.
-// The audio-only tab carries a 0x01 sentinel prefix internally and shows a
-// localized title; section kinds are small integers (0 video, 1 soundtrack,
-// 2 audio, 3 captions).
-
 static NSString * const YMAudioOnlyTab = @"\x01Audio-only";
 
 typedef NS_ENUM(NSInteger, YMDownloadSheetSection) {
@@ -165,7 +156,7 @@ static NSString *YMByteCountString(unsigned long long bytes) {
     [super viewDidLoad];
     [self buildModel];
     self.view.backgroundColor = UIColor.systemBackgroundColor;
-    self.view.tintColor = UIColor.systemPurpleColor; // checkmarks, segmented control, download button all inherit this
+    self.view.tintColor = UIColor.systemPurpleColor; // why he ourple
 
     UILabel *titleLabel = [UILabel new];
     if (self.channelTitle.length > 0) {

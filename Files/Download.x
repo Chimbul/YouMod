@@ -27,38 +27,11 @@
 }
 @end
 
-
-
 typedef void (^YouModFileDownloadCompletion)(NSURL *fileURL, NSError *error);
 typedef void (^YouModMergeCompletion)(BOOL success, NSError *error);
 typedef void (^YouModRangeDownloadProgress)(unsigned long long completedBytes);
 
-
-
-
-
-
-
-
-
-
-
 YTPlayerViewController *YouModCurrentPlayerViewController = nil;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 static YTIPlayerResponse *YouModPlayerDataForPlayer(YTPlayerViewController *player) {
     YTPlayerResponse *response;
@@ -70,7 +43,6 @@ static YTIPlayerResponse *YouModPlayerDataForPlayer(YTPlayerViewController *play
     YTIPlayerResponse *playerData = response.playerData;
     return playerData;
 }
-
 
 static YTIVideoDetails *YouModVideoDetailsForPlayer(YTPlayerViewController *player) {
     YTIPlayerResponse *ires = YouModPlayerDataForPlayer(player);
@@ -96,9 +68,6 @@ static NSString *YouModDescriptionForPlayer(YTPlayerViewController *player) {
     YTIVideoDetails *details = YouModVideoDetailsForPlayer(player);
     return details.shortDescription;
 }
-
-
-
 
 NSURL *YouModThumbnailURL(YTPlayerViewController *player) {
     if (!player) return nil;
@@ -245,18 +214,6 @@ static void YouModShowCopyVideoInfoSheet(YTPlayerViewController *player, UIViewC
     YouModPresentMenu(nil, items, presenter, sender);
 }
 
-// Interim picker. The drill-down chain is what the single sheet from the UI concept
-// replaces next; until then these feed the new format model (YMFormats) and the new
-// download path (YMDownloadStart), so downloads work end to end.
-//
-// Nothing is filtered any more: every codec, resolution and HDR variant YouTube
-// offers is listed, because FFmpeg can mux all of them.
-
-
-
-
-
-
 static void YouModShowThumbnailSheet(YTPlayerViewController *player, UIViewController *presenter, UIView *sender) {
     NSMutableArray *items = [NSMutableArray array];
 
@@ -282,9 +239,6 @@ static void YouModShowDownloadManager(YTPlayerViewController *player, UIViewCont
     YTSingleVideoController *sgvidcon = player.activeVideo;
     YTSingleVideo *sgvid = sgvidcon.singleVideo;
 
-    // Destination first, picker second. Choosing where a download is going decides
-    // what can be offered — Photos plays only some of what YouTube serves — so it is
-    // asked here rather than as a row inside the picker.
     if (!sgvid.isLivePlayback) {
         [items addObject:[YouModMenuItem itemWithTitle:LOC(@"DOWNLOAD_TO_PHOTOS") subtitle:nil icon:YouModYTIconImage(57, NO, nil) handler:^{
             [YMDownloadSheet presentForPlayer:player destination:YMDownloadDestinationPhotos presenter:presenter];

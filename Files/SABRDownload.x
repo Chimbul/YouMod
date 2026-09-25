@@ -1,25 +1,7 @@
-// SABRDownload.x — On-device SABR download (opt-in, behind the SABRDownload toggle).
-//
-// Modern YouTube (21.29) ships no direct stream URL; media flows via SABR (server-
-// driven adaptive bitrate) over the UMP byte protocol. This downloads on-device by
-// CAPTURING the app's own live, fully-signed `videoplayback` request (which already
-// carries the session's auth / PoToken in its URL) and REPLAYING a modified copy of
-// it — selecting the mp4 itags we want, then reading the returned UMP media parts to
-// disk — instead of reconstructing a SABR session from scratch. The two elementary
-// files are handed to YouMod's existing muxer for the final mp4.
-//
-// Additive: gated on SABR_ENABLED(), off by default. Touches none of the existing
-// (direct / server) download paths.
-//
-// Protocol field numbers follow LuanRT/googlevideo (cross-checked against
-// coletdjnz/yt-dlp-ytse and Epic0001/YTKACE) but are pinned to what YouTube 21.29
-// actually sends; see docs/specs/2026-07-29-sabr-ondevice-download-final.md. They are
-// version-sensitive — every wire field is a named constant below so a YouTube update
-// can be re-mapped in one place.
+// Reworked on-device downloader with SABR
 
 #import "Headers.h"
 
-// On-device SABR is the only download path now, so capture is always on.
 #define SABR_ENABLED() 1
 
 // Serial queue guarding all shared engine state (capture globals, per-download
