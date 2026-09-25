@@ -455,12 +455,15 @@ UIColor *SBColorFromHex(NSString *hexString) {
         if (action == SBSegmentActionDisable || action == SBSegmentActionDisplay) continue;
 
         BOOL isPoi = [segment.category isEqualToString:@"poi_highlight"];
+        // "Always auto-skip" acts like auto-skip but ignores the
+        // once-per-segment set, so re-entering a segment skips again.
+        BOOL repeatSkip = (action == SBSegmentActionAlwaysSkip);
 
         if (isPoi) {
-            if (action == SBSegmentActionSkipTo) {
+            if (action == SBSegmentActionSkipTo || repeatSkip) {
                 NSString *segID = segment.UUID;
-                if (![self.sbSkippedSegments containsObject:segID] && currentTime < segment.startTime) {
-                    [self.sbSkippedSegments addObject:segID];
+                if ((repeatSkip || ![self.sbSkippedSegments containsObject:segID]) && currentTime < segment.startTime) {
+                    if (!repeatSkip) [self.sbSkippedSegments addObject:segID];
                     [self sbSkipToHighlight];
                     break;
                 }
@@ -475,9 +478,9 @@ UIColor *SBColorFromHex(NSString *hexString) {
 
         if (currentTime >= segment.startTime && currentTime < segment.endTime - SBSegmentEndGuardSeconds) {
             NSString *segID = segment.UUID;
-            if ([self.sbSkippedSegments containsObject:segID]) continue;
+            if (!repeatSkip && [self.sbSkippedSegments containsObject:segID]) continue;
 
-            if (action == SBSegmentActionAutoSkip) {
+            if (action == SBSegmentActionAutoSkip || repeatSkip) {
                 [self sbPerformSkip:segment];
             } else if (action == SBSegmentActionAsk) {
                 [self sbShowAskNotification:segment];
@@ -489,7 +492,9 @@ UIColor *SBColorFromHex(NSString *hexString) {
 
 %new
 - (void)sbPerformSkip:(SBSegment *)segment {
-    [self.sbSkippedSegments addObject:segment.UUID];
+    // "Always auto-skip" segments stay out of the once-per-segment set so
+    // encountering them again skips again.
+    if ([segment configuredAction] != SBSegmentActionAlwaysSkip) [self.sbSkippedSegments addObject:segment.UUID];
     [self seekToTime:(CGFloat)segment.endTime];
 
     if (IS_ENABLED(SBAudioNotification)) {

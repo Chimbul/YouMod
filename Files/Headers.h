@@ -72,6 +72,8 @@
 #import <YouTubeHeader/YTPlayerBarRectangleDecorationView.h>
 #import <YouTubeHeader/ELMNodeController.h>
 #import <objc/runtime.h>
+#import <YouTubeHeader/GPBMessage.h>
+#import <objc/NSObjCRuntime.h>
 #import <YouTubeHeader/ELMTouchCommandPropertiesHandler.h>
 #import <YouTubeHeader/YTReelNonVideoContentModel.h>
 #import <YouTubeHeader/YTIPlayerBarPlayingState.h>
@@ -715,7 +717,8 @@ typedef NS_ENUM(NSInteger, SBSegmentAction) {
     SBSegmentActionAutoSkip = 1,
     SBSegmentActionAsk = 2,
     SBSegmentActionDisplay = 3,
-    SBSegmentActionSkipTo = 4
+    SBSegmentActionSkipTo = 4,
+    SBSegmentActionAlwaysSkip = 5
 };
 
 @interface YTIPlayerBarItemData : GPBMessage

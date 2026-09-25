@@ -212,7 +212,9 @@ static void YMScanForGearFrame(UIView *view, YTMainAppControlsOverlayView *overl
     for (UIView *sub in view.subviews) {
         if ([sub isKindOfClass:%c(YTQTMButton)]) {
             CGRect f = [sub convertRect:sub.bounds toView:overlay];
-            if (CGRectGetMidY(f) <= topRegionMaxY) { // in the top button row
+            // Zero-size frames show up transiently while the overlay is
+            // animating; anchoring to one parks the row at a garbage spot.
+            if (!CGRectIsEmpty(f) && CGRectGetMidY(f) <= topRegionMaxY) { // in the top button row
                 // The CGRectIsNull check must stay first: CGRectGetMidX(CGRectNull) is
                 // infinite, so the > comparison alone would never accept the first match.
                 if (CGRectIsNull(*bestFrame) || CGRectGetMidX(f) > CGRectGetMidX(*bestFrame)) *bestFrame = f;
@@ -229,7 +231,8 @@ static void YMScanForGearFrame(UIView *view, YTMainAppControlsOverlayView *overl
 static CGRect YMGearFrameInOverlay(YTMainAppControlsOverlayView *overlay) {
     YTQTMButton *overflow = [overlay valueForKey:@"_overflowButton"];
     if (overflow.window) {
-        return [overflow convertRect:overflow.bounds toView:overlay];
+        CGRect frame = [overflow convertRect:overflow.bounds toView:overlay];
+        if (!CGRectIsEmpty(frame)) return frame;
     }
 
     CGFloat topRegionMaxY = overlay.bounds.size.height * 0.25;
@@ -491,9 +494,11 @@ static BOOL isRelatedVideosExpanded = NO;
         }
         return;
     }
-    UIView *exitFullscreenButton = [self exitFullscreenButton];
-    if (exitFullscreenButton == nil) exitFullscreenButton = [self valueForKey:@"_rightIconsView"];
-    BOOL hasAnchor = exitFullscreenButton && exitFullscreenButton.window;
+    UIView *button = [self exitFullscreenButton];
+    if (button == nil) button = [[self valueForKey:@"_enterExitFullscreenButton"] valueForKey:@"_enterExitFullscreenButton"];
+    // A mid-transition anchor can report a zero rect; anchoring to it would
+    // stack the row on a garbage frame, so wait for a real one.
+    BOOL hasAnchor = button && button.window && !CGRectIsEmpty(button.bounds);
     if (!hasAnchor) return;
     NSMutableSet<NSNumber *> *activeTags = [NSMutableSet set];
     for (YMOverlayButtonSpec *spec in specs) [activeTags addObject:@(spec.viewTag)];
@@ -511,7 +516,7 @@ static BOOL isRelatedVideosExpanded = NO;
     BOOL isLive = [sgvid2 isLivePlayback];
     BOOL peekVisible = [self isPeekableViewVisible];
 
-    CGRect exitFrame = exitFullscreenButton.frame;
+    CGRect exitFrame = [button convertRect:button.bounds toView:self];
     CGFloat trailingCenterX = CGRectGetMidX(exitFrame);
     // Stack the row on top of the fullscreen button, not beside/over it.
     CGFloat rowTop = CGRectGetMinY(exitFrame) - YMOverlayButtonSize;

@@ -545,6 +545,7 @@
 
 "SB_ACTION_DISABLE" = "禁用";
 "SB_ACTION_AUTO_SKIP" = "自动跳过";
+"SB_ACTION_ALWAYS_SKIP" = "Always auto-skip";
 "SB_ACTION_ASK" = "跳过前询问";
 "SB_ACTION_DISPLAY" = "仅在进度条显示";
 "SB_ACTION_SKIP_TO" = "跳至片段";
@@ -607,6 +608,7 @@
 "SB_USERID_HEADER" = "User ID";
 "SB_PRIVATE_ID" = "Private User ID";
 "SB_PUBLIC_ID" = "Public User ID";
+"SB_TAP_TO_SHOW" = "Tap to show";
 "SB_COPY_ID" = "Copy ID";
 "SB_EDIT_ID" = "Edit ID";
 "SB_ID_COPIED" = "ID copied";
@@ -614,3 +616,4 @@
 "SB_ID_INVALID" = "ID must be at least 30 characters";
 "SB_ID_SAVE" = "Save";
 "SB_ID_CANCEL" = "Cancel";
+

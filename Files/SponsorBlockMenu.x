@@ -269,8 +269,6 @@ static void sbPostVoteQuery(NSString *query, void (^completion)(BOOL success, NS
 
 @end
 
-#pragma mark - YMSBCardItem
-
 @implementation YMSBCardItem
 
 + (instancetype)itemWithImage:(UIImage *)image title:(NSString *)title subtitle:(NSString *)subtitle tintColor:(UIColor *)tint handler:(void (^)(YMSBCardViewController *card))handler {

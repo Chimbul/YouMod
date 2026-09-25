@@ -1850,6 +1850,7 @@ static const void *kYMOverlayButtonDataKey = &kYMOverlayButtonDataKey;
 static const void *kYMOverlayButtonSnapshotKey = &kYMOverlayButtonSnapshotKey;
 static const void *kYMOverlaySavedStdAppearanceKey = &kYMOverlaySavedStdAppearanceKey;
 static const void *kYMOverlaySavedScrollEdgeAppearanceKey = &kYMOverlaySavedScrollEdgeAppearanceKey;
+static const void *kYMOverlayMoveInFlightKey = &kYMOverlayMoveInFlightKey;
 
 @implementation YMOverlayButtonOrderViewController
 
@@ -2230,6 +2231,13 @@ static const void *kYMOverlaySavedScrollEdgeAppearanceKey = &kYMOverlaySavedScro
     BOOL fromBecomesEmpty = (fromFlat.count == 1);
     BOOL toWasEmpty = (toFlat.count == 0);
 
+    // Stacking a batch update on top of the previous move's animation leaves
+    // ghost rows (the same button painted in several places) because the
+    // placeholder delete/insert dance runs against cells that are still fading
+    // out with stale buttonIDs. Serialize: one move in flight at a time.
+    if ([objc_getAssociatedObject(self, kYMOverlayMoveInFlightKey) boolValue]) return;
+    objc_setAssociatedObject(self, kYMOverlayMoveInFlightKey, @(YES), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
     [self.tableView performBatchUpdates:^{
         // Rebuild buttonData as top group followed by bottom group so the
         // entry lands at the end of its new section; relative order within
@@ -2256,7 +2264,12 @@ static const void *kYMOverlaySavedScrollEdgeAppearanceKey = &kYMOverlaySavedScro
         [self.tableView insertRowsAtIndexPaths:@[[NSIndexPath indexPathForRow:toRow inSection:toSection]] withRowAnimation:rowAnim];
 
         [self saveButtonData];
-    } completion:nil];
+    } completion:^(BOOL finished) {
+        objc_setAssociatedObject(self, kYMOverlayMoveInFlightKey, @(NO), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        // Self-sizing rows + batch updates can leave stale cells behind; pin the
+        // table back to the real data once the animation settles.
+        [self.tableView reloadData];
+    }];
 }
 
 #pragma mark - Reordering

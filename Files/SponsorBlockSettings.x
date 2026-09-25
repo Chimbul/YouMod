@@ -20,6 +20,7 @@ static const NSInteger SBSliderValueLabelTagBase = 100;
 static NSString *SBActionLocKey(SBSegmentAction action) {
     switch (action) {
         case SBSegmentActionAutoSkip: return @"SB_ACTION_AUTO_SKIP";
+        case SBSegmentActionAlwaysSkip: return @"SB_ACTION_ALWAYS_SKIP";
         case SBSegmentActionAsk:      return @"SB_ACTION_ASK";
         case SBSegmentActionDisplay:  return @"SB_ACTION_DISPLAY";
         case SBSegmentActionSkipTo:   return @"SB_ACTION_SKIP_TO";
@@ -580,9 +581,9 @@ static const void *kSBAllFlatRowsKey = &kSBAllFlatRowsKey;
 
     NSArray<NSNumber *> *actionOptions;
     if (isHighlight) {
-        actionOptions = @[@(SBSegmentActionDisable), @(SBSegmentActionSkipTo), @(SBSegmentActionAsk), @(SBSegmentActionDisplay)];
+        actionOptions = @[@(SBSegmentActionDisable), @(SBSegmentActionSkipTo), @(SBSegmentActionAlwaysSkip), @(SBSegmentActionAsk), @(SBSegmentActionDisplay)];
     } else {
-        actionOptions = @[@(SBSegmentActionDisable), @(SBSegmentActionAutoSkip), @(SBSegmentActionAsk), @(SBSegmentActionDisplay)];
+        actionOptions = @[@(SBSegmentActionDisable), @(SBSegmentActionAutoSkip), @(SBSegmentActionAlwaysSkip), @(SBSegmentActionAsk), @(SBSegmentActionDisplay)];
     }
 
     NSMutableArray<UIMenuElement *> *menuActions = [NSMutableArray array];
@@ -672,9 +673,8 @@ static const void *kSBAllFlatRowsKey = &kSBAllFlatRowsKey;
         return;
     }
     if (indexPath.section == 3) {
-        UITableViewCell *sourceCell = [tableView cellForRowAtIndexPath:indexPath];
         [tableView deselectRowAtIndexPath:indexPath animated:YES];
-        [self sbPresentUserIDSheetForRow:indexPath.row sourceView:sourceCell];
+        [self sbPresentUserIDDialogForRow:indexPath.row];
         return;
     }
     if (indexPath.section != 2) return;
@@ -712,7 +712,12 @@ static const void *kSBAllFlatRowsKey = &kSBAllFlatRowsKey;
 
     BOOL isPublic = (row == 1);
     cell.textLabel.text = LOC(isPublic ? @"SB_PUBLIC_ID" : @"SB_PRIVATE_ID");
-    NSString *userID = isPublic ? sbPublicUserID() : sbLocalUserID();
+    if (!isPublic) {
+        // Private ID stays masked in the row; it is revealed inside the dialog.
+        cell.detailTextLabel.text = LOC(@"SB_TAP_TO_SHOW");
+        return cell;
+    }
+    NSString *userID = sbPublicUserID();
     NSString *detail = userID;
     if (detail.length > 16) {
         detail = [NSString stringWithFormat:@"%@…%@", [userID substringToIndex:10], [userID substringFromIndex:userID.length - 4]];
@@ -721,77 +726,66 @@ static const void *kSBAllFlatRowsKey = &kSBAllFlatRowsKey;
     return cell;
 }
 
-- (void)sbPresentUserIDSheetForRow:(NSInteger)row sourceView:(UIView *)sourceView {
+// All user-ID actions live in one dialog: a YouTube alert with a plain
+// system text field and the Cancel / Copy / Save buttons in order.
+- (void)sbPresentUserIDDialogForRow:(NSInteger)row {
     BOOL isPublic = (row == 1);
     NSString *userID = isPublic ? sbPublicUserID() : sbLocalUserID();
-
-    YTDefaultSheetController *sheet = [%c(YTDefaultSheetController) sheetControllerWithParentResponder:self];
     __weak typeof(self) weakSelf = self;
 
-    YTActionSheetAction *copyAction = [%c(YTActionSheetAction) actionWithTitle:LOC(@"SB_COPY_ID")
-                                                                      iconImage:[UIImage systemImageNamed:@"doc.on.doc"]
-                                                                           style:0
-                                                                        handler:^(__unused YTActionSheetAction *action) {
+    YTAlertView *alertView = [%c(YTAlertView) dialog];
+    alertView.title = LOC(isPublic ? @"SB_PUBLIC_ID" : @"SB_PRIVATE_ID");
+    alertView.shouldDismissOnBackgroundTap = YES;
+
+    // Plain system text field with a light gray fill — dark mode uses the
+    // secondary background so it stays readable.
+    UITextField *field = [[UITextField alloc] initWithFrame:CGRectMake(0, 0, 238, 44)];
+    field.autoresizingMask = UIViewAutoresizingFlexibleWidth;
+    field.text = userID;
+    field.font = [UIFont monospacedSystemFontOfSize:14 weight:UIFontWeightRegular];
+    field.textColor = [UIColor labelColor];
+    field.borderStyle = UITextBorderStyleRoundedRect;
+    field.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor *(UITraitCollection *trait) {
+        return (trait.userInterfaceStyle == UIUserInterfaceStyleDark)
+            ? [UIColor secondarySystemBackgroundColor]
+            : [UIColor systemGray5Color];
+    }];
+    field.clearButtonMode = UITextFieldViewModeWhileEditing;
+    field.autocapitalizationType = UITextAutocapitalizationTypeNone;
+    field.autocorrectionType = UITextAutocorrectionTypeNo;
+    field.spellCheckingType = UITextSpellCheckingTypeNo;
+    field.keyboardType = UIKeyboardTypeASCIICapable;
+    field.returnKeyType = UIReturnKeyDone;
+
+    alertView.customContentView = field;
+    alertView.customContentViewInsets = UIEdgeInsetsMake(0, 8, 4, 8);
+
+    [alertView addCancelButtonWithAction:nil];
+    [alertView addTitle:LOC(@"SB_COPY_ID") withAction:^{
         UIPasteboard.generalPasteboard.string = userID;
         sbShowSBPill(LOC(@"SB_ID_COPIED"), YES);
     }];
-    [sheet addAction:copyAction];
-
-    YTActionSheetAction *editAction = [%c(YTActionSheetAction) actionWithTitle:LOC(@"SB_EDIT_ID")
-                                                                      iconImage:[UIImage systemImageNamed:@"square.and.pencil"]
-                                                                           style:0
-                                                                        handler:^(__unused YTActionSheetAction *action) {
-        YMSBCardViewController *card = [[YMSBCardViewController alloc] init];
-        card.cardTitle = LOC(isPublic ? @"SB_PUBLIC_ID" : @"SB_PRIVATE_ID");
-
-        UITextField *field = [[UITextField alloc] init];
-        field.text = userID;
-        field.font = [UIFont monospacedSystemFontOfSize:14 weight:UIFontWeightRegular];
-        field.textColor = [UIColor labelColor];
-        // Border, corner radius and fill are applied by the card
-        // (sbStyleFieldBorders) so they follow appearance changes.
-        field.borderStyle = UITextBorderStyleNone;
-        field.clearButtonMode = UITextFieldViewModeWhileEditing;
-        field.autocapitalizationType = UITextAutocapitalizationTypeNone;
-        field.autocorrectionType = UITextAutocorrectionTypeNo;
-        field.spellCheckingType = UITextSpellCheckingTypeNo;
-        field.keyboardType = UIKeyboardTypeASCIICapable;
-        card.textField = field;
-
-        card.items = @[
-            [YMSBCardItem itemWithImage:[UIImage systemImageNamed:@"checkmark.circle.fill"]
-                                   title:LOC(@"SB_ID_SAVE")
-                                subtitle:nil
-                               tintColor:[UIColor systemGreenColor]
-                                  handler:^(YMSBCardViewController *c) {
-                NSString *newValue = [field.text stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-                if (newValue.length < 30) {
-                    sbShowSBPill(LOC(@"SB_ID_INVALID"), NO);
-                    return;
-                }
-                if (isPublic) {
-                    sbSetPublicUserIDManual(newValue);
-                } else {
-                    sbSetPrivateUserID(newValue);
-                }
-                [c dismissCard];
-                sbShowSBPill(LOC(@"SB_ID_SAVED"), YES);
-                __strong typeof(weakSelf) strongSelf = weakSelf;
-                [strongSelf.tableView reloadData];
-            }],
-            [YMSBCardItem itemWithImage:[UIImage systemImageNamed:@"xmark.circle.fill"]
-                                   title:LOC(@"SB_ID_CANCEL")
-                                subtitle:nil
-                               tintColor:[UIColor systemRedColor]
-                                  handler:^(YMSBCardViewController *c) {
-                [c dismissCard];
-            }],
-        ];
-        [YMSBCardViewController presentCard:card];
+    [alertView addTitle:LOC(@"SB_ID_SAVE") withAction:^{
+        NSString *newValue = [field.text stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+        if (newValue.length < 30) {
+            sbShowSBPill(LOC(@"SB_ID_INVALID"), NO);
+            return;
+        }
+        if (isPublic) {
+            sbSetPublicUserIDManual(newValue);
+        } else {
+            sbSetPrivateUserID(newValue);
+        }
+        sbShowSBPill(LOC(@"SB_ID_SAVED"), YES);
+        __strong typeof(weakSelf) strongSelf = weakSelf;
+        [strongSelf.tableView reloadData];
     }];
-    [sheet addAction:editAction];
+    [alertView show];
 
-    [sheet presentFromView:sourceView animated:YES completion:nil];
+    // Focus the field once the alert has finished fading in.
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        [field becomeFirstResponder];
+    });
 }
 
 #pragma mark - UIColorPickerViewControllerDelegate

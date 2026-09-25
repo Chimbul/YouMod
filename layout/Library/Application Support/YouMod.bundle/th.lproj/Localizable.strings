@@ -456,8 +456,8 @@
 "FIXES_SLOW_MINIPLAYER_DESC" = "แก้ไขมินิเพลเยอร์ตอบสนองช้า สามารถใช้ได้เฉพาะกับ YouTube เวอร์ชั่นเก่า";
 "DISABLES_NEW_MINIPLAYER" = "ปิดใช้งานมินิเพลเยอร์ใหม่";
 "DISABLES_NEW_MINIPLAYER_DESC" = "ใช้มินิเพลเยอร์แบบเก่า สามารถใช้ได้เฉพาะกับ YouTube เวอร์ชั่นเก่า";
-"DISABLES_SNACK_BAR" = "ปิดใข้งาน Snack bar";
-"DISABLES_SNACK_BAR_DESC" = "ปิดใข้งาน Snack bar เมื่อแตะปุ่มหรือทำอะไรในแอป";
+"DISABLES_SNACK_BAR" = "ปิดใช้งาน Snack bar";
+"DISABLES_SNACK_BAR_DESC" = "ปิดใช้งาน Snack bar เมื่อแตะปุ่มหรือทำอะไรในแอป";
 "HIDE_STARTUP_ANIMATIONS" = "ซ่อนแอนิเมชัน";
 "HIDE_STARTUP_ANIMATIONS_DESC" = "ซ่อนแอนิเมชันตอนเปิดแอป";
 "HIDE_LIKE_DISLIKE_VOTES" = "ซ่อนโหวดชอบ/ไม่ชอบ";
@@ -544,6 +544,7 @@
 
 "SB_ACTION_DISABLE" = "ปิดการใช้งาน";
 "SB_ACTION_AUTO_SKIP" = "ข้ามอัตโนมัติ";
+"SB_ACTION_ALWAYS_SKIP" = "ข้ามอัตโนมัติตลอด";
 "SB_ACTION_ASK" = "ถามก่อนข้าม";
 "SB_ACTION_DISPLAY" = "แสดงบนแถบเวลาเท่านั้น";
 "SB_ACTION_SKIP_TO" = "ข้ามไปยังช่วงนี้";
@@ -586,7 +587,7 @@
 "SB_MENU_DISABLE" = "ปิด SponsorBlock";
 "SB_MENU_VOTE" = "โหวต segment";
 "SB_MENU_WHITELIST" = "Whitelist ช่องนี้";
-"SB_VOTE_TITLE" = "Segments";
+"SB_VOTE_TITLE" = "รายการ Segments";
 "SB_VOTES_COUNT" = "%ld โหวต";
 "SB_VOTE_UPVOTE" = "โหวตว่าถูกต้อง";
 "SB_VOTE_DOWNVOTE" = "โหวตว่าไม่ถูกต้อง";
@@ -600,12 +601,13 @@
 "SB_WHITELIST_ADD" = "เพิ่มใน whitelist";
 "SB_WHITELIST_REMOVE" = "นำออกจาก whitelist";
 "SB_WHITELIST_DESC" = "SponsorBlock จะถูกปิดสำหรับช่องนี้";
-"SB_WHITELIST_MANAGE" = "Whitelist";
+"SB_WHITELIST_MANAGE" = "จัดการ Whitelist";
 "SB_WHITELIST_EMPTY" = "ยังไม่มีช่องใน whitelist";
 "SB_WHITELIST_DELETE" = "ลบ";
-"SB_USERID_HEADER" = "User ID";
-"SB_PRIVATE_ID" = "Private User ID";
-"SB_PUBLIC_ID" = "Public User ID";
+"SB_USERID_HEADER" = "การตั้งค่า User ID";
+"SB_PRIVATE_ID" = "User ID ส่วนตัว";
+"SB_PUBLIC_ID" = "User ID สาธารณะ";
+"SB_TAP_TO_SHOW" = "แตะเพื่อแสดง";
 "SB_COPY_ID" = "คัดลอก ID";
 "SB_EDIT_ID" = "แก้ไข ID";
 "SB_ID_COPIED" = "คัดลอก ID แล้ว";
@@ -613,5 +615,6 @@
 "SB_ID_INVALID" = "ID ต้องยาวอย่างน้อย 30 ตัวอักษร";
 "SB_ID_SAVE" = "บันทึก";
 "SB_ID_CANCEL" = "ยกเลิก";
+
 "AUDIO" = "เสียง";
 
