@@ -305,6 +305,7 @@
 #define RemoveNotifyOption @"YouModRemoveNotifyOption"
 #define RemoveClearScreenOption @"YouModRemoveClearScreenOption"
 #define RemoveAddToLastQueueOption @"YouModRemoveAddToLastQueueOption"
+#define YouModVersion @"2.1.0"
 // SponsorBlock
 #define SBEnabled @"YouModSBEnabled"
 #define SBShowButton @"YouModSBShowButton"
@@ -780,11 +781,10 @@ typedef NS_ENUM(NSInteger, SBSegmentAction) {
 + (void)fetchSegmentsForVideoID:(NSString *)videoID completion:(void (^)(NSArray<SBSegment *> *segments))completion;
 @end
 
-// Segment voting; implemented as a category in SponsorBlockMenu.x so the
-// primary @implementation in SponsorBlock.x stays fetch/skip only.
-@interface SBRequest (Vote)
+@interface SBRequest (Write)
 + (void)voteOnSegment:(SBSegment *)segment videoID:(NSString *)videoID type:(NSInteger)voteType completion:(void (^)(BOOL success, NSString *errorMessage))completion;
 + (void)voteCategoryOnSegment:(SBSegment *)segment videoID:(NSString *)videoID category:(NSString *)category completion:(void (^)(BOOL success, NSString *errorMessage))completion;
++ (void)submitSegmentForVideoID:(NSString *)videoID category:(NSString *)category start:(float)start end:(float)end duration:(float)duration completion:(void (^)(BOOL success, NSString *errorMessage))completion;
 @end
 
 @interface SBSkipNotificationView : UIView
@@ -806,6 +806,13 @@ typedef NS_ENUM(NSInteger, SBSegmentAction) {
 - (void)dismissWithCompletion:(void (^)(void))completion;
 - (void)pauseProgress;
 - (void)resumeProgress;
+@end
+
+// Overlay window/view that only take touches landing on their subviews; empty
+// areas fall through to YouTube's window underneath (SponsorBlock.x).
+@interface SBPassthroughView : UIView
+@end
+@interface SBPassthroughWindow : UIWindow
 @end
 
 extern UIView *sbGetNotificationParent(void);
@@ -835,6 +842,7 @@ extern YTPlayerViewController *YouModCurrentPlayerViewController;
 @property (nonatomic, copy) NSString *subtitle;
 @property (nonatomic, strong) UIColor *tintColor;
 @property (nonatomic, copy) NSString *identifier; // e.g. channelID on whitelist rows
+@property (nonatomic, strong) UIView *accessoryView; // optional trailing controls
 @property (nonatomic, copy) void (^handler)(YMSBCardViewController *card);
 + (instancetype)itemWithImage:(UIImage *)image title:(NSString *)title subtitle:(NSString *)subtitle tintColor:(UIColor *)tint handler:(void (^)(YMSBCardViewController *card))handler;
 @end
@@ -847,6 +855,7 @@ extern YTPlayerViewController *YouModCurrentPlayerViewController;
 @property (nonatomic, strong) UISearchBar *searchBar; // optional search bar; filters items by title/subtitle
 @property (nonatomic, strong) NSArray<YMSBCardItem *> *items;
 @property (nonatomic, assign) BOOL swipeToDelete;
+@property (nonatomic, assign) BOOL undimmedHalfSheet; // half-height, player stays usable behind it
 @property (nonatomic, copy) void (^onDeleteItem)(YMSBCardViewController *card, YMSBCardItem *item);
 - (void)reloadItems;
 - (void)dismissCard;
@@ -1053,7 +1062,14 @@ extern NSString *YouModGlobalAuthHeader;
 @property (nonatomic, strong) NSArray<SBSegment *> *sbSegments;
 @property (nonatomic, strong) NSMutableSet<NSString *> *sbSkippedSegments;
 @property (nonatomic, strong) SBSkipNotificationView *sbNotificationView;
+@property (nonatomic, strong) NSMutableSet<NSString *> *sbAcceptedMutes;
+@property (nonatomic, assign) BOOL sbMutedBySegment;
+@property (nonatomic, strong) NSMutableDictionary *sbDraft;
 - (void)sbCheckSegmentsAtCurrentTime;
+- (void)sbUpdateMuteAtTime:(CGFloat)currentTime;
+- (void)sbShowFullVideoLabelIfNeeded:(NSArray<SBSegment *> *)segments;
+- (void)sbShowSubmitCard;
+- (NSArray<YMSBCardItem *> *)sbSubmitItemsForCard:(YMSBCardViewController *)card;
 - (void)sbPerformSkip:(SBSegment *)segment;
 - (void)sbShowAskNotification:(SBSegment *)segment;
 - (void)sbShowHighlightBannerIfNeeded:(NSArray<SBSegment *> *)segments;

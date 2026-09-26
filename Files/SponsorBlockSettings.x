@@ -580,7 +580,9 @@ static const void *kSBAllFlatRowsKey = &kSBAllFlatRowsKey;
     }
 
     NSArray<NSNumber *> *actionOptions;
-    if (isHighlight) {
+    if ([category isEqualToString:@"exclusive_access"]) {
+        actionOptions = @[@(SBSegmentActionDisable), @(SBSegmentActionDisplay)];
+    } else if (isHighlight) {
         actionOptions = @[@(SBSegmentActionDisable), @(SBSegmentActionSkipTo), @(SBSegmentActionAlwaysSkip), @(SBSegmentActionAsk), @(SBSegmentActionDisplay)];
     } else {
         actionOptions = @[@(SBSegmentActionDisable), @(SBSegmentActionAutoSkip), @(SBSegmentActionAlwaysSkip), @(SBSegmentActionAsk), @(SBSegmentActionDisplay)];
@@ -996,6 +998,7 @@ NSArray<YMSearchRow *> *sbSearchRows(UIViewController *host) {
         @"hook":           @[@(SBSegmentActionDisable),  @"#395699"],
         @"poi_highlight":  @[@(SBSegmentActionDisable),  @"#FF006A"],
         @"filler":         @[@(SBSegmentActionDisable),  @"#7300FF"],
+        @"exclusive_access": @[@(SBSegmentActionDisplay), @"#008A5C"],
     };
 
     NSMutableDictionary *defaults = [@{

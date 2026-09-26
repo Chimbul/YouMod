@@ -28,6 +28,18 @@ static NSString *sbFormatTime(float t) {
     return [NSString stringWithFormat:@"%ld:%02ld", (long)m, (long)s];
 }
 
+// Like sbFormatTime but with tenths, for marking segment boundaries.
+static NSString *sbFormatPreciseTime(float t) {
+    if (t < 0) t = 0;
+    NSInteger tenths = (NSInteger)lroundf(t * 10.0f);
+    NSInteger total = tenths / 10;
+    NSInteger h = total / 3600;
+    NSInteger m = (total % 3600) / 60;
+    NSInteger sec = total % 60;
+    if (h > 0) return [NSString stringWithFormat:@"%ld:%02ld:%02ld.%ld", (long)h, (long)m, (long)sec, (long)(tenths % 10)];
+    return [NSString stringWithFormat:@"%ld:%02ld.%ld", (long)m, (long)sec, (long)(tenths % 10)];
+}
+
 static NSString *sbLocalizedCategoryName(NSString *category) {
     return [YouModBundle() localizedStringForKey:[NSString stringWithFormat:@"SB_CAT_%@", category ?: @""]
                                             value:category
@@ -219,19 +231,34 @@ static void sbRefreshPlayerAfterWhitelistChange(void) {
     sbPostSegmentsForPlayer(player, !listed);
 }
 
-#pragma mark - SBRequest (Vote)
+#pragma mark - SBRequest (Write)
 
-// All parameters go in the URL query string per the SponsorBlock API; the
-// response body is empty on 200 and carries a plain-text reason on 400/403.
-static void sbPostVoteQuery(NSString *query, void (^completion)(BOOL success, NSString *errorMessage)) {
-    NSString *urlString = [@"https://sponsor.ajay.app/api/voteOnSponsorTime?" stringByAppendingString:query];
+static NSString *sbQueryValue(NSString *value) {
+    static NSCharacterSet *allowed;
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{
+        NSMutableCharacterSet *set = [[NSCharacterSet URLQueryAllowedCharacterSet] mutableCopy];
+        [set removeCharactersInString:@"&=+?"];
+        allowed = set;
+    });
+    return [value ?: @"" stringByAddingPercentEncodingWithAllowedCharacters:allowed];
+}
+
+// All parameters go in the URL query string per the SponsorBlock API.
+// Failed requests carry a plain-text reason in the body (400/403).
+static void sbPostQuery(NSString *path, NSDictionary<NSString *, NSString *> *params, void (^completion)(BOOL success, NSInteger status, NSString *errorMessage)) {
+    NSMutableArray *pairs = [NSMutableArray array];
+    [params enumerateKeysAndObjectsUsingBlock:^(NSString *key, NSString *value, __unused BOOL *stop) {
+        [pairs addObject:[NSString stringWithFormat:@"%@=%@", key, sbQueryValue(value)]];
+    }];
+    NSString *urlString = [NSString stringWithFormat:@"https://sponsor.ajay.app%@?%@", path, [pairs componentsJoinedByString:@"&"]];
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:urlString]];
     request.HTTPMethod = @"POST";
     request.timeoutInterval = 15.0;
 
     [[[NSURLSession sharedSession] dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
-        NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)response;
-        BOOL ok = (error == nil) && [httpResponse statusCode] == 200;
+        NSInteger status = [(NSHTTPURLResponse *)response statusCode];
+        BOOL ok = (error == nil) && status == 200;
         NSString *message = nil;
         if (!ok) {
             if (error) message = error.localizedDescription;
@@ -239,22 +266,22 @@ static void sbPostVoteQuery(NSString *query, void (^completion)(BOOL success, NS
                 message = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
             }
             if (message.length > 120) message = [message substringToIndex:120];
-            if (message.length == 0) message = [NSString stringWithFormat:@"HTTP %ld", (long)[httpResponse statusCode]];
+            if (message.length == 0) message = [NSString stringWithFormat:@"HTTP %ld", (long)status];
         }
-        if (completion) dispatch_async(dispatch_get_main_queue(), ^{ completion(ok, message); });
+        if (completion) dispatch_async(dispatch_get_main_queue(), ^{ completion(ok, status, message); });
     }] resume];
 }
 
-@implementation SBRequest (Vote)
+@implementation SBRequest (Write)
 
 + (void)voteOnSegment:(SBSegment *)segment videoID:(NSString *)videoID type:(NSInteger)voteType completion:(void (^)(BOOL success, NSString *errorMessage))completion {
     if (!segment.UUID.length || !videoID.length) {
         if (completion) completion(NO, nil);
         return;
     }
-    NSString *query = [NSString stringWithFormat:@"UUID=%@&videoID=%@&userID=%@&type=%ld",
-                       segment.UUID, videoID, sbLocalUserID(), (long)voteType];
-    sbPostVoteQuery(query, completion);
+    sbPostQuery(@"/api/voteOnSponsorTime",
+                @{@"UUID": segment.UUID, @"videoID": videoID, @"userID": sbLocalUserID(), @"type": [@(voteType) stringValue]},
+                ^(BOOL ok, __unused NSInteger status, NSString *message) { if (completion) completion(ok, message); });
 }
 
 + (void)voteCategoryOnSegment:(SBSegment *)segment videoID:(NSString *)videoID category:(NSString *)category completion:(void (^)(BOOL success, NSString *errorMessage))completion {
@@ -262,9 +289,32 @@ static void sbPostVoteQuery(NSString *query, void (^completion)(BOOL success, NS
         if (completion) completion(NO, nil);
         return;
     }
-    NSString *query = [NSString stringWithFormat:@"UUID=%@&videoID=%@&userID=%@&category=%@",
-                       segment.UUID, videoID, sbLocalUserID(), category];
-    sbPostVoteQuery(query, completion);
+    sbPostQuery(@"/api/voteOnSponsorTime",
+                @{@"UUID": segment.UUID, @"videoID": videoID, @"userID": sbLocalUserID(), @"category": category},
+                ^(BOOL ok, __unused NSInteger status, NSString *message) { if (completion) completion(ok, message); });
+}
+
++ (void)submitSegmentForVideoID:(NSString *)videoID category:(NSString *)category start:(float)start end:(float)end duration:(float)duration completion:(void (^)(BOOL success, NSString *errorMessage))completion {
+    NSString *actionType = @"skip";
+    if ([category isEqualToString:@"poi_highlight"]) actionType = @"poi";
+    else if ([category isEqualToString:@"exclusive_access"]) actionType = @"full";
+
+    NSMutableDictionary *params = [@{
+        @"videoID": videoID ?: @"",
+        @"userID": sbLocalUserID(),
+        @"category": category ?: @"",
+        @"startTime": [NSString stringWithFormat:@"%.3f", start],
+        @"endTime": [NSString stringWithFormat:@"%.3f", end],
+        @"actionType": actionType,
+        @"userAgent": [@"YouMod/" stringByAppendingString:YouModVersion],
+    } mutableCopy];
+    if (duration > 0) params[@"videoDuration"] = [NSString stringWithFormat:@"%.3f", duration];
+
+    sbPostQuery(@"/api/skipSegments", params, ^(BOOL ok, NSInteger status, NSString *message) {
+        if (status == 409) message = LOC(@"SB_SUBMIT_DUPLICATE");
+        else if (status == 429) message = LOC(@"SB_SUBMIT_RATE_LIMIT");
+        if (completion) completion(ok, message);
+    });
 }
 
 @end
@@ -282,6 +332,58 @@ static void sbPostVoteQuery(NSString *query, void (^completion)(BOOL success, NS
 }
 
 @end
+
+#pragma mark - Bottom panel
+
+static SBPassthroughWindow *sbPanelWindow = nil;
+static const NSTimeInterval SBPanelAnimationDuration = 0.3;
+
+static void sbHidePanel(void) {
+    SBPassthroughWindow *window = sbPanelWindow;
+    sbPanelWindow = nil;
+    UIView *panel = window.rootViewController.childViewControllers.firstObject.view;
+    if (!panel) {
+        window.hidden = YES;
+        return;
+    }
+    [UIView animateWithDuration:SBPanelAnimationDuration animations:^{
+        panel.transform = CGAffineTransformMakeTranslation(0, panel.bounds.size.height);
+    } completion:^(__unused BOOL finished) {
+        window.hidden = YES;
+    }];
+}
+
+static void sbShowInPanel(UINavigationController *nav, UIWindowScene *scene) {
+    if (sbPanelWindow) sbHidePanel();
+    SBPassthroughWindow *window = [[SBPassthroughWindow alloc] initWithWindowScene:scene];
+    window.frame = scene.coordinateSpace.bounds;
+    window.windowLevel = UIWindowLevelNormal + 1;
+    window.backgroundColor = [UIColor clearColor];
+
+    UIViewController *host = [[UIViewController alloc] init];
+    host.view = [[SBPassthroughView alloc] initWithFrame:window.bounds];
+    host.view.backgroundColor = [UIColor clearColor];
+    host.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+
+    [host addChildViewController:nav];
+    CGFloat height = round(window.bounds.size.height / 2.0);
+    nav.view.frame = CGRectMake(0, window.bounds.size.height - height, window.bounds.size.width, height);
+    nav.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleTopMargin;
+    nav.view.layer.cornerRadius = 12.0;
+    nav.view.layer.maskedCorners = kCALayerMinXMinYCorner | kCALayerMaxXMinYCorner;
+    nav.view.layer.masksToBounds = YES;
+    [host.view addSubview:nav.view];
+    [nav didMoveToParentViewController:host];
+
+    window.rootViewController = host;
+    window.hidden = NO;
+    sbPanelWindow = window;
+
+    nav.view.transform = CGAffineTransformMakeTranslation(0, height);
+    [UIView animateWithDuration:SBPanelAnimationDuration animations:^{
+        nav.view.transform = CGAffineTransformIdentity;
+    }];
+}
 
 #pragma mark - YMSBCardViewController (form sheet)
 
@@ -562,7 +664,10 @@ static void sbPostVoteQuery(NSString *query, void (^completion)(BOOL success, NS
     cell.imageView.image = item.image;
     cell.imageView.tintColor = item.tintColor;
     cell.textLabel.text = item.title;
+    cell.textLabel.numberOfLines = 0;
     cell.detailTextLabel.text = item.subtitle.length > 0 ? item.subtitle : nil;
+    // Assigned on every pass so a reused cell never keeps another row's controls.
+    cell.accessoryView = item.accessoryView;
     return cell;
 }
 
@@ -612,6 +717,10 @@ static void sbPostVoteQuery(NSString *query, void (^completion)(BOOL success, NS
 }
 
 - (void)dismissCard {
+    if (sbPanelWindow && self.navigationController.parentViewController == sbPanelWindow.rootViewController) {
+        sbHidePanel();
+        return;
+    }
     [self dismissViewControllerAnimated:YES completion:nil];
 }
 
@@ -639,9 +748,15 @@ static void sbPostVoteQuery(NSString *query, void (^completion)(BOOL success, NS
     nav.navigationBar.titleTextAttributes = titleAttributes;
     nav.navigationBar.prefersLargeTitles = NO;
 
+
     UIViewController *presenter = YouModTopViewController(nil);
     while (presenter.presentedViewController) {
         presenter = presenter.presentedViewController;
+    }
+    UIWindowScene *scene = presenter.view.window.windowScene;
+    if (card.undimmedHalfSheet && scene) {
+        sbShowInPanel(nav, scene);
+        return nav;
     }
     [presenter presentViewController:nav animated:YES completion:nil];
     return nav;
@@ -711,6 +826,17 @@ static void sbPostVoteQuery(NSString *query, void (^completion)(BOOL success, NS
         [sheet addAction:voteAction];
     }
 
+    if (active) {
+        YTActionSheetAction *submitAction = [%c(YTActionSheetAction) actionWithTitle:LOC(@"SB_MENU_SUBMIT")
+                                                                            iconImage:sbSheetIcon(@"plus.circle")
+                                                                                 style:0
+                                                                              handler:^(__unused YTActionSheetAction *action) {
+            __strong typeof(weakSelf) strongSelf = weakSelf;
+            if (strongSelf) [strongSelf sbShowSubmitCard];
+        }];
+        [sheet addAction:submitAction];
+    }
+
     YTActionSheetAction *whitelistAction = [%c(YTActionSheetAction) actionWithTitle:LOC(channelListed ? @"SB_WHITELIST_REMOVE" : @"SB_WHITELIST_ADD")
                                                                             iconImage:sbSheetIcon(channelListed ? @"checkmark.seal.fill" : @"checkmark.seal")
                                                                                  style:0
@@ -721,6 +847,24 @@ static void sbPostVoteQuery(NSString *query, void (^completion)(BOOL success, NS
     [sheet addAction:whitelistAction];
 
     [sheet presentFromView:sourceView animated:YES completion:nil];
+}
+
+// выборы, выборы, кандидаты пидоры
+static void sbHandleVoteResult(YTPlayerViewController *player, SBSegment *droppedSegment, NSString *videoID, BOOL success, NSString *errorMessage) {
+    if (!success) {
+        NSString *reason = errorMessage.length > 0 ? [NSString stringWithFormat:@"%@ — %@", LOC(@"SB_VOTE_FAILED"), errorMessage] : LOC(@"SB_VOTE_FAILED");
+        sbShowSBPill(reason, NO);
+        return;
+    }
+    sbInvalidateSegmentCache(videoID);
+    sbShowSBPill(LOC(@"SB_VOTE_SUCCESS"), YES);
+    if (!player || !droppedSegment || ![[player currentVideoID] isEqualToString:videoID]) return;
+    NSMutableArray *remaining = [player.sbSegments mutableCopy];
+    [remaining removeObject:droppedSegment];
+    player.sbSegments = remaining;
+    [[NSNotificationCenter defaultCenter] postNotificationName:@"SBSegmentsDidLoad"
+                                                        object:player
+                                                      userInfo:@{@"segments": remaining ?: @[]}];
 }
 
 // Form-sheet card listing every loaded segment (categories the user enabled);
@@ -776,19 +920,15 @@ static void sbPostVoteQuery(NSString *query, void (^completion)(BOOL success, NS
         if (!strongSelf) return;
         NSString *videoID = [strongSelf currentVideoID];
         [SBRequest voteOnSegment:segment videoID:videoID type:type completion:^(BOOL success, NSString *errorMessage) {
-            if (success) {
-                sbInvalidateSegmentCache(videoID);
-                sbShowSBPill(LOC(@"SB_VOTE_SUCCESS"), YES);
-            } else {
-                NSString *reason = errorMessage.length > 0 ? [NSString stringWithFormat:@"%@ — %@", LOC(@"SB_VOTE_FAILED"), errorMessage] : LOC(@"SB_VOTE_FAILED");
-                sbShowSBPill(reason, NO);
-            }
+            sbHandleVoteResult(weakSelf, type == 0 ? segment : nil, videoID, success, errorMessage);
         }];
     };
 
+    BOOL canChangeCategory = ![segment.actionType isEqualToString:@"poi"] && ![segment.actionType isEqualToString:@"full"];
+
     YMSBCardViewController *options = [[YMSBCardViewController alloc] init];
     options.cardTitle = sbLocalizedCategoryName(segment.category);
-    options.items = @[
+    NSMutableArray<YMSBCardItem *> *optionItems = [@[
         [YMSBCardItem itemWithImage:sbSymbolImage(@"hand.thumbsup.fill")
                                title:LOC(@"SB_VOTE_UPVOTE")
                             subtitle:segmentInfo
@@ -804,14 +944,6 @@ static void sbPostVoteQuery(NSString *query, void (^completion)(BOOL success, NS
                             subtitle:segmentInfo
                            tintColor:[UIColor labelColor]
                               handler:^(__unused YMSBCardViewController *c) { voteHandler(20); }],
-        [YMSBCardItem itemWithImage:sbSymbolImage(@"tag")
-                               title:LOC(@"SB_VOTE_CHANGE_CATEGORY")
-                            subtitle:segmentInfo
-                           tintColor:[UIColor labelColor]
-                               handler:^(YMSBCardViewController *c) {
-            __strong typeof(weakSelf) strongSelf = weakSelf;
-            if (strongSelf) [strongSelf sbPushCategoryPickerForSegment:segment fromCard:c];
-        }],
         [YMSBCardItem itemWithImage:sbSymbolImage(@"backward.end.fill")
                                title:LOC(@"SB_VOTE_JUMP_START")
                             subtitle:segmentInfo
@@ -830,7 +962,18 @@ static void sbPostVoteQuery(NSString *query, void (^completion)(BOOL success, NS
             __strong typeof(weakSelf) strongSelf = weakSelf;
             if (strongSelf) [strongSelf seekToTime:(CGFloat)segment.endTime];
         }],
-    ];
+    ] mutableCopy];
+    if (canChangeCategory) {
+        [optionItems insertObject:[YMSBCardItem itemWithImage:sbSymbolImage(@"tag")
+                                                        title:LOC(@"SB_VOTE_CHANGE_CATEGORY")
+                                                     subtitle:segmentInfo
+                                                    tintColor:[UIColor labelColor]
+                                                      handler:^(YMSBCardViewController *c) {
+            __strong typeof(weakSelf) strongSelf = weakSelf;
+            if (strongSelf) [strongSelf sbPushCategoryPickerForSegment:segment fromCard:c];
+        }] atIndex:3];
+    }
+    options.items = optionItems;
     [card.navigationController pushViewController:options animated:YES];
 }
 
@@ -841,6 +984,7 @@ static void sbPostVoteQuery(NSString *query, void (^completion)(BOOL success, NS
 
     NSMutableArray<YMSBCardItem *> *items = [NSMutableArray array];
     for (NSString *category in sbAllCategories()) {
+        if ([category isEqualToString:segment.category] || [category isEqualToString:@"poi_highlight"] || [category isEqualToString:@"exclusive_access"]) continue;
         NSString *hex = [[NSUserDefaults standardUserDefaults] stringForKey:SB_COLOR_KEY(category)];
         UIColor *color = hex ? SBColorFromHex(hex) : [UIColor whiteColor];
         [items addObject:[YMSBCardItem itemWithImage:sbDotImage(color)
@@ -853,13 +997,7 @@ static void sbPostVoteQuery(NSString *query, void (^completion)(BOOL success, NS
             if (!strongSelf) return;
             NSString *videoID = [strongSelf currentVideoID];
             [SBRequest voteCategoryOnSegment:segment videoID:videoID category:category completion:^(BOOL success, NSString *errorMessage) {
-                if (success) {
-                    sbInvalidateSegmentCache(videoID);
-                    sbShowSBPill(LOC(@"SB_VOTE_SUCCESS"), YES);
-                } else {
-                    NSString *reason = errorMessage.length > 0 ? [NSString stringWithFormat:@"%@ — %@", LOC(@"SB_VOTE_FAILED"), errorMessage] : LOC(@"SB_VOTE_FAILED");
-                    sbShowSBPill(reason, NO);
-                }
+                sbHandleVoteResult(weakSelf, nil, videoID, success, errorMessage);
             }];
         }]];
     }
@@ -868,6 +1006,182 @@ static void sbPostVoteQuery(NSString *query, void (^completion)(BOOL success, NS
     picker.cardTitle = LOC(@"SB_VOTE_CHANGE_CATEGORY");
     picker.items = items;
     [card.navigationController pushViewController:picker animated:YES];
+}
+
+// −1 / −0.1 / +0.1 / +1 second buttons for fine-tuning a marked time.
+static UIView *sbNudgeControls(void (^nudge)(float delta)) {
+    UIStackView *stack = [[UIStackView alloc] init];
+    stack.axis = UILayoutConstraintAxisHorizontal;
+    stack.spacing = 4;
+    for (NSNumber *delta in @[@(-1.0f), @(-0.1f), @(0.1f), @(1.0f)]) {
+        float d = delta.floatValue;
+        NSString *title = [NSString stringWithFormat:@"%@%@", d < 0 ? @"\u2212" : @"+", fabsf(d) < 1 ? @".1" : @"1"];
+        UIButton *button = [UIButton systemButtonWithPrimaryAction:[UIAction actionWithTitle:title image:nil identifier:nil handler:^(__unused UIAction *action) {
+            nudge(d);
+        }]];
+        button.titleLabel.font = [UIFont monospacedDigitSystemFontOfSize:14 weight:UIFontWeightSemibold];
+        button.backgroundColor = [UIColor tertiarySystemFillColor];
+        button.layer.cornerRadius = 8;
+        [button.widthAnchor constraintEqualToConstant:36].active = YES;
+        [button.heightAnchor constraintEqualToConstant:32].active = YES;
+        [stack addArrangedSubview:button];
+    }
+    stack.frame = CGRectMake(0, 0, 4 * 36 + 3 * 4, 32);
+    return stack;
+}
+
+// New-segment draft for the current video (-1 means not set yet)
+%property (nonatomic, strong) NSMutableDictionary *sbDraft;
+
+%new
+- (void)sbShowSubmitCard {
+    NSString *videoID = [self currentVideoID];
+    if (videoID.length == 0) return;
+    if (![self.sbDraft[@"videoID"] isEqualToString:videoID]) {
+        self.sbDraft = [@{@"videoID": videoID, @"category": @"sponsor", @"start": @(-1), @"end": @(-1)} mutableCopy];
+    }
+    YMSBCardViewController *card = [[YMSBCardViewController alloc] init];
+    card.cardTitle = LOC(@"SB_SUBMIT_TITLE");
+    card.message = LOC(@"SB_SUBMIT_MESSAGE");
+    card.undimmedHalfSheet = YES;
+    card.items = [self sbSubmitItemsForCard:card];
+    [YMSBCardViewController presentCard:card];
+}
+
+%new
+- (NSArray<YMSBCardItem *> *)sbSubmitItemsForCard:(YMSBCardViewController *)card {
+    __weak typeof(self) weakSelf = self;
+    NSMutableDictionary *draft = self.sbDraft;
+    NSString *category = draft[@"category"];
+    float start = [draft[@"start"] floatValue];
+    float end = [draft[@"end"] floatValue];
+    BOOL isPoi = [category isEqualToString:@"poi_highlight"];
+    BOOL isFull = [category isEqualToString:@"exclusive_access"];
+    NSString *unset = LOC(@"SB_SUBMIT_NOT_SET");
+
+    // Weak card: the items built here hold this block, and the card holds them.
+    __weak YMSBCardViewController *weakCard = card;
+    void (^refresh)(void) = ^{
+        __strong typeof(weakSelf) strongSelf = weakSelf;
+        YMSBCardViewController *strongCard = weakCard;
+        if (strongSelf && strongCard) strongCard.items = [strongSelf sbSubmitItemsForCard:strongCard];
+    };
+
+    // Shifts a marked time and seeks there, so the exact frame is visible.
+    void (^nudge)(NSString *, float) = ^(NSString *key, float delta) {
+        __strong typeof(weakSelf) strongSelf = weakSelf;
+        if (!strongSelf) return;
+        float duration = (float)[strongSelf currentVideoTotalMediaTime];
+        float value = MAX(0.0f, [draft[key] floatValue] + delta);
+        if (duration > 0) value = MIN(value, duration);
+        draft[key] = @(value);
+        [strongSelf seekToTime:(CGFloat)value];
+        refresh();
+    };
+
+    NSString *hex = [[NSUserDefaults standardUserDefaults] stringForKey:SB_COLOR_KEY(category)];
+    NSMutableArray<YMSBCardItem *> *items = [NSMutableArray array];
+    [items addObject:[YMSBCardItem itemWithImage:sbDotImage(hex ? SBColorFromHex(hex) : [UIColor whiteColor])
+                                           title:sbLocalizedCategoryName(category)
+                                        subtitle:LOC(@"SB_SUBMIT_CATEGORY")
+                                       tintColor:[UIColor labelColor]
+                                         handler:^(YMSBCardViewController *c) {
+        __strong typeof(weakSelf) strongSelf = weakSelf;
+        if (!strongSelf) return;
+        NSMutableArray<YMSBCardItem *> *pickerItems = [NSMutableArray array];
+        for (NSString *cat in sbAllCategories()) {
+            NSString *catHex = [[NSUserDefaults standardUserDefaults] stringForKey:SB_COLOR_KEY(cat)];
+            [pickerItems addObject:[YMSBCardItem itemWithImage:sbDotImage(catHex ? SBColorFromHex(catHex) : [UIColor whiteColor])
+                                                         title:sbLocalizedCategoryName(cat)
+                                                      subtitle:nil
+                                                     tintColor:[UIColor labelColor]
+                                                       handler:^(YMSBCardViewController *picker) {
+                draft[@"category"] = cat;
+                refresh();
+                [picker.navigationController popViewControllerAnimated:YES];
+            }]];
+        }
+        YMSBCardViewController *picker = [[YMSBCardViewController alloc] init];
+        picker.cardTitle = LOC(@"SB_SUBMIT_CATEGORY");
+        picker.items = pickerItems;
+        [c.navigationController pushViewController:picker animated:YES];
+    }]];
+
+    if (!isFull) {
+        [items addObject:[YMSBCardItem itemWithImage:sbSymbolImage(@"arrow.right.to.line")
+                                               title:LOC(isPoi ? @"SB_SUBMIT_SET_HIGHLIGHT" : @"SB_SUBMIT_SET_START")
+                                            subtitle:start >= 0 ? sbFormatPreciseTime(start) : unset
+                                           tintColor:[UIColor labelColor]
+                                             handler:^(__unused YMSBCardViewController *c) {
+            __strong typeof(weakSelf) strongSelf = weakSelf;
+            if (!strongSelf) return;
+            draft[@"start"] = @([strongSelf currentVideoMediaTime]);
+            refresh();
+        }]];
+        if (start >= 0) items.lastObject.accessoryView = sbNudgeControls(^(float delta) { nudge(@"start", delta); });
+    }
+    if (!isFull && !isPoi) {
+        [items addObject:[YMSBCardItem itemWithImage:sbSymbolImage(@"arrow.left.to.line")
+                                               title:LOC(@"SB_SUBMIT_SET_END")
+                                            subtitle:end >= 0 ? sbFormatPreciseTime(end) : unset
+                                           tintColor:[UIColor labelColor]
+                                             handler:^(__unused YMSBCardViewController *c) {
+            __strong typeof(weakSelf) strongSelf = weakSelf;
+            if (!strongSelf) return;
+            draft[@"end"] = @([strongSelf currentVideoMediaTime]);
+            refresh();
+        }]];
+        if (end >= 0) items.lastObject.accessoryView = sbNudgeControls(^(float delta) { nudge(@"end", delta); });
+    }
+    if (!isFull && start >= 0) {
+        [items addObject:[YMSBCardItem itemWithImage:sbSymbolImage(@"play.circle")
+                                               title:LOC(@"SB_SUBMIT_PREVIEW")
+                                            subtitle:nil
+                                           tintColor:[UIColor labelColor]
+                                             handler:^(__unused YMSBCardViewController *c) {
+            // Plays from just before the start so the transition can be
+            // checked; the half sheet stays open over the visible player.
+            __strong typeof(weakSelf) strongSelf = weakSelf;
+            if (!strongSelf) return;
+            [strongSelf seekToTime:(CGFloat)MAX(0.0f, start - 2.0f)];
+        }]];
+    }
+
+    [items addObject:[YMSBCardItem itemWithImage:sbSymbolImage(@"paperplane.fill")
+                                           title:LOC(@"SB_SUBMIT_SEND")
+                                        subtitle:nil
+                                       tintColor:[UIColor systemBlueColor]
+                                         handler:^(YMSBCardViewController *c) {
+        __strong typeof(weakSelf) strongSelf = weakSelf;
+        if (!strongSelf) return;
+        float submitStart = isFull ? 0 : start;
+        float submitEnd = isFull ? 0 : (isPoi ? start : end);
+        BOOL valid = isFull || (isPoi ? submitStart >= 0 : (submitStart >= 0 && submitEnd > submitStart));
+        if (!valid) {
+            sbShowSBPill(LOC(@"SB_SUBMIT_INVALID"), NO);
+            return;
+        }
+        NSString *videoID = draft[@"videoID"];
+        [c dismissCard];
+        [SBRequest submitSegmentForVideoID:videoID
+                                  category:category
+                                     start:submitStart
+                                       end:submitEnd
+                                  duration:(float)[strongSelf currentVideoTotalMediaTime]
+                                completion:^(BOOL success, NSString *errorMessage) {
+            __strong typeof(weakSelf) ss = weakSelf;
+            if (!success) {
+                NSString *reason = errorMessage.length > 0 ? [NSString stringWithFormat:@"%@ — %@", LOC(@"SB_SUBMIT_FAILED"), errorMessage] : LOC(@"SB_SUBMIT_FAILED");
+                sbShowSBPill(reason, NO);
+                return;
+            }
+            sbShowSBPill(LOC(@"SB_SUBMIT_SUCCESS"), YES);
+            if (!ss) return;
+            ss.sbDraft = nil;
+            if ([[ss currentVideoID] isEqualToString:videoID]) sbPostSegmentsForPlayer(ss, YES);
+        }];
+    }]];
+    return items;
 }
 
 // Adds/removes the current channel to/from the whitelist directly from the
