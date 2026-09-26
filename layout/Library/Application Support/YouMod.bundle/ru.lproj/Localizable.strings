@@ -690,10 +690,8 @@
 "SLEEP_TIMER_REMAINING_FMT" = "Осталось: %@";
 "SLEEP_TIMER_MINUTES_FMT" = "%ld мин.";
 "SLEEP_TIMER_END_OF_VIDEO" = "Конец видео";
-"SLEEP_TIMER_TIME_UP" = "Таймер сна сработал — воспроизведение приостановлено";
+"SLEEP_TIMER_TIME_UP" = "Таймер сна сработал. Воспроизведение приостановлено";
 "SLEEP_TIMER_CUSTOM_TIME" = "Выбрать время...";
-
-// Keys synced from en.lproj (English base)
 "SLEEP_TIMER_ENTRY" = "Таймер сна";
 "SLEEP_TIMER_ENTRY_DESC" = "Где показывается кнопка таймера сна.";
 "SLEEP_TIMER_ENTRY_TABBAR" = "Панель вкладок";

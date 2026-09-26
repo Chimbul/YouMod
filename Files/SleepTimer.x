@@ -54,6 +54,7 @@ static NSString *YMSleepTimerFormatClock(NSTimeInterval interval) {
 @property (nonatomic, assign) float originalVolume;
 @property (nonatomic, assign) BOOL volumeCaptured;
 @property (nonatomic, assign) BOOL connectionLost;
+@property (nonatomic, copy) NSString *endOfVideoID;
 + (instancetype)shared;
 - (void)startWithMinutes:(NSInteger)minutes;
 - (void)startAtDate:(NSDate *)date;
@@ -128,6 +129,7 @@ static NSString *YMSleepTimerFormatClock(NSTimeInterval interval) {
     [self restoreVolume];
     self.mode = YMSleepTimerModeEndOfVideo;
     self.endDate = nil;
+    self.endOfVideoID = [YouModCurrentPlayerViewController currentVideoID];
     self.connectionLost = NO;
     [self persist];
     [self scheduleTimer];
@@ -198,7 +200,9 @@ static NSString *YMSleepTimerFormatClock(NSTimeInterval interval) {
         if (remaining <= 7.0) [self applyFadeFraction:(remaining / 7.0)];
     } else {
         YTPlayerViewController *player = YouModCurrentPlayerViewController;
-        if (player && [player isPlaybackFinished]) {
+        NSString *videoID = [player currentVideoID];
+        BOOL videoChanged = self.endOfVideoID && videoID && ![videoID isEqualToString:self.endOfVideoID];
+        if (player && ([player isPlaybackFinished] || videoChanged)) {
             [self fire];
             return;
         }
