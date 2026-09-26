@@ -121,7 +121,7 @@ fi
 
 if [[ -z "$(xcframework_dir)" ]]; then
   info "building FFmpeg for ios-arm64 — this takes 30-90 minutes"
-  ( cd "$SRC_DIR" && ./ios.sh "${BUILD_ARGS[@]}" )
+  ( cd "$SRC_DIR" && ./ios.sh "${BUILD_ARGS[@]}" ) || { tail -n 80 "$SRC_DIR/build.log" >&2; die "ios.sh failed"; }
 fi
 
 install_frameworks
