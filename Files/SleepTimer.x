@@ -147,13 +147,17 @@ static NSString *YMSleepTimerFormatClock(NSTimeInterval interval) {
 
 - (void)fire {
     [self stopTimer];
+    // Fade the audio out completely, then stop the video, then show the
+    // dialog. Volume is only restored after the pause so the *next* playback
+    // doesn't start muted-silent.
+    [self applyFadeFraction:0.0];
+    [self pausePlayer];
     [self restoreVolumeAfterPause];
     self.endDate = nil;
     self.mode = YMSleepTimerModeCountdown;
     [self persist];
     [self deactivateSlimBars];
     [self notifyButtons];
-    [self pausePlayer];
     void (^alert)(void) = ^{
         YTAlertView *alertView = [%c(YTAlertView) infoDialog];
         alertView.title = LOC(@"SLEEP_TIMER");
@@ -349,45 +353,22 @@ static NSString *YMSleepTimerVideoTimeLeftText(void) {
     return text;
 }
 
-// Container that keeps the picker centered inside whatever space the dialog
-// actually gives it — the dialog's content width varies by device/locale, so a
-// fixed frame set up front drifts off-center.
-@interface YMSleepTimerPickerContainer : UIView
-@property (nonatomic, strong) UIDatePicker *datePicker;
-@end
-
-@implementation YMSleepTimerPickerContainer
-- (void)layoutSubviews {
-    [super layoutSubviews];
-    CGSize natural = self.datePicker.intrinsicContentSize;
-    CGFloat width = (natural.width > 0 && natural.width < self.bounds.size.width) ? natural.width : self.bounds.size.width;
-    CGFloat height = (natural.height > 0 && natural.height < self.bounds.size.height) ? natural.height : self.bounds.size.height;
-    self.datePicker.frame = CGRectMake(floorf((self.bounds.size.width - width) / 2.0),
-                                       floorf((self.bounds.size.height - height) / 2.0),
-                                       width, height);
-}
-@end
-
 // Custom time picker inside a YT-native alert (not a system dialog).
 static void YMSleepTimerShowCustomTimeAlert(void) {
     YTAlertView *alertView = [%c(YTAlertView) dialog];
     alertView.title = LOC(@"SLEEP_TIMER_CUSTOM_TIME");
     alertView.shouldDismissOnBackgroundTap = YES;
 
-    YMSleepTimerPickerContainer *container = [[YMSleepTimerPickerContainer alloc] initWithFrame:CGRectMake(0, 0, 238, 150)];
-    container.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-
-    UIDatePicker *datePicker = [[UIDatePicker alloc] init];
+    UIDatePicker *datePicker = [[UIDatePicker alloc] initWithFrame:CGRectMake(0, 0, 238, 150)];
+    datePicker.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     datePicker.datePickerMode = UIDatePickerModeTime;
     // Force the scrolling-wheel style: on iOS 14+ the default is compact, which
     // collapses to a button that opens a separate popover instead of sitting
     // inside this dialog.
     datePicker.preferredDatePickerStyle = UIDatePickerStyleWheels;
     datePicker.locale = [NSLocale currentLocale]; // renders 12/24h per system setting
-    container.datePicker = datePicker;
-    [container addSubview:datePicker];
 
-    alertView.customContentView = container;
+    alertView.customContentView = datePicker;
     alertView.customContentViewInsets = UIEdgeInsetsMake(0, 8, 4, 8);
 
     [alertView addCancelButtonWithAction:nil];
@@ -428,7 +409,7 @@ void YMSleepTimerPresentPicker(UIView *sourceView) {
 
         if ([timer isActive]) {
             YTActionSheetAction *off = [%c(YTActionSheetAction) actionWithTitle:LOC(@"SLEEP_TIMER_OFF")
-                                                                       subtitle:[NSString stringWithFormat:LOC(@"SLEEP_TIMER_REMAINING_FMT"), [timer remainingText]]
+                                                                       subtitle:nil
                                                                       iconImage:nil
                                                                        handler:^(__unused YTActionSheetAction *action) {
                 [timer cancel];

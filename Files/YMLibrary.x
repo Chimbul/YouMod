@@ -166,6 +166,9 @@ static NSString *ymMediaInfoStringForFile(NSURL *fileURL, unsigned long long byt
 @property (nonatomic, strong) UIImageView *thumbnailImageView;
 @property (nonatomic, strong) UILabel *titleLabel;
 @property (nonatomic, strong) UILabel *sizeLabel;
+@property (nonatomic, strong) UIButton *menuButton;
+// Called with the button itself so the sheet can anchor its iPad popover.
+@property (nonatomic, copy) void (^menuTappedHandler)(UIView *sourceView);
 @end
 
 @implementation YMLibraryVideoCell
@@ -178,6 +181,7 @@ static NSString *ymMediaInfoStringForFile(NSURL *fileURL, unsigned long long byt
         _thumbnailImageView = [UIImageView new];
         _thumbnailImageView.contentMode = UIViewContentModeScaleAspectFill;
         _thumbnailImageView.clipsToBounds = YES;
+        _thumbnailImageView.layer.cornerRadius = 12.0;
         _thumbnailImageView.backgroundColor = [UIColor secondarySystemBackgroundColor];
         _thumbnailImageView.translatesAutoresizingMaskIntoConstraints = NO;
 
@@ -192,9 +196,17 @@ static NSString *ymMediaInfoStringForFile(NSURL *fileURL, unsigned long long byt
         _sizeLabel.textColor = [UIColor secondaryLabelColor];
         _sizeLabel.translatesAutoresizingMaskIntoConstraints = NO;
 
+        _menuButton = [UIButton buttonWithType:UIButtonTypeSystem];
+        _menuButton.imageEdgeInsets = UIEdgeInsetsMake(4, 4, 4, 4);
+        [_menuButton setImage:[UIImage systemImageNamed:@"ellipsis"] forState:UIControlStateNormal];
+        _menuButton.tintColor = [UIColor labelColor];
+        [_menuButton addTarget:self action:@selector(menuTapped) forControlEvents:UIControlEventTouchUpInside];
+        _menuButton.translatesAutoresizingMaskIntoConstraints = NO;
+
         [self.contentView addSubview:_thumbnailImageView];
         [self.contentView addSubview:_titleLabel];
         [self.contentView addSubview:_sizeLabel];
+        [self.contentView addSubview:_menuButton];
 
         [NSLayoutConstraint activateConstraints:@[
             [_thumbnailImageView.topAnchor constraintEqualToAnchor:self.contentView.topAnchor],
@@ -204,7 +216,12 @@ static NSString *ymMediaInfoStringForFile(NSURL *fileURL, unsigned long long byt
 
             [_titleLabel.topAnchor constraintEqualToAnchor:_thumbnailImageView.bottomAnchor constant:10],
             [_titleLabel.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor constant:14],
-            [_titleLabel.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor constant:-14],
+            [_titleLabel.trailingAnchor constraintEqualToAnchor:_menuButton.leadingAnchor constant:-2],
+
+            [_menuButton.centerYAnchor constraintEqualToAnchor:_titleLabel.firstBaselineAnchor],
+            [_menuButton.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor constant:-6],
+            [_menuButton.widthAnchor constraintEqualToConstant:28],
+            [_menuButton.heightAnchor constraintEqualToConstant:28],
 
             [_sizeLabel.topAnchor constraintEqualToAnchor:_titleLabel.bottomAnchor constant:2],
             [_sizeLabel.leadingAnchor constraintEqualToAnchor:_titleLabel.leadingAnchor],
@@ -213,6 +230,10 @@ static NSString *ymMediaInfoStringForFile(NSURL *fileURL, unsigned long long byt
         ]];
     }
     return self;
+}
+
+- (void)menuTapped {
+    if (self.menuTappedHandler) self.menuTappedHandler(self.menuButton);
 }
 
 @end
@@ -293,6 +314,8 @@ static UIColor *ymYouTubeBackgroundColor(void) {
     _searchBar.delegate = self;
     _searchBar.placeholder = LOC(@"SEARCH");
     _searchBar.searchBarStyle = UISearchBarStyleMinimal;
+    _searchBar.backgroundImage = [[UIImage alloc] init];
+    _searchBar.tintColor = [UIColor colorWithRed:0.6 green:0.2 blue:0.9 alpha:1.0];
     _searchBar.translatesAutoresizingMaskIntoConstraints = NO;
 
     UIButton *settingsButton = [UIButton buttonWithType:UIButtonTypeSystem];
@@ -311,6 +334,7 @@ static UIColor *ymYouTubeBackgroundColor(void) {
     _collectionView.dataSource = self;
     _collectionView.delegate = self;
     _collectionView.backgroundColor = ymYouTubeBackgroundColor();
+    _collectionView.keyboardDismissMode = UIScrollViewKeyboardDismissModeOnDrag;
     _collectionView.translatesAutoresizingMaskIntoConstraints = NO;
     [_collectionView registerClass:[YMLibraryVideoCell class] forCellWithReuseIdentifier:@"video"];
     [self.view addSubview:_collectionView];
@@ -360,7 +384,31 @@ static UIColor *ymYouTubeBackgroundColor(void) {
         [_emptyLabel.trailingAnchor constraintLessThanOrEqualToAnchor:self.view.trailingAnchor constant:-24],
     ]];
 
+    [self updateSearchBarTheme];
     [self reload];
+}
+
+// Same treatment as the YouMod settings pages: the bar itself blends into the
+// background and only the rounded text field carries a fill color.
+- (void)updateSearchBarTheme {
+    UISearchBar *sb = self.searchBar;
+    if (!sb) return;
+    BOOL dark = self.traitCollection.userInterfaceStyle == UIUserInterfaceStyleDark;
+    UIColor *bgColor = dark ? [%c(YTColor) black3] : [UIColor systemBackgroundColor];
+    sb.backgroundColor = bgColor;
+    sb.barTintColor = bgColor;
+    if ([sb respondsToSelector:@selector(searchTextField)]) {
+        UITextField *tf = sb.searchTextField;
+        tf.textColor = dark ? [UIColor whiteColor] : [UIColor labelColor];
+        tf.backgroundColor = dark ? [UIColor colorWithWhite:0.15 alpha:1.0] : [UIColor colorWithWhite:0.94 alpha:1.0];
+    }
+}
+
+- (void)traitCollectionDidChange:(UITraitCollection *)previousTraitCollection {
+    [super traitCollectionDidChange:previousTraitCollection];
+    if (previousTraitCollection.userInterfaceStyle != self.traitCollection.userInterfaceStyle) {
+        [self updateSearchBarTheme];
+    }
 }
 
 - (void)openSettingsTapped {
@@ -422,6 +470,20 @@ static UIColor *ymYouTubeBackgroundColor(void) {
     [searchBar resignFirstResponder];
 }
 
+- (void)searchBarTextDidBeginEditing:(UISearchBar *)searchBar {
+    [searchBar setShowsCancelButton:YES animated:YES];
+}
+
+- (void)searchBarTextDidEndEditing:(UISearchBar *)searchBar {
+    [searchBar setShowsCancelButton:NO animated:YES];
+}
+
+- (void)searchBarCancelButtonClicked:(UISearchBar *)searchBar {
+    searchBar.text = @"";
+    [searchBar resignFirstResponder];
+    [self applyFilter:@""];
+}
+
 - (NSInteger)collectionView:(UICollectionView *)collectionView numberOfItemsInSection:(NSInteger)section {
     return self.rows.count;
 }
@@ -433,6 +495,10 @@ static UIColor *ymYouTubeBackgroundColor(void) {
     cell.sizeLabel.text = row.sizeText;
     cell.thumbnailImageView.image = row.thumbnail;
     cell.thumbnailImageView.tintColor = row.isAudio ? [UIColor secondaryLabelColor] : nil;
+    __weak typeof(self) weakSelf = self;
+    cell.menuTappedHandler = ^(UIView *sourceView) {
+        [weakSelf showActionSheetForRowAtIndexPath:indexPath sourceView:sourceView];
+    };
     return cell;
 }
 
@@ -459,8 +525,47 @@ static UIColor *ymYouTubeBackgroundColor(void) {
     }];
 }
 
-- (UIMenu *)contextMenuForRowAtIndexPath:(NSIndexPath *)indexPath {
+// Same options as the long-press context menu, presented as an action sheet
+// from the cell's ellipsis button.
+- (void)showActionSheetForRowAtIndexPath:(NSIndexPath *)indexPath sourceView:(UIView *)sourceView {
     YMLibraryRow *row = self.rows[indexPath.item];
+    NSURL *fileURL = [NSURL fileURLWithPath:row.path];
+
+    UIAlertController *sheet = [UIAlertController alertControllerWithTitle:row.title message:nil preferredStyle:UIAlertControllerStyleActionSheet];
+    [sheet addAction:[UIAlertAction actionWithTitle:LOC(@"LIBRARY_SHARE")
+                                              style:UIAlertActionStyleDefault
+                                            handler:^(__unused UIAlertAction *action) {
+        YouModShareItem(fileURL, self);
+    }]];
+    [sheet addAction:[UIAlertAction actionWithTitle:LOC(@"LIBRARY_SAVE_THUMBNAIL")
+                                              style:UIAlertActionStyleDefault
+                                            handler:^(__unused UIAlertAction *action) {
+        [self saveThumbnailToPhotosForRow:row];
+    }]];
+    [sheet addAction:[UIAlertAction actionWithTitle:LOC(@"LIBRARY_OPEN_VIDEO")
+                                              style:UIAlertActionStyleDefault
+                                            handler:^(__unused UIAlertAction *action) {
+        [self openOriginalVideoForRow:row];
+    }]];
+    [sheet addAction:[UIAlertAction actionWithTitle:LOC(@"LIBRARY_VIEW_INFO")
+                                              style:UIAlertActionStyleDefault
+                                            handler:^(__unused UIAlertAction *action) {
+        [self presentInfoForFileURL:fileURL bytes:row.bytes];
+    }]];
+    [sheet addAction:[UIAlertAction actionWithTitle:LOC(@"LIBRARY_DELETE")
+                                              style:UIAlertActionStyleDestructive
+                                            handler:^(__unused UIAlertAction *action) {
+        [self deleteRowAtIndexPath:indexPath];
+    }]];
+    [sheet addAction:[UIAlertAction actionWithTitle:LOC(@"CANCEL")
+                                              style:UIAlertActionStyleCancel
+                                            handler:nil]];
+    sheet.popoverPresentationController.sourceView = sourceView;
+    sheet.popoverPresentationController.sourceRect = sourceView.bounds;
+    [self presentViewController:sheet animated:YES completion:nil];
+}
+
+- (UIMenu *)contextMenuForRowAtIndexPath:(NSIndexPath *)indexPath {    YMLibraryRow *row = self.rows[indexPath.item];
     NSURL *fileURL = [NSURL fileURLWithPath:row.path];
 
     UIAction *openVideo = [UIAction actionWithTitle:LOC(@"LIBRARY_OPEN_VIDEO") image:[UIImage systemImageNamed:@"play.rectangle"] identifier:nil handler:^(UIAction *action) {
