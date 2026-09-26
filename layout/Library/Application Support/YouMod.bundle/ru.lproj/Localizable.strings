@@ -694,8 +694,8 @@
 "SLEEP_TIMER_CUSTOM_TIME" = "Выбрать время...";
 
 // Keys synced from en.lproj (English base)
-"SLEEP_TIMER_ENTRY" = "Sleep Timer";
-"SLEEP_TIMER_ENTRY_DESC" = "Where the Sleep Timer entry point appears.";
-"SLEEP_TIMER_ENTRY_TABBAR" = "Tab bar";
-"SLEEP_TIMER_ENTRY_OVERLAY" = "Player overlay";
-"SLEEP_TIMER_ENTRY_BOTH" = "Both";
+"SLEEP_TIMER_ENTRY" = "Таймер сна";
+"SLEEP_TIMER_ENTRY_DESC" = "Где показывается кнопка таймера сна.";
+"SLEEP_TIMER_ENTRY_TABBAR" = "Панель вкладок";
+"SLEEP_TIMER_ENTRY_OVERLAY" = "Оверлей плеера";
+"SLEEP_TIMER_ENTRY_BOTH" = "Оба";
