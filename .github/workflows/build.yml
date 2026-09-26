@@ -33,7 +33,7 @@ jobs:
           path: YouMod
 
       - name: Install dependencies
-        run: brew install make ldid
+        run: brew install make ldid gnu-sed
 
       - name: Set PATH environment variables
         run: |
