@@ -123,12 +123,12 @@ BOOL YMIsOverlayButtonEnabled(NSString *identifier) {
     }
     // Fallback migration for legacy keys if custom order is not saved yet
     if ([identifier isEqualToString:@"mute.video"]) return IS_ENABLED(MuteButton);
-    if ([identifier isEqualToString:@"speed.video"]) return IS_ENABLED(SpeedButton);
-    if ([identifier isEqualToString:@"quality.video"]) return IS_ENABLED(QualityButton);
-    if ([identifier isEqualToString:@"share.video"]) return IS_ENABLED(ShareButton);
-    if ([identifier isEqualToString:@"loop.video"]) return IS_ENABLED(LoopButton);
-    if ([identifier isEqualToString:@"caption.video"]) return IS_ENABLED(CaptionButton);
-    if ([identifier isEqualToString:@"download.video"]) return IS_ENABLED(DownloadManager) && INTFORVAL(DownloadButtonPosition) != DownloadButtonPositionUnderPlayer;
+    else if ([identifier isEqualToString:@"speed.video"]) return IS_ENABLED(SpeedButton);
+    else if ([identifier isEqualToString:@"quality.video"]) return IS_ENABLED(QualityButton);
+    else if ([identifier isEqualToString:@"share.video"]) return IS_ENABLED(ShareButton);
+    else if ([identifier isEqualToString:@"loop.video"]) return IS_ENABLED(LoopButton);
+    else if ([identifier isEqualToString:@"caption.video"]) return IS_ENABLED(CaptionButton);
+    else if ([identifier isEqualToString:@"download.video"]) return IS_ENABLED(DownloadManager) && INTFORVAL(DownloadButtonPosition) != DownloadButtonPositionUnderPlayer;
     return YES;
 }
 
@@ -303,6 +303,7 @@ static YTQTMButton *YMCreateOverlayButton(UIView *parent, YMOverlayButtonSpec *s
         [button setTintColor:[UIColor whiteColor]];
     }
 
+    if ([button respondsToSelector:@selector(enableNewTouchFeedback)]) [button enableNewTouchFeedback];
     button.exclusiveTouch = YES;
     button.tag = spec.viewTag;
     button.frame = CGRectMake(0, 0, YMOverlayButtonSize, YMOverlayButtonSize);
@@ -496,7 +497,7 @@ static const NSInteger YMFrostedBackgroundTag = 9905;
 
 // Padding around the button union. Vertical padding stays 0 — the pill must
 // match the button height exactly (30pt) rather than grow taller than it.
-static const CGFloat YMFrostedBackgroundHPadding = 8.0;
+static const CGFloat YMFrostedBackgroundHPadding = 7.0;
 static const CGFloat YMFrostedBackgroundVPadding = 0.0;
 
 // Applies YouTube's own frosted-glass effect to `view` (the pill that covers
@@ -560,14 +561,12 @@ static void YMFrostedBackgroundUpdate(YTInlinePlayerBarContainerView *self_, NSA
 
 - (id)init {
     self = %orig;
-    if (self && [self._viewControllerForAncestor isKindOfClass:%c(YTMainAppVideoPlayerOverlayViewController)]) {
-        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(ymUpdateBarButtonLabels:) name:YouModUpdateSpeedLabel object:nil];
-        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(ymUpdateBarButtonLabels:) name:YouModUpdateNotification object:nil];
-        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(ymUpdateSleepButtonIcon:) name:YouModUpdateNotification object:nil];
-        if (IS_ENABLED(SBShowButton)) {
-            [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(updateTimeLabels) name:@"YouModUpdateTimeLabel" object:nil];
-        }
-    } 
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(ymUpdateBarButtonLabels:) name:YouModUpdateSpeedLabel object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(ymUpdateBarButtonLabels:) name:YouModUpdateNotification object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(ymUpdateSleepButtonIcon:) name:YouModUpdateNotification object:nil];
+    if (IS_ENABLED(SBShowButton)) {
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(updateTimeLabels) name:@"YouModUpdateTimeLabel" object:nil];
+    }
     return self;
 }
 
@@ -669,7 +668,6 @@ static void YMFrostedBackgroundUpdate(YTInlinePlayerBarContainerView *self_, NSA
     YTPlayerViewController *player = ovcon.parentViewController;
     if (player) matched.onTap(player, sender);
 }
-
 %new
 - (void)ymUpdateBarButtonLabels:(id)arg {
     for (YMOverlayButtonSpec *spec in YMRegisteredOverlayButtons()) {
@@ -686,7 +684,6 @@ static void YMFrostedBackgroundUpdate(YTInlinePlayerBarContainerView *self_, NSA
         }
     }
 }
-
 %new
 - (void)ymUpdateSleepButtonIcon:(id)arg {
     for (YMOverlayButtonSpec *spec in YMRegisteredOverlayButtons()) {
@@ -698,24 +695,17 @@ static void YMFrostedBackgroundUpdate(YTInlinePlayerBarContainerView *self_, NSA
     }
 }
 - (void)dealloc {
-    if ([self._viewControllerForAncestor isKindOfClass:%c(YTMainAppVideoPlayerOverlayViewController)]) {
-        [[NSNotificationCenter defaultCenter] removeObserver:self name:YouModUpdateSpeedLabel object:nil];
-        [[NSNotificationCenter defaultCenter] removeObserver:self name:YouModUpdateNotification object:nil];
-        if (IS_ENABLED(SBShowButton)) {
-            [[NSNotificationCenter defaultCenter] removeObserver:self name:@"YouModUpdateTimeLabel" object:nil];
-        }
-    }
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:YouModUpdateSpeedLabel object:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:YouModUpdateNotification object:nil];
+    if (IS_ENABLED(SBShowButton)) [[NSNotificationCenter defaultCenter] removeObserver:self name:@"YouModUpdateTimeLabel" object:nil];
     %orig;
 }
 %end
 
 static void YouModShowShareNotification(NSString *message, BOOL success) {
     UIView *parent = sbGetNotificationParent();
-    if (success) {
-        [SBSkipNotificationView showSuccessInView:parent message:message duration:3.0];
-    } else {
-        [SBSkipNotificationView showErrorInView:parent message:message duration:4.0];
-    }
+    if (success) [SBSkipNotificationView showSuccessInView:parent message:message duration:3.0];
+    else [SBSkipNotificationView showErrorInView:parent message:message duration:4.0];
 }
 
 %hook YTPlayerViewController
@@ -732,9 +722,7 @@ static void YouModShowShareNotification(NSString *message, BOOL success) {
     NSString *videoURL = [NSString stringWithFormat:@"https://youtube.com/watch?v=%@", self.currentVideoID];
     NSInteger seconds = (NSInteger)floor(self.currentVideoMediaTime);
     NSString *timestampURL = [NSString stringWithFormat:@"%@&t=%lds", videoURL, (long)seconds];
-
-    UIViewController *presenter = (UIViewController *)[self activeVideoPlayerOverlay];
-    YTDefaultSheetController *sheet = [%c(YTDefaultSheetController) sheetControllerWithParentResponder:presenter];
+    YTDefaultSheetController *sheet = [%c(YTDefaultSheetController) sheetControllerWithParentResponder:self];
 
     YTActionSheetAction *copyURL = [%c(YTActionSheetAction) actionWithTitle:LOC(@"COPY_URL") iconImage:YouModYTIconImage(250, NO, nil) style:0 handler:^(__unused YTActionSheetAction *action) {
         UIPasteboard.generalPasteboard.string = videoURL;
@@ -769,14 +757,12 @@ static void YouModShowShareNotification(NSString *message, BOOL success) {
 %hook YTAutoplayAutonavController
 - (id)initWithParentResponder:(id)arg {
     self = %orig;
-    if (self && IS_ENABLED(KeepLoopKey)) {
-        [self setLoopMode:2];
-    }
+    if (self && IS_ENABLED(KeepLoopKey)) [self setLoopMode:2];
     return self;
 }
 - (void)setLoopMode:(NSInteger)arg {
-    NSInteger set = IS_ENABLED(KeepLoopKey) ? 2 : arg;
-    %orig(set);
+    if (IS_ENABLED(KeepLoopKey)) arg = 2;
+    %orig(arg);
 }
 %end
 
@@ -799,23 +785,19 @@ static NSString *getCompactQualityLabel(MLFormat *format) {
 }
 
 %hook YTVideoQualitySwitchOriginalController
-
 - (void)singleVideo:(id)singleVideo didSelectVideoFormat:(MLFormat *)format {
     currentQualityLabel = getCompactQualityLabel(format);
     [[NSNotificationCenter defaultCenter] postNotificationName:YouModUpdateNotification object:nil];
     %orig;
 }
-
 %end
 
 %hook YTVideoQualitySwitchRedesignedController
-
 - (void)singleVideo:(id)singleVideo didSelectVideoFormat:(MLFormat *)format {
     currentQualityLabel = getCompactQualityLabel(format);
     [[NSNotificationCenter defaultCenter] postNotificationName:YouModUpdateNotification object:nil];
     %orig;
 }
-
 %end
 
 %ctor {
