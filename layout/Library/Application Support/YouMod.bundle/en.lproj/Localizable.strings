@@ -228,6 +228,8 @@
 "AUDIO_TRACK_SELECT_DESC" = "Specifies the preferred audio track language to use for playback, if available.";
 "NO_AUTO_DUBBED" = "Uses original audio track";
 "NO_AUTO_DUBBED_DESC" = "Uses original audio track if the preferred language track is auto-dubbed or not found.";
+"NO_AUTO_TRANSLATED_TITLES" = "Original titles";
+"NO_AUTO_TRANSLATED_TITLES_DESC" = "Shows video titles in their original language instead of YouTube's automatic translation, where the original title is provided (search results and video lists).";
 "CAPTION_TRACK" = "Preferred captions";
 "CAPTION_TRACK_SELECT" = "Selected captions";
 "CAPTION_TRACK_SELECT_DESC" = "Specifies the preferred captions language to display, if available.";

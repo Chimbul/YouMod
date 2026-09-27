@@ -170,6 +170,7 @@
 #define AudioTrack @"YouModAudioTrackSegment"
 #define AudioTrackLangIndex @"YouModAudioTrackLangIndex"
 #define NoDubbedAudioTrack @"YouModNoDubbedAudioTrack"
+#define NoTranslatedTitles @"YouModNoTranslatedTitles"
 #define CaptionTrack @"YouModCaptionTrack"
 #define CaptionTrackLangIndex @"YouModCaptionTrackLangIndex"
 #define DisablesCaptionTrack @"YouModDisablesCaptionTrack"
@@ -702,8 +703,15 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 - (NSString *)xtags;
 @end
 
+@interface YTIVideoWithContextRenderer : GPBMessage
+- (YTIFormattedString *)title;
+- (BOOL)hasUntranslatedTitle;
+- (YTIFormattedString *)untranslatedTitle;
+@end
+
 @interface YTIFormattedString (YouMod)
 - (NSString *)dropdownOptionTitle;
+- (NSString *)stringWithFormattingRemoved;
 @end
 
 @interface YTIVideoDetails (YouMod)
