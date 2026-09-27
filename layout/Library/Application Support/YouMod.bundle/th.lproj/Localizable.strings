@@ -655,7 +655,7 @@
 "DOWNLOAD_TO_PHOTOS" = "ดาวน์โหลดไปยังรูปภาพ";
 "DOWNLOAD_TO_FILES" = "ดาวน์โหลดไปยังคลัง";
 "DOWNLOAD_TO_FILES_DESC" = "รองรับฟอร์แมตมากกว่า แต่บางฟอร์แมตต้องใช้แอปเครื่องเล่นอย่าง VLC";
-"DOWNLOAD_THUMBNAIL" = "ดาวน์โหลดรูปภาพขนาดย่อ";
+"DOWNLOAD_THUMBNAIL" = "ดาวน์โหลดปกคลิป";
 "QUALITY" = "คุณภาพ";
 "SOUNDTRACK" = "แทร็กเสียง";
 "AUDIO_ONLY" = "เสียงเท่านั้น";
