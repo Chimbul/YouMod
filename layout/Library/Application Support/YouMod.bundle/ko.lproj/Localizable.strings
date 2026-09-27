@@ -380,6 +380,8 @@
 "REMOVE_SHORTS_LIKE_BUTTON_DESC" = "Shorts 오버레이에서 좋아요 버튼을 제거합니다.";
 "REMOVE_SHORTS_COMMENT_BUTTON" = "댓글 버튼 제거";
 "REMOVE_SHORTS_COMMENT_BUTTON_DESC" = "Shorts 오버레이에서 댓글 버튼을 제거합니다.";
+"REMOVE_SHORTS_SAVE_BUTTON" = "저장 버튼 제거";
+"REMOVE_SHORTS_SAVE_BUTTON_DESC" = "Shorts 오버레이에서 저장 버튼을 제거합니다.";
 "REMOVE_SHORTS_SHARE_BUTTON" = "공유 버튼 제거";
 "REMOVE_SHORTS_SHARE_BUTTON_DESC" = "Shorts 오버레이에서 공유 버튼을 제거합니다.";
 "REMOVE_SHORTS_REMIX_BUTTON" = "리믹스 버튼 제거";
@@ -626,6 +628,11 @@
 "LIBRARY_SAVE_THUMBNAIL" = "썸네일을 사진 앱에 저장";
 "LIBRARY_VIEW_INFO" = "정보 보기";
 "LIBRARY_DELETE" = "삭제";
+"LIBRARY_RENAME" = "이름 바꾸기";
+"LIBRARY_RENAME_TITLE" = "파일 이름 바꾸기";
+"LIBRARY_RENAMED" = "파일 이름이 변경되었습니다";
+"LIBRARY_RENAME_EMPTY" = "이름을 비워 둘 수 없습니다";
+"LIBRARY_RENAME_FAILED" = "파일 이름을 바꿀 수 없습니다";
 "OK" = "확인";
 "LIBRARY_INFO_SIZE" = "크기";
 "LIBRARY_INFO_DURATION" = "재생 시간";

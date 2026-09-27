@@ -262,11 +262,45 @@ static UIFont *YMOverlayTextButtonFont(NSString *text, CGSize maxSize) {
     return hasYTFont ? [typeStyle ytSansFontOfSize:(CGFloat)bestSize weight:UIFontWeightSemibold] : [UIFont systemFontOfSize:(CGFloat)bestSize weight:UIFontWeightSemibold];
 }
 
-static UIImage *YMOverlayButtonIcon(NSString *symbolName) {
+// The moon button's color must follow the sleep-timer state, but a plain
+// imageWithTintColor image still goes through YTQTMButton's tint pipeline at
+// display time, so swapping it in doesn't reliably change what's on screen.
+// Flatten the tinted symbol into a bitmap instead: the pixels already carry
+// the final color, YouTube theming can't recolor it, and the state change is
+// a plain image swap.
+static UIImage *YMBakedOverlayMoonIcon(void) {
+    UIColor *tint = YMSleepTimerIsActive() ? [UIColor systemRedColor] : [UIColor whiteColor];
     UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:20 weight:UIImageSymbolWeightMedium];
-    UIColor *tint = [UIColor whiteColor];
-    if ([symbolName isEqualToString:@"moon"]) tint = YMSleepTimerIsActive() ? [UIColor systemRedColor] : [UIColor whiteColor];
-    return [[UIImage systemImageNamed:symbolName withConfiguration:config] imageWithTintColor:tint];
+    UIImage *symbol = [UIImage systemImageNamed:@"moon" withConfiguration:config];
+    if (!symbol) return nil;
+    UIImage *tinted = [symbol imageWithTintColor:tint] ?: symbol;
+    CGSize size = tinted.size;
+    if (size.width <= 0 || size.height <= 0) return tinted;
+    UIGraphicsImageRenderer *renderer = [[UIGraphicsImageRenderer alloc] initWithSize:size];
+    return [renderer imageWithActions:^(UIGraphicsImageRendererContext *ctx) {
+        [tinted drawInRect:CGRectMake(0, 0, size.width, size.height)];
+    }];
+}
+
+// Sets the moon icon on every control state and forces the button to redraw,
+// so the icon follows the sleep-timer state no matter how YTQTMButton caches
+// its per-state images.
+static void YMApplySleepButtonIcon(YTQTMButton *btn) {
+    if (!btn) return;
+    UIImage *icon = YMBakedOverlayMoonIcon();
+    [btn setImage:icon forState:UIControlStateNormal];
+    [btn setImage:icon forState:UIControlStateHighlighted];
+    [btn setImage:icon forState:UIControlStateSelected];
+    [btn setImage:icon forState:UIControlStateDisabled];
+    [btn setNeedsDisplay];
+    [btn setNeedsLayout];
+    [btn.imageView setNeedsDisplay];
+}
+
+static UIImage *YMOverlayButtonIcon(NSString *symbolName) {
+    if ([symbolName isEqualToString:@"moon"]) return YMBakedOverlayMoonIcon();
+    UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:20 weight:UIImageSymbolWeightMedium];
+    return [[UIImage systemImageNamed:symbolName withConfiguration:config] imageWithTintColor:[UIColor whiteColor]];
 }
 
 static YTQTMButton *YMCreateOverlayButton(UIView *parent, YMOverlayButtonSpec *spec) {
@@ -446,7 +480,7 @@ static BOOL isRelatedVideosExpanded = NO;
     for (YMOverlayButtonSpec *spec in YMRegisteredOverlayButtons()) {
         if ([spec.identifier isEqualToString:@"sleep.timer"]) {
             YTQTMButton *btn = (YTQTMButton *)[self viewWithTag:spec.viewTag];
-            if (btn) [btn setImage:YMOverlayButtonIcon(@"moon") forState:UIControlStateNormal];
+            if (btn) YMApplySleepButtonIcon(btn);
             break;
         }
     }
@@ -654,7 +688,7 @@ static void YMFrostedBackgroundUpdate(YTInlinePlayerBarContainerView *self_, NSA
     for (YMOverlayButtonSpec *spec in YMRegisteredOverlayButtons()) {
         if ([spec.identifier isEqualToString:@"sleep.timer"]) {
             YTQTMButton *btn = (YTQTMButton *)[self viewWithTag:spec.viewTag];
-            if (btn) [btn setImage:YMOverlayButtonIcon(@"moon") forState:UIControlStateNormal];
+            if (btn) YMApplySleepButtonIcon(btn);
             break;
         }
     }
@@ -871,7 +905,7 @@ static NSString *getCompactQualityLabel(MLFormat *format) {
     };
     sleep.onTap = ^(YTPlayerViewController *player, YTQTMButton *button) {
         YMSleepTimerPresentPicker(button);
-        [button setImage:YMOverlayButtonIcon(@"moon") forState:UIControlStateNormal];
+        YMApplySleepButtonIcon(button);
     };
     YMRegisterOverlayButton(sleep);
     %init;

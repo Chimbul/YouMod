@@ -588,9 +588,10 @@ void YouModHandleDownloadButtonAction(_ASDisplayView *view) {
     if (!downloadBtn) {
         UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:20 weight:UIImageSymbolWeightMedium];
         // Baked-white AlwaysOriginal image: immune to YouTube recoloring via tint.
-        UIImage *icon = [[UIImage systemImageNamed:@"arrow.down.circle" withConfiguration:config] imageWithTintColor:[UIColor whiteColor]];
+        UIImage *icon = [UIImage systemImageNamed:@"arrow.down.circle" withConfiguration:config];
         downloadBtn = [%c(YTQTMButton) iconButton];
         [downloadBtn setImage:icon forState:UIControlStateNormal];
+        [downloadBtn applyTintColors];
         downloadBtn.exclusiveTouch = YES;
         downloadBtn.tag = 1501;
         [downloadBtn addTarget:self action:@selector(didTapYouModShortsDownload:) forControlEvents:UIControlEventTouchUpInside];

@@ -236,20 +236,26 @@ static NSString *YMByteCountString(unsigned long long bytes) {
 // row content of the sections whose rows actually changed.
 - (void)applyRebuiltRowsFrom:(NSArray<NSNumber *> *)oldSections
                 changedKinds:(NSArray<NSNumber *> *)changedKinds {
-    [self.tableView performBatchUpdates:^{
-        for (NSUInteger i = 0; i < oldSections.count; i++) {
-            if ([self.sections indexOfObject:oldSections[i]] == NSNotFound) {
-                [self.tableView deleteSections:[NSIndexSet indexSetWithIndex:i]
-                              withRowAnimation:UITableViewRowAnimationFade];
+    // Batch updates must only declare section insert/delete — and may only run
+    // when the section list itself changed. Switching codecs keeps the sections
+    // but changes row counts, and an (empty) batch would trip UIKit's data
+    // source consistency check ("Invalid batch updates detected").
+    if (![oldSections isEqualToArray:self.sections]) {
+        [self.tableView performBatchUpdates:^{
+            for (NSUInteger i = 0; i < oldSections.count; i++) {
+                if ([self.sections indexOfObject:oldSections[i]] == NSNotFound) {
+                    [self.tableView deleteSections:[NSIndexSet indexSetWithIndex:i]
+                                  withRowAnimation:UITableViewRowAnimationFade];
+                }
             }
-        }
-        for (NSUInteger i = 0; i < self.sections.count; i++) {
-            if ([oldSections indexOfObject:self.sections[i]] == NSNotFound) {
-                [self.tableView insertSections:[NSIndexSet indexSetWithIndex:i]
-                              withRowAnimation:UITableViewRowAnimationFade];
+            for (NSUInteger i = 0; i < self.sections.count; i++) {
+                if ([oldSections indexOfObject:self.sections[i]] == NSNotFound) {
+                    [self.tableView insertSections:[NSIndexSet indexSetWithIndex:i]
+                                  withRowAnimation:UITableViewRowAnimationFade];
+                }
             }
-        }
-    } completion:nil];
+        } completion:nil];
+    }
     NSMutableIndexSet *reload = [NSMutableIndexSet indexSet];
     for (NSNumber *kind in changedKinds) {
         NSInteger index = [self.sections indexOfObject:kind];

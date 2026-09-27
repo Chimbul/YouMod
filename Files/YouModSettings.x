@@ -135,6 +135,7 @@ typedef NS_ENUM(NSInteger, YMVisibilityOperator) {
 @property (nonatomic, strong) NSArray<NSString *> *pickerOptions;
 @property (nonatomic, assign) NSInteger pickerDefault;
 @property (nonatomic, copy) void (^action)(UIViewController *vc);
+@property (nonatomic, assign) BOOL opensPage; // YES -> row pushes another page, gets a disclosure chevron
 @property (nonatomic, strong) NSArray<NSNumber *> *segmentIcons;
 @property (nonatomic, strong) NSArray<NSString *> *segmentLabels;
 @property (nonatomic, strong) NSArray<UIImage *> *segmentImages;
@@ -151,6 +152,7 @@ typedef NS_ENUM(NSInteger, YMVisibilityOperator) {
 + (instancetype)sliderWithTitle:(NSString *)title subtitle:(NSString *)subtitle key:(NSString *)key min:(float)min max:(float)max step:(float)step defaultValue:(float)defaultValue;
 + (instancetype)pickerWithTitle:(NSString *)title subtitle:(NSString *)subtitle key:(NSString *)key options:(NSArray<NSString *> *)options defaultValue:(NSInteger)defaultValue;
 + (instancetype)actionWithTitle:(NSString *)title subtitle:(NSString *)subtitle action:(void (^)(UIViewController *vc))action;
++ (instancetype)navActionWithTitle:(NSString *)title subtitle:(NSString *)subtitle action:(void (^)(UIViewController *vc))action;
 + (instancetype)headerWithTitle:(NSString *)title;
 + (instancetype)segmentWithTitle:(NSString *)title key:(NSString *)key icons:(NSArray<NSNumber *> *)icons defaultValue:(NSInteger)defaultValue;
 + (instancetype)textSegmentWithTitle:(NSString *)title key:(NSString *)key labels:(NSArray<NSString *> *)labels defaultValue:(NSInteger)defaultValue;
@@ -233,6 +235,12 @@ typedef NS_ENUM(NSInteger, YMVisibilityOperator) {
     item.title = title;
     item.subtitle = subtitle;
     item.action = action;
+    return item;
+}
+
++ (instancetype)navActionWithTitle:(NSString *)title subtitle:(NSString *)subtitle action:(void (^)(UIViewController *vc))action {
+    YMSettingsItem *item = [self actionWithTitle:title subtitle:subtitle action:action];
+    item.opensPage = YES;
     return item;
 }
 
@@ -872,6 +880,10 @@ static const void *kYMCachedDisplayedItemsKey = &kYMCachedDisplayedItemsKey;
     cell.textLabel.textColor = [self ymTextColor];
     cell.textLabel.font = [UIFont systemFontOfSize:16 weight:UIFontWeightMedium];
 
+    if (item.opensPage) {
+        cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+    }
+
     if (item.subtitle.length > 0) {
         cell.detailTextLabel.text = item.subtitle;
         cell.detailTextLabel.textColor = [self ymSecondaryColor];
@@ -1361,6 +1373,10 @@ YMSettingsItem *YMPicker(NSString *title, NSString *subtitle, NSString *key, NSA
 
 YMSettingsItem *YMAction(NSString *title, NSString *subtitle, void (^action)(UIViewController *vc)) {
     return [YMSettingsItem actionWithTitle:title subtitle:subtitle action:action];
+}
+
+YMSettingsItem *YMNavAction(NSString *title, NSString *subtitle, void (^action)(UIViewController *vc)) {
+    return [YMSettingsItem navActionWithTitle:title subtitle:subtitle action:action];
 }
 
 YMSettingsItem *YMHeader(NSString *title) {

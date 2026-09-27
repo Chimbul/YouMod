@@ -380,6 +380,8 @@
 "REMOVE_SHORTS_LIKE_BUTTON_DESC" = "Rimuove il pulsante Mi piace dall'overlay di Shorts.";
 "REMOVE_SHORTS_COMMENT_BUTTON" = "Rimuovi pulsante Commenti";
 "REMOVE_SHORTS_COMMENT_BUTTON_DESC" = "Rimuove il pulsante Commenti dall'overlay di Shorts.";
+"REMOVE_SHORTS_SAVE_BUTTON" = "Rimuovi pulsante Salva";
+"REMOVE_SHORTS_SAVE_BUTTON_DESC" = "Rimuove il pulsante Salva dall'overlay di Shorts.";
 "REMOVE_SHORTS_SHARE_BUTTON" = "Rimuovi pulsante Condividi";
 "REMOVE_SHORTS_SHARE_BUTTON_DESC" = "Rimuove il pulsante Condividi dall'overlay di Shorts.";
 "REMOVE_SHORTS_REMIX_BUTTON" = "Rimuovi pulsante Remix";
@@ -618,7 +620,7 @@
 // Keys synced from en.lproj (English base)
 "HIDE_AUTO_DUBBED_DOWNLOADS" = "Hide auto-dubbed audio tracks";
 "HIDE_AUTO_DUBBED_DOWNLOADS_DESC" = "Hides AI auto-dubbed audio tracks from the download sheet's soundtrack picker.";
-"DOWNLOAD_LIBRARY_TAB" = "Downloads";
+"DOWNLOAD_LIBRARY_TAB" = "Download library";
 "DOWNLOAD_LIBRARY_TAB_DESC" = "Adds a tab that lists every downloaded video with thumbnails and sizes.";
 "DOWNLOAD_LIBRARY_EMPTY" = "No downloads yet";
 "LIBRARY_OPEN_VIDEO" = "Open Video on YouTube";
@@ -627,6 +629,11 @@
 "LIBRARY_SAVE_THUMBNAIL" = "Save Thumbnail to Photos";
 "LIBRARY_VIEW_INFO" = "View Info";
 "LIBRARY_DELETE" = "Delete";
+"LIBRARY_RENAME" = "Rinomina";
+"LIBRARY_RENAME_TITLE" = "Rinomina file";
+"LIBRARY_RENAMED" = "File rinominato";
+"LIBRARY_RENAME_EMPTY" = "Il nome non può essere vuoto";
+"LIBRARY_RENAME_FAILED" = "Impossibile rinominare il file";
 "OK" = "OK";
 "LIBRARY_INFO_SIZE" = "Size";
 "LIBRARY_INFO_DURATION" = "Duration";

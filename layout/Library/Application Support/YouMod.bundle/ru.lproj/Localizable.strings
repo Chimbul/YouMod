@@ -380,6 +380,8 @@
 "REMOVE_SHORTS_LIKE_BUTTON_DESC" = "Удаляет кнопку «Нравится» в интерфейсе Shorts.";
 "REMOVE_SHORTS_COMMENT_BUTTON" = "Удалить кнопку «Комментарии»";
 "REMOVE_SHORTS_COMMENT_BUTTON_DESC" = "Удаляет кнопку «Комментарии» в интерфейсе Shorts.";
+"REMOVE_SHORTS_SAVE_BUTTON" = "Удалить кнопку «Сохранить»";
+"REMOVE_SHORTS_SAVE_BUTTON_DESC" = "Удаляет кнопку «Сохранить» в интерфейсе Shorts.";
 "REMOVE_SHORTS_SHARE_BUTTON" = "Удалить кнопку «Поделиться»";
 "REMOVE_SHORTS_SHARE_BUTTON_DESC" = "Удаляет кнопку «Поделиться» в интерфейсе Shorts.";
 "REMOVE_SHORTS_REMIX_BUTTON" = "Удалить кнопку «Ремикс»";
@@ -646,6 +648,11 @@
 "LIBRARY_SAVE_THUMBNAIL" = "Сохранить превью в Фото";
 "LIBRARY_VIEW_INFO" = "Информация";
 "LIBRARY_DELETE" = "Удалить";
+"LIBRARY_RENAME" = "Переименовать";
+"LIBRARY_RENAME_TITLE" = "Переименовать файл";
+"LIBRARY_RENAMED" = "Файл переименован";
+"LIBRARY_RENAME_EMPTY" = "Название не может быть пустым";
+"LIBRARY_RENAME_FAILED" = "Не удалось переименовать файл";
 "OK" = "OK";
 "LIBRARY_INFO_SIZE" = "Размер";
 "LIBRARY_INFO_DURATION" = "Длительность";

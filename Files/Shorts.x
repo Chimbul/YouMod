@@ -45,16 +45,38 @@ static void YouModRemoveShortsOverlayButton(_ASDisplayView *dpView) {
         @"id.reel_comment_button": @(IS_ENABLED(RemoveShortsCommentButton)),
         @"id.reel_share_button": @(IS_ENABLED(RemoveShortsShareButton)),
         @"id.reel_remix_button" : @(IS_ENABLED(RemoveShortsRemixButton)),
-        @"id.reel_pivot_button": @(IS_ENABLED(RemoveShortsSoundMetadataButton))
+        @"id.reel_pivot_button": @(IS_ENABLED(RemoveShortsSoundMetadataButton)),
+        @"reel_save_button.eml" : @(IS_ENABLED(RemoveShortsSaveButton))
     };
     ASDisplayNode *node = dpView.keepalive_node;
     for (NSString *button in buttonsList) {
         if ([buttonsList[button] boolValue]) {
-            for (UIView *sub in dpView.subviews) {
-                if ([sub.accessibilityIdentifier isEqualToString:button]) [sub removeFromSuperview];
+            for (_ASDisplayView *sub in dpView.subviews) {
+                if ([sub.accessibilityIdentifier isEqualToString:button]) {
+                    [sub removeFromSuperview];
+                } else if (sub.accessibilityIdentifier == nil && sub.accessibilityLabel != nil && IS_ENABLED(RemoveShortsSaveButton)) {
+                    ASDisplayNode *subNode = sub.keepalive_node;
+                    NSString *desc = nil;
+                    @try {
+                        desc = [[[[subNode performSelector:@selector(nodeController)] performSelector:@selector(owningComponent)] performSelector:@selector(owningComponent)] description];
+                    } @catch (id ex) {
+                        continue;
+                    }
+                    if (desc != nil && [desc containsString:button]) [sub removeFromSuperview];
+                }
             }
-            for (id child in [node.yogaChildren copy]) {
-                if ([[child description] containsString:button]) [node removeYogaChild:child];
+            for (ASDisplayNode *child in [node.yogaChildren copy]) {
+                if ([[child description] containsString:button]) {
+                    [node removeYogaChild:child];
+                } else if (IS_ENABLED(RemoveShortsSaveButton)) {
+                    NSString *desc = nil;
+                    @try {
+                        desc = [[[[child performSelector:@selector(nodeController)] performSelector:@selector(owningComponent)] performSelector:@selector(owningComponent)] description];
+                    } @catch (id ex) {
+                        continue;
+                    }
+                    if (desc != nil && [desc containsString:button]) [node removeYogaChild:child];
+                }
             }
         }
     }   
@@ -239,7 +261,7 @@ void YouModFilterShortsDisplayView(_ASDisplayView *view, NSString *iden) {
 // Filtering Shorts overlay buttons
 - (void)layoutActionBar {
     %orig;
-    if (!IS_ENABLED(RemoveShortsLikeButton) && !IS_ENABLED(RemoveShortsLikeButton) && !IS_ENABLED(RemoveShortsCommentButton) && !IS_ENABLED(RemoveShortsShareButton) && !IS_ENABLED(RemoveShortsRemixButton) && !IS_ENABLED(RemoveShortsSoundMetadataButton)) return;
+    if (!IS_ENABLED(RemoveShortsLikeButton) && !IS_ENABLED(RemoveShortsCommentButton) && !IS_ENABLED(RemoveShortsShareButton) && !IS_ENABLED(RemoveShortsRemixButton) && !IS_ENABLED(RemoveShortsSoundMetadataButton) && !IS_ENABLED(RemoveShortsSaveButton)) return;
     YTReelElementAsyncComponentView *view = nil;
     @try {
         view = [self valueForKey:@"_playerOverlayView"];

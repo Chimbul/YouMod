@@ -116,7 +116,10 @@ static NSString *ymMediaInfoStringForFile(NSURL *fileURL, unsigned long long byt
     AVURLAsset *asset = [AVURLAsset URLAssetWithURL:fileURL options:nil];
     NSMutableArray<NSString *> *lines = [NSMutableArray array];
     [lines addObject:[NSString stringWithFormat:@"%@: %@", LOC(@"LIBRARY_INFO_SIZE"), ymFormattedFileSize(bytes)]];
-    [lines addObject:[NSString stringWithFormat:@"%@: %.0fs", LOC(@"LIBRARY_INFO_DURATION"), CMTimeGetSeconds(asset.duration)]];
+    double durationSeconds = CMTimeGetSeconds(asset.duration);
+    if (durationSeconds > 0) {
+        [lines addObject:[NSString stringWithFormat:@"%@: %.0fs", LOC(@"LIBRARY_INFO_DURATION"), durationSeconds]];
+    }
     [lines addObject:[NSString stringWithFormat:@"%@: %@", LOC(@"LIBRARY_INFO_CONTAINER"), fileURL.pathExtension.uppercaseString]];
 
     AVAssetTrack *videoTrack = [asset tracksWithMediaType:AVMediaTypeVideo].firstObject;
@@ -166,7 +169,7 @@ static NSString *ymMediaInfoStringForFile(NSURL *fileURL, unsigned long long byt
 @property (nonatomic, strong) UIImageView *thumbnailImageView;
 @property (nonatomic, strong) UILabel *titleLabel;
 @property (nonatomic, strong) UILabel *sizeLabel;
-@property (nonatomic, strong) UIButton *menuButton;
+@property (nonatomic, strong) YTQTMButton *menuButton;
 // Called with the button itself so the sheet can anchor its iPad popover.
 @property (nonatomic, copy) void (^menuTappedHandler)(UIView *sourceView);
 @end
@@ -196,11 +199,12 @@ static NSString *ymMediaInfoStringForFile(NSURL *fileURL, unsigned long long byt
         _sizeLabel.textColor = [UIColor secondaryLabelColor];
         _sizeLabel.translatesAutoresizingMaskIntoConstraints = NO;
 
-        _menuButton = [UIButton buttonWithType:UIButtonTypeSystem];
+        _menuButton = [%c(YTQTMButton) iconButton];
         // Rendered into an exact 24x24 canvas so the ellipsis never gets
         // squished or cropped inside the button's hit area.
         [_menuButton setImage:YouModSymbolImageInCanvas(@"ellipsis", 24, 22, UIImageSymbolWeightMedium) forState:UIControlStateNormal];
         _menuButton.tintColor = [UIColor labelColor];
+        if ([_menuButton respondsToSelector:@selector(enableNewTouchFeedback)]) [_menuButton enableNewTouchFeedback];
         [_menuButton addTarget:self action:@selector(menuTapped) forControlEvents:UIControlEventTouchUpInside];
         _menuButton.translatesAutoresizingMaskIntoConstraints = NO;
 
@@ -539,18 +543,26 @@ static UIColor *ymYouTubeBackgroundColor(void) {
 
     YTDefaultSheetController *sheet = [%c(YTDefaultSheetController) sheetControllerWithParentResponder:parentResponder];
 
+    [sheet addAction:[%c(YTActionSheetAction) actionWithTitle:LOC(@"LIBRARY_RENAME")
+                                                    iconImage:YouModSymbolImageInCanvas(@"pencil", 24, 22, UIImageSymbolWeightMedium)
+                                                        style:0
+                                                      handler:^(__unused YTActionSheetAction *action) {
+        [self presentRenameDialogForRow:row];
+    }]];
     [sheet addAction:[%c(YTActionSheetAction) actionWithTitle:LOC(@"LIBRARY_SHARE")
                                                     iconImage:YouModSymbolImageInCanvas(@"square.and.arrow.up", 24, 22, UIImageSymbolWeightMedium)
                                                         style:0
                                                       handler:^(__unused YTActionSheetAction *action) {
         YouModShareItem(fileURL, self);
     }]];
-    [sheet addAction:[%c(YTActionSheetAction) actionWithTitle:LOC(@"LIBRARY_SAVE_THUMBNAIL")
-                                                    iconImage:YouModSymbolImageInCanvas(@"photo", 24, 22, UIImageSymbolWeightMedium)
-                                                        style:0
-                                                      handler:^(__unused YTActionSheetAction *action) {
-        [self saveThumbnailToPhotosForRow:row];
-    }]];
+    if (!row.isAudio) {
+        [sheet addAction:[%c(YTActionSheetAction) actionWithTitle:LOC(@"LIBRARY_SAVE_THUMBNAIL")
+                                                        iconImage:YouModSymbolImageInCanvas(@"photo", 24, 22, UIImageSymbolWeightMedium)
+                                                            style:0
+                                                          handler:^(__unused YTActionSheetAction *action) {
+            [self saveThumbnailToPhotosForRow:row];
+        }]];
+    }
     [sheet addAction:[%c(YTActionSheetAction) actionWithTitle:LOC(@"LIBRARY_OPEN_VIDEO")
                                                     iconImage:YouModSymbolImageInCanvas(@"play.rectangle", 24, 22, UIImageSymbolWeightMedium)
                                                         style:0
@@ -565,12 +577,87 @@ static UIColor *ymYouTubeBackgroundColor(void) {
     }]];
     [sheet addAction:[%c(YTActionSheetAction) actionWithTitle:LOC(@"LIBRARY_DELETE")
                                                     iconImage:YouModSymbolImageInCanvas(@"trash", 24, 22, UIImageSymbolWeightMedium)
-                                                        style:1
+                                                        style:0
                                                       handler:^(__unused YTActionSheetAction *action) {
         [self deleteRowAtIndexPath:indexPath];
     }]];
 
     [sheet presentFromView:sourceView animated:YES completion:nil];
+}
+
+// Rename dialog, styled after the SponsorBlock user-ID dialog: a YouTube
+// alert with a plain system text field on top and Cancel / Rename buttons.
+// The video ID suffix (and the file extension) are preserved automatically.
+- (void)presentRenameDialogForRow:(YMLibraryRow *)row {
+    YTAlertView *alertView = [%c(YTAlertView) dialog];
+    alertView.title = LOC(@"LIBRARY_RENAME_TITLE");
+    alertView.shouldDismissOnBackgroundTap = YES;
+
+    UITextField *field = [[UITextField alloc] initWithFrame:CGRectMake(0, 0, 238, 44)];
+    field.autoresizingMask = UIViewAutoresizingFlexibleWidth;
+    field.text = ymDisplayTitleForFileName(row.path.lastPathComponent.stringByDeletingPathExtension);
+    field.font = [UIFont systemFontOfSize:15];
+    field.textColor = [UIColor labelColor];
+    field.borderStyle = UITextBorderStyleRoundedRect;
+    field.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor *(UITraitCollection *trait) {
+        return (trait.userInterfaceStyle == UIUserInterfaceStyleDark)
+            ? [UIColor secondarySystemBackgroundColor]
+            : [UIColor systemGray5Color];
+    }];
+    field.clearButtonMode = UITextFieldViewModeWhileEditing;
+    field.autocorrectionType = UITextAutocorrectionTypeNo;
+    field.spellCheckingType = UITextSpellCheckingTypeNo;
+    field.returnKeyType = UIReturnKeyDone;
+
+    alertView.customContentView = field;
+    alertView.customContentViewInsets = UIEdgeInsetsMake(0, 8, 4, 8);
+
+    [alertView addCancelButtonWithAction:nil];
+    [alertView addTitle:LOC(@"LIBRARY_RENAME") withAction:^{
+        NSString *newBase = [field.text stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+        if (newBase.length == 0) {
+            YouModSendError(LOC(@"LIBRARY_RENAME_EMPTY"));
+            return;
+        }
+        if ([self applyRename:newBase toRow:row]) {
+            YouModSendSuccess(LOC(@"LIBRARY_RENAMED"));
+            [self.collectionView reloadData];
+        } else {
+            YouModSendError(LOC(@"LIBRARY_RENAME_FAILED"));
+        }
+    }];
+    [alertView show];
+
+    // Focus the field once the alert has finished fading in.
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        [field becomeFirstResponder];
+    });
+}
+
+// Moves the media file (plus its sidecar thumbnail) and updates the row in
+// place, so the collection view reflects the new name immediately.
+// Returns NO when the name didn't change or the file couldn't be moved.
+- (BOOL)applyRename:(NSString *)newBase toRow:(YMLibraryRow *)row {
+    NSFileManager *fm = [NSFileManager defaultManager];
+    NSString *directory = [row.path stringByDeletingLastPathComponent];
+    NSString *videoID = ymVideoIDForFileName(row.path.lastPathComponent.stringByDeletingPathExtension);
+    NSString *newBaseName = videoID ? [NSString stringWithFormat:@"%@ [%@]", newBase, videoID] : newBase;
+    NSString *newPath = [[directory stringByAppendingPathComponent:newBaseName] stringByAppendingPathExtension:row.path.pathExtension];
+    if (!newPath || [newPath isEqualToString:row.path]) return NO;
+    if ([fm fileExistsAtPath:newPath]) return NO;
+
+    if (![fm moveItemAtPath:row.path toPath:newPath error:nil]) return NO;
+
+    // Follow along with the sibling .jpg and drop the stale generated-thumb
+    // cache entry (keyed by the old file name).
+    NSString *oldSibling = [[row.path stringByDeletingPathExtension] stringByAppendingPathExtension:@"jpg"];
+    NSString *newSibling = [[newPath stringByDeletingPathExtension] stringByAppendingPathExtension:@"jpg"];
+    if ([fm fileExistsAtPath:oldSibling]) [fm moveItemAtPath:oldSibling toPath:newSibling error:nil];
+    [fm removeItemAtPath:ymGeneratedThumbCacheURL([NSURL fileURLWithPath:row.path]).path error:nil];
+
+    row.path = newPath;
+    row.title = newBase;
+    return YES;
 }
 
 - (void)openOriginalVideoForRow:(YMLibraryRow *)row {

@@ -249,6 +249,7 @@
 #define ShortsOnly @"YouModShortsOnly"
 #define RemoveShortsLikeButton @"YouModRemoveShortsLikeButton"
 #define RemoveShortsCommentButton @"YouModRemoveShortsCommentButton"
+#define RemoveShortsSaveButton @"YouModRemoveShortsSaveButton"
 #define RemoveShortsShareButton @"YouModRemoveShortsShareButton"
 #define RemoveShortsRemixButton @"YouModRemoveShortsRemixButton"
 #define RemoveShortsSoundMetadataButton @"YouModRemoveShortsSoundMetadataButton"
@@ -420,6 +421,7 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 
 @interface YTQTMButton (YouMod)
 - (void)enableNewTouchFeedback;
+- (void)applyTintColors;
 @end
 
 @interface YTHeaderView : UIView

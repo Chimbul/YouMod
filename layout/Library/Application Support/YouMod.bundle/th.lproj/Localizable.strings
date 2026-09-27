@@ -379,6 +379,8 @@
 "REMOVE_SHORTS_LIKE_BUTTON_DESC" = "ลบปุ่มถูกใจออกจากวิดีโอ Shorts";
 "REMOVE_SHORTS_COMMENT_BUTTON" = "ลบปุ่มความคิดเห็น";
 "REMOVE_SHORTS_COMMENT_BUTTON_DESC" = "ลบปุ่มความคิดเห็นออกจากวิดีโอ Shorts";
+"REMOVE_SHORTS_SAVE_BUTTON" = "ลบปุ่มบันทึก";
+"REMOVE_SHORTS_SAVE_BUTTON_DESC" = "ลบปุ่มบันทึกออกจากวิดีโอ Shorts";
 "REMOVE_SHORTS_SHARE_BUTTON" = "ลบปุ่มแชร์";
 "REMOVE_SHORTS_SHARE_BUTTON_DESC" = "ลบปุ่มแชร์ออกจากวิดีโอ Shorts";
 "REMOVE_SHORTS_REMIX_BUTTON" = "ลบปุ่มรีมิกซ์";
@@ -632,7 +634,7 @@
 
 "HIDE_AUTO_DUBBED_DOWNLOADS" = "ซ่อนแทร็กเสียงที่พากย์อัตโนมัติ";
 "HIDE_AUTO_DUBBED_DOWNLOADS_DESC" = "ซ่อนแทร็กเสียงที่ AI พากย์อัตโนมัติออกจากตัวเลือกแทร็กเสียงในชีตดาวน์โหลด";
-"DOWNLOAD_LIBRARY_TAB" = "แท็บคลังดาวน์โหลด";
+"DOWNLOAD_LIBRARY_TAB" = "คลังดาวน์โหลด";
 "DOWNLOAD_LIBRARY_TAB_DESC" = "เพิ่มแท็บที่แสดงรายการวิดีโอที่ดาวน์โหลดไว้ทั้งหมด";
 "DOWNLOAD_LIBRARY_EMPTY" = "ยังไม่มีรายการดาวน์โหลด";
 "LIBRARY_OPEN_VIDEO" = "เปิดวิดีโอบน YouTube";
@@ -641,6 +643,11 @@
 "LIBRARY_SAVE_THUMBNAIL" = "บันทึกปกคลิปไปยังรูปภาพ";
 "LIBRARY_VIEW_INFO" = "ข้อมูลวิดีโอ";
 "LIBRARY_DELETE" = "ลบ";
+"LIBRARY_RENAME" = "เปลี่ยนชื่อ";
+"LIBRARY_RENAME_TITLE" = "เปลี่ยนชื่อไฟล์";
+"LIBRARY_RENAMED" = "เปลี่ยนชื่อไฟล์แล้ว";
+"LIBRARY_RENAME_EMPTY" = "ชื่อไม่สามารถเว้นว่างได้";
+"LIBRARY_RENAME_FAILED" = "เปลี่ยนชื่อไฟล์ไม่สำเร็จ";
 "OK" = "ตกลง";
 "LIBRARY_INFO_SIZE" = "ขนาด";
 "LIBRARY_INFO_DURATION" = "ความยาว";
@@ -669,8 +676,8 @@
 "CODEC_BEST_COMPATIBILITY" = "เข้ากันได้ดีที่สุด";
 "AUDIO_CODEC" = "โคเด็กเสียง";
 "VIDEO_CODEC" = "โคเด็กวิดีโอ";
-"SUBTITLES" = "ซับไตเติล";
-"NO_SUBTITLES" = "ไม่มีซับไตเติล";
+"SUBTITLES" = "ซับไตเติ้ล";
+"NO_SUBTITLES" = "ไม่มีซับไตเติ้ล";
 "PHOTOS_CODEC_NOTE" = "เนื่องจากโคเด็กที่ Apple รองรับ จึงดาวน์โหลดได้เพียงวิดีโอ H.264 และเสียง AAC เท่านั้น หากต้องการคุณภาพหรือโคเด็กที่มีประสิทธิภาพกว่า ต้องดาวน์โหลดวิดีโอไปยังแอปไฟล์ก่อน แล้วจึงเปิดด้วยแอปเครื่องเล่นอย่าง VLC";
 "FILES_HINT_BOTH" = "วิดีโอแบบ %@ และเสียงแบบ %@ มีประสิทธิภาพและคุณภาพสูงกว่า แต่เครื่องเล่นในตัวของ iOS เล่นไม่ได้ ให้ใช้แอปเครื่องเล่นอย่าง VLC";
 "FILES_HINT_VIDEO" = "วิดีโอแบบ %@ มีประสิทธิภาพและคุณภาพสูงกว่า แต่เครื่องเล่นในตัวของ iOS เล่นไม่ได้ ให้ใช้แอปเครื่องเล่นอย่าง VLC";

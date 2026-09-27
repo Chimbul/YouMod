@@ -65,7 +65,7 @@
 "ADD_SHORTS_DOWNLOAD_DESC" = "Adds a download button to Shorts video overlay.";
 "HIDE_AUTO_DUBBED_DOWNLOADS" = "Hide auto-dubbed audio tracks";
 "HIDE_AUTO_DUBBED_DOWNLOADS_DESC" = "Hides AI auto-dubbed audio tracks from the download sheet's soundtrack picker.";
-"DOWNLOAD_LIBRARY_TAB" = "Downloads";
+"DOWNLOAD_LIBRARY_TAB" = "Download library";
 "DOWNLOAD_LIBRARY_TAB_DESC" = "Adds a tab that lists every downloaded video with thumbnails and sizes.";
 "DOWNLOAD_LIBRARY_EMPTY" = "No downloads yet";
 "LIBRARY_OPEN_VIDEO" = "Open Video on YouTube";
@@ -74,6 +74,11 @@
 "LIBRARY_SAVE_THUMBNAIL" = "Save Thumbnail to Photos";
 "LIBRARY_VIEW_INFO" = "View Info";
 "LIBRARY_DELETE" = "Delete";
+"LIBRARY_RENAME" = "Rename";
+"LIBRARY_RENAME_TITLE" = "Rename File";
+"LIBRARY_RENAMED" = "File renamed";
+"LIBRARY_RENAME_EMPTY" = "Name can't be empty";
+"LIBRARY_RENAME_FAILED" = "Couldn't rename the file";
 "OK" = "OK";
 "LIBRARY_INFO_SIZE" = "Size";
 "LIBRARY_INFO_DURATION" = "Duration";
@@ -401,6 +406,8 @@
 "REMOVE_SHORTS_LIKE_BUTTON_DESC" = "Removes the like button from the Shorts overlay.";
 "REMOVE_SHORTS_COMMENT_BUTTON" = "Remove comment button";
 "REMOVE_SHORTS_COMMENT_BUTTON_DESC" = "Removes the comment button from the Shorts overlay.";
+"REMOVE_SHORTS_SAVE_BUTTON" = "Remove save button";
+"REMOVE_SHORTS_SAVE_BUTTON_DESC" = "Removes the save button from the Shorts overlay.";
 "REMOVE_SHORTS_SHARE_BUTTON" = "Remove share button";
 "REMOVE_SHORTS_SHARE_BUTTON_DESC" = "Removes the share button from the Shorts overlay.";
 "REMOVE_SHORTS_REMIX_BUTTON" = "Remove remix button";

@@ -80,7 +80,7 @@ static NSString *YMDLByteCountString(unsigned long long bytes) {
         [parts addObject:[NSString stringWithFormat:@"%@/s",
                           [fmt stringFromByteCount:(long long)self.smoothedBytesPerSecond]]];
     }
-    return [parts componentsJoinedByString:@"  ·  "];
+    return [parts componentsJoinedByString:@" · "];
 }
 
 - (double)averageBytesPerSecondFor:(unsigned long long)bytes {
@@ -235,6 +235,7 @@ void YouModHandlePostDownloadImage(UIImage *image, UIViewController *presenter) 
 #pragma mark - Download path
 
 static void YMDownloadFail(NSString *message, NSArray<NSURL *> *temporaries) {
+    if (!gYMDownloadBusy) return;
     for (NSURL *url in temporaries) {
         [[NSFileManager defaultManager] removeItemAtURL:url error:nil];
     }
@@ -350,7 +351,7 @@ void YMDownloadStart(YMFormat *video, NSArray<YMFormat *> *audioTracks, NSArray<
                                                         [YMSABR cancelCurrent];
                                                         gYMDownloadBusy = NO;
                                                         gYMDownloadProgressView = nil;
-                                                        YouModSendToast(LOC(@"DOWNLOAD_CANCELLED"));
+                                                        YouModSendError(LOC(@"DOWNLOAD_CANCELLED"));
                                                     }];
     YMFormat *audio = audioTracks.firstObject;
     if (video) {
