@@ -235,10 +235,10 @@ void YouModHandlePostDownloadImage(UIImage *image, UIViewController *presenter) 
 #pragma mark - Download path
 
 static void YMDownloadFail(NSString *message, NSArray<NSURL *> *temporaries) {
-    if (!gYMDownloadBusy) return;
     for (NSURL *url in temporaries) {
         [[NSFileManager defaultManager] removeItemAtURL:url error:nil];
     }
+    if (!gYMDownloadBusy) return;
     dispatch_async(dispatch_get_main_queue(), ^{
         gYMDownloadBusy = NO;
         [gYMDownloadProgressView dismiss];
