@@ -321,7 +321,7 @@ static BOOL isTabSelected = NO;
             for (NSDictionary *entry in savedOrder) {
                 if (![entry[@"enabled"] boolValue]) continue;
                 NSString *tabID = entry[@"id"];
-                else if ([tabID isEqualToString:@"create"]) continue;
+                if ([tabID isEqualToString:@"create"]) continue;
                 NSString *pivot = ymPivotIDForTabID(tabID);
                 if (pivot) [pivotIdentifiers addObject:pivot];
             }
