@@ -7,30 +7,21 @@
         // Modify the type of the icon before setting the renderer
         YTIIcon *icon = renderer.iconImage;
         if (icon) {
-            if (INTFORVAL(YTLogoIndex) == 1) {
-                icon.iconType = 537;
-            } else if (INTFORVAL(YTLogoIndex) == 2) {
-                icon.iconType = 158;
-            }
+            if (INTFORVAL(YTLogoIndex) == 1) icon.iconType = 537;
+            else if (INTFORVAL(YTLogoIndex) == 2) icon.iconType = 158;
         }
     }
     %orig(renderer);
 }
 // For when spoofing before 18.34.5
 - (void)setPremiumLogo:(BOOL)arg { 
-    if (INTFORVAL(YTLogoIndex) == 1) {
-        arg = YES;
-    } else if (INTFORVAL(YTLogoIndex) == 2) {
-        arg = NO;
-    }
+    if (INTFORVAL(YTLogoIndex) == 1) arg = YES;
+    else if (INTFORVAL(YTLogoIndex) == 2) arg = NO;
     %orig(arg);
 }
 - (BOOL)isPremiumLogo { 
-    if (INTFORVAL(YTLogoIndex) == 1) {
-        return YES;
-    } else if (INTFORVAL(YTLogoIndex) == 2) {
-        return NO;
-    }
+    if (INTFORVAL(YTLogoIndex) == 1) return YES;
+    else if (INTFORVAL(YTLogoIndex) == 2) return NO;
     return %orig;
 }
 %end
@@ -41,30 +32,21 @@
         // Modify the type of the icon before setting the renderer
         YTIIcon *icon = renderer.iconImage;
         if (icon) {
-            if (INTFORVAL(YTLogoIndex) == 1) {
-                icon.iconType = 537;
-            } else if (INTFORVAL(YTLogoIndex) == 2) {
-                icon.iconType = 158;
-            }
+            if (INTFORVAL(YTLogoIndex) == 1) icon.iconType = 537;
+            else if (INTFORVAL(YTLogoIndex) == 2) icon.iconType = 158;
         }
     }
     %orig(renderer);
 }
 // For when spoofing before 18.34.5
 - (void)setPremiumLogo:(BOOL)arg { 
-    if (INTFORVAL(YTLogoIndex) == 1) {
-        arg = YES;
-    } else if (INTFORVAL(YTLogoIndex) == 2) {
-        arg = NO;
-    }
+    if (INTFORVAL(YTLogoIndex) == 1) arg = YES;
+    else if (INTFORVAL(YTLogoIndex) == 2) arg = NO;
     %orig(arg);
 }
 - (BOOL)isPremiumLogo { 
-    if (INTFORVAL(YTLogoIndex) == 1) {
-        return YES;
-    } else if (INTFORVAL(YTLogoIndex) == 2) {
-        return NO;
-    }
+    if (INTFORVAL(YTLogoIndex) == 1) return YES;
+    else if (INTFORVAL(YTLogoIndex) == 2) return NO;
     return %orig;
 }
 %end

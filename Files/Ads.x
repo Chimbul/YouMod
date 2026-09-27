@@ -70,9 +70,7 @@ static NSString *getAdString(NSString *description) {
 }
 
 static BOOL isAdRenderer(YTIElementRenderer *elementRenderer, int kind) {
-    if (elementRenderer.hasCompatibilityOptions && elementRenderer.compatibilityOptions.hasAdLoggingData) {
-        return YES;
-    }
+    if (elementRenderer.hasCompatibilityOptions && elementRenderer.compatibilityOptions.hasAdLoggingData) return YES;
     NSString *description = [elementRenderer description];
     NSString *adString = getAdString(description);
     if (adString) return YES;
@@ -92,10 +90,7 @@ static NSMutableArray <YTIItemSectionRenderer *> *filteredArray(NSArray <YTIItem
 
     NSMutableArray <YTIItemSectionRenderer *> *newArray = [array mutableCopy];
     NSIndexSet *removeIndexes = [newArray indexesOfObjectsPassingTest:^BOOL(YTIItemSectionRenderer *sectionRenderer, NSUInteger idx, BOOL *stop) {
-        if (objc_getAssociatedObject(sectionRenderer, kFilteredSectionKey)) {
-            return NO;
-        }
-
+        if (objc_getAssociatedObject(sectionRenderer, kFilteredSectionKey)) return NO;
         if ([sectionRenderer isKindOfClass:%c(YTIShelfRenderer)]) {
             NSString *description = [sectionRenderer description];
             if ([description containsString:@"community-tab-chip-posts-section"]) {
@@ -112,9 +107,7 @@ static NSMutableArray <YTIItemSectionRenderer *> *filteredArray(NSArray <YTIItem
                     return YES;
                 }
             }
-            if (hideFeedPost && getPostString(description) != nil) {
-                return YES;
-            }
+            if (hideFeedPost && getPostString(description) != nil) return YES;
 
             YTIShelfSupportedRenderers *content = ((YTIShelfRenderer *)sectionRenderer).content;
             YTIHorizontalListRenderer *horizontalListRenderer = content.horizontalListRenderer;
@@ -178,8 +171,8 @@ static NSMutableArray <YTIItemSectionRenderer *> *filteredArray(NSArray <YTIItem
             }
             
             if (hideFeedPost && getPostString(description) != nil) return YES;
-            if (hideGenMusic && [description containsString:@"feed_nudge.eml"]) return YES;
-            if (hideSurveys && [description containsString:@"in_feed_survey.eml"]) return YES;
+            else if (hideGenMusic && [description containsString:@"feed_nudge.eml"]) return YES;
+            else if (hideSurveys && [description containsString:@"in_feed_survey.eml"]) return YES;
             if (hideComments && [description containsString:@"comment-item-section"] && [description containsString:@"comments-entry-point"]) {
                 return YES;
             }
@@ -331,8 +324,7 @@ static BOOL isAdsReelContentModel(YTReelContentModel *model) {
             return isProductList(command);
         }]];
     }
-    if (isProductList(onUiReady))
-        model.onUiReady = nil;
+    if (isProductList(onUiReady)) model.onUiReady = nil;
     %orig;
 }
 %end
@@ -341,7 +333,7 @@ static BOOL isAdsReelContentModel(YTReelContentModel *model) {
 - (void)playerOverlayProvider:(YTPlayerOverlayProvider *)provider didInsertPlayerOverlay:(YTPlayerOverlay *)overlay {
     NSString *iden = [overlay overlayIdentifier];
     if ([iden isEqualToString:@"player_overlay_product_in_video"] || [iden isEqualToString:@"player_overlay_timely_shelf"]) return;
-    if ([iden isEqualToString:@"player_overlay_paid_content"] && IS_ENABLED(HidePaidPromoOverlay)) return;
+    else if ([iden isEqualToString:@"player_overlay_paid_content"] && IS_ENABLED(HidePaidPromoOverlay)) return;
     %orig;
 }
 %end
@@ -355,9 +347,7 @@ static BOOL isAdsReelContentModel(YTReelContentModel *model) {
     %orig;
     if (IS_ENABLED(HidePaidPromoOverlay)) {
         UIView *badge = [self valueForKey:@"_overlayBadge"];
-        if (badge && badge.superview) {
-            [badge removeFromSuperview];
-        }
+        if (badge) [badge removeFromSuperview];
     }
 }
 %end
@@ -380,7 +370,7 @@ void YouModFilterAdsDisplayView(_ASDisplayView *view, NSString *iden) {
         [node removeYogaChild:node.yogaChildren.firstObject];
         [view removeFromSuperview];
     } else if (IS_ENABLED(HideCommentsPreview) && [iden isEqualToString:@"id.ui.comments_entry_point_teaser"]) {
-        [view removeFromSuperview];
+        view.hidden = YES;
     } else if ([view.accessibilityLabel containsString:@"Premium"] && [view._viewControllerForAncestor isKindOfClass:%c(YTPageHeaderViewController)]) {
         _ASDisplayView *spview = (_ASDisplayView *)view.superview;
         ASDisplayNode *node = spview.keepalive_node;

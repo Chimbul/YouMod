@@ -106,11 +106,8 @@
 %hook YTMenuItemVisibilityHandler
 - (BOOL)shouldShowServiceItemRenderer:(YTIMenuConditionalServiceItemRenderer *)renderer {
     int iconnum = renderer.icon.iconType;
-    if (iconnum == 251 && IS_ENABLED(RemovePlayInNextQueueOption)) {
-        return NO;
-    } else if (iconnum == 895 && IS_ENABLED(RemoveAddToLastQueueOption)) {
-        return NO;
-    }
+    if (iconnum == 251 && IS_ENABLED(RemovePlayInNextQueueOption)) return NO;
+    else if (iconnum == 895 && IS_ENABLED(RemoveAddToLastQueueOption)) return NO;
     return %orig;
 }
 %end
@@ -118,11 +115,8 @@
 %hook YTMenuItemVisibilityHandlerImpl
 - (BOOL)shouldShowServiceItemRenderer:(YTIMenuConditionalServiceItemRenderer *)renderer {
     int iconnum = renderer.icon.iconType;
-    if (iconnum == 251 && IS_ENABLED(RemovePlayInNextQueueOption)) {
-        return NO;
-    } else if (iconnum == 895 && IS_ENABLED(RemoveAddToLastQueueOption)) {
-        return NO;
-    }
+    if (iconnum == 251 && IS_ENABLED(RemovePlayInNextQueueOption)) return NO;
+    else if (iconnum == 895 && IS_ENABLED(RemoveAddToLastQueueOption)) return NO;
     return %orig;
 }
 %end
@@ -197,11 +191,8 @@
 
 %hook UIDevice
 - (UIUserInterfaceIdiom)userInterfaceIdiom {
-    if (INTFORVAL(DeviceUIIndex) == 1) {
-        return UIUserInterfaceIdiomPad;
-    } else if (INTFORVAL(DeviceUIIndex) == 2) {
-        return UIUserInterfaceIdiomPhone;
-    }
+    if (INTFORVAL(DeviceUIIndex) == 1) return UIUserInterfaceIdiomPad;
+    else if (INTFORVAL(DeviceUIIndex) == 2) return UIUserInterfaceIdiomPhone;
     return %orig;
 }
 %end
@@ -216,9 +207,7 @@
     %orig;
     if (IS_ENABLED(HideInfoButtonPanel)) {
         YTQTMButton *button = self.informationButton;
-        if (button != nil) {
-            button.hidden = YES;
-        }
+        if (button != nil) button.hidden = YES;
     }
     for (UIView *button in self.subviews) {
         if ([button isKindOfClass:%c(YTQTMButton)]) {

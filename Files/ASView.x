@@ -1,9 +1,12 @@
 #import "Headers.h"
 
+static const void *kASViewKey = &kASViewKey;
+
 %hook _ASDisplayView
 %property (nonatomic, assign) _ASDisplayView *currentDownloadButton;
 - (void)didMoveToWindow {
     %orig;
+    if (objc_getAssociatedObject(self, kASViewKey)) return;
     NSString *iden = self.accessibilityIdentifier;
     YouModApplyOLEDToDisplayView(self, iden);
     YouModConfigureDownloadButton(self, iden);
@@ -13,6 +16,7 @@
     YouModFilterVideoButtons(self, iden);
     YouModFilterShortsDisplayView(self, iden);
     YouModRemoveShortsPausedButtons(self, iden);
+    objc_setAssociatedObject(self, kASViewKey, @YES, OBJC_ASSOCIATION_ASSIGN);
 }
 %new
 - (void)YouModHandleCommentLongPress:(UILongPressGestureRecognizer *)sender {
@@ -43,13 +47,16 @@
 %hook ASCollectionView
 - (void)didMoveToWindow {
     %orig;
+    if (objc_getAssociatedObject(self, kASViewKey)) return;
     YouModApplyOLEDCollectionView(self, self.accessibilityIdentifier);
+    objc_setAssociatedObject(self, kASViewKey, @YES, OBJC_ASSOCIATION_ASSIGN);
 }
 %end
 
 %hook YTELMViewController
 - (void)viewWillAppear:(BOOL)animated {
     %orig;
+    if (objc_getAssociatedObject(self, kASViewKey)) return;
     NSString *desc = [[self valueForKey:@"_renderer"] description];
     // The watermark is an ELM element rendered into one layer, so it has no
     // subview and no identifier to filter on. The renderer name is the only handle.
@@ -78,5 +85,6 @@
     } else if ([desc containsString:@"quick_actions.eml"]) {
         YouModRemoveFullscreenActionsButtons(self);
     }
+    objc_setAssociatedObject(self, kASViewKey, @YES, OBJC_ASSOCIATION_ASSIGN);
 }
 %end

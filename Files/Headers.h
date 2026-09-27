@@ -387,7 +387,6 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 + (NSString *)browseIDForWhatToWatch;
 + (NSString *)browseIDForSubscriptionsTab;
 + (NSString *)browseIDForLibraryTab;
-+ (NSString *)browseIDForMyVideos;
 + (NSString *)browseIDForLearningDestination;
 @end
 

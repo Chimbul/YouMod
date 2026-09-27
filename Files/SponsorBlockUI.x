@@ -316,9 +316,7 @@ static void YMDismissExistingPillsInView(UIView *parentView, void (^completion)(
 }
 
 - (void)actionButtonTapped {
-    if (self.onAction) {
-        self.onAction();
-    }
+    if (self.onAction) self.onAction();
     [self dismiss];
 }
 
@@ -920,7 +918,6 @@ static void SBRenderMarkersInDecorationView(UIView *view) {
 
 %group SBObserver
 %hook YTPlayerViewController
-
 - (void)viewDidLoad {
     %orig;
     [[NSNotificationCenter defaultCenter] removeObserver:self name:@"SBSegmentsDidLoad" object:self];
@@ -929,21 +926,14 @@ static void SBRenderMarkersInDecorationView(UIView *view) {
                                                  name:@"SBSegmentsDidLoad"
                                                object:self];
 }
-
 - (void)dealloc {
     [[NSNotificationCenter defaultCenter] removeObserver:self name:@"SBSegmentsDidLoad" object:self];
     %orig;
 }
-
 %new
 - (void)sbSegmentsDidLoad:(NSNotification *)notification {
     [self sbRefreshMarkers:notification.userInfo[@"segments"]];
 }
-
-// Re-resolves the current player bar view fresh and re-creates segment markers
-// on it. Called whenever the player layout might have changed (initial load,
-// fullscreen enter/exit, viewport resize) so markers always live on the
-// currently-visible bar instead of an old detached one.
 %new
 - (void)sbRefreshMarkers:(NSArray<SBSegment *> *)segments {
     if (!IS_ENABLED(SBSegmentsInPlayer) && !IS_ENABLED(SBSegmentsInMiniPlayer) && !IS_ENABLED(SBSegmentsInFeed)) return;
@@ -1069,9 +1059,6 @@ static void SBRenderMarkersInDecorationView(UIView *view) {
         if (markerLayer) [container.layer addSublayer:markerLayer];
     }
 
-    // Insert above the track (main player bar) so the markers paint on it;
-    // the dot is re-fronted after. Miniplayer/feed keep dot-relative or top
-    // ordering.
     if (referenceView && referenceView.superview == mainView) {
         [mainView insertSubview:container aboveSubview:referenceView];
     } else if (scrubberDot && scrubberDot.superview == mainView) {
@@ -1080,16 +1067,8 @@ static void SBRenderMarkersInDecorationView(UIView *view) {
         [mainView addSubview:container];
         [mainView bringSubviewToFront:container];
     }
-    if (scrubberDot) {
-        [mainView bringSubviewToFront:scrubberDot];
-    }
+    if (scrubberDot) [mainView bringSubviewToFront:scrubberDot];
 }
-
-// On fullscreen enter/exit and other layout transitions, YouTube swaps the
-// player bar instance. Re-render markers on the current bar (matches
-// iSponsorBlock's approach). Deferred to the next runloop so YouTube's own
-// layout pass finishes first — otherwise the new bar's bounds.size.width can
-// still be 0 and the refresh early-returns without inserting markers.
 - (void)setPlayerViewLayout:(NSInteger)layout {
     %orig;
     __weak typeof(self) weakSelf = self;
@@ -1098,7 +1077,6 @@ static void SBRenderMarkersInDecorationView(UIView *view) {
         sbUpdateOverlayInsetForPivotBar();
     });
 }
-
 - (void)updateViewportSizeProvider {
     %orig;
     __weak typeof(self) weakSelf = self;
@@ -1107,7 +1085,6 @@ static void SBRenderMarkersInDecorationView(UIView *view) {
         sbUpdateOverlayInsetForPivotBar();
     });
 }
-
 %end
 %end
 

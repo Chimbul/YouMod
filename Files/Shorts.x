@@ -29,13 +29,9 @@
 
 static void YouModMakeAShortsAction(YTReelPlayerViewController *self, YTSingleVideoController *video, YTSingleVideoTime *time) {
     if (INTFORVAL(ShortsActionIndex) == 0) return;
-
     if (floor(time.time) >= floor(video.totalMediaTime)) {
-        if (INTFORVAL(ShortsActionIndex) == 1) {
-            [self reelContentViewRequestsAdvanceToNextVideo:nil];
-        } else if (INTFORVAL(ShortsActionIndex) == 2) {
-            [self reelContentViewRequestsPlayPauseToggle:nil];
-        }
+        if (INTFORVAL(ShortsActionIndex) == 1) [self reelContentViewRequestsAdvanceToNextVideo:nil];
+        else if (INTFORVAL(ShortsActionIndex) == 2) [self reelContentViewRequestsPlayPauseToggle:nil];
     }
 }
 
@@ -55,14 +51,10 @@ static void YouModRemoveShortsOverlayButton(_ASDisplayView *dpView) {
     for (NSString *button in buttonsList) {
         if ([buttonsList[button] boolValue]) {
             for (UIView *sub in dpView.subviews) {
-                if ([sub.accessibilityIdentifier isEqualToString:button]) {
-                    [sub removeFromSuperview];
-                }
+                if ([sub.accessibilityIdentifier isEqualToString:button]) [sub removeFromSuperview];
             }
             for (id child in [node.yogaChildren copy]) {
-                if ([[child description] containsString:button]) {
-                    [node removeYogaChild:child];
-                }
+                if ([[child description] containsString:button]) [node removeYogaChild:child];
             }
         }
     }   
@@ -137,9 +129,7 @@ static void YouModRemoveShortsOverlayButton(_ASDisplayView *dpView) {
     }
 
     // If found, change to it
-    if (matchedTrack) {
-        [pv setAudioTrack:matchedTrack source:0];
-    }
+    if (matchedTrack) [pv setAudioTrack:matchedTrack source:0];
 }
 %end
 
@@ -183,9 +173,9 @@ void YouModRemoveShortsPausedButtons(_ASDisplayView *self, NSString *iden) {
 void YouModFilterShortsDisplayView(_ASDisplayView *view, NSString *iden) {
     if (!iden || iden.length == 0) return;
     if (([iden isEqualToString:@"product_sticker.main_target"] || [iden isEqualToString:@"product_sticker.secondary_target"]) && IS_ENABLED(HideShortsProducts)) {
-        [view removeFromSuperview];
+        view.hidden = YES;
     } else if ([iden isEqualToString:@"id.elements.components.suggested_action"] && IS_ENABLED(HideShortsRecbar)) {
-        [view.superview removeFromSuperview];
+        view.hidden = YES;
     } else if ([iden isEqualToString:@"eml.shorts-disclosures"] && IS_ENABLED(RemoveShortsDisclosure)) {
         _ASDisplayView *dpView = (_ASDisplayView *)view.superview;
         ASDisplayNode *node = dpView.keepalive_node;

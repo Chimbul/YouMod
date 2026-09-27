@@ -7,8 +7,6 @@
 
 #pragma mark - Slim status bar classes (only exist on newer YouTube versions)
 
-@class YTSlimStatusBarControllerImpl;
-
 @interface YTSlimStatusBarView : UIView
 - (void)updateAppearanceToSleepTimerActiveWithText:(NSString *)text;
 @end
@@ -507,9 +505,6 @@ void YMSleepTimerPresentPicker(UIView *sourceView) {
             timer.connectionLost = NO;
             return;
         }
-        // Give YouTube ~3s to settle its own bar before we re-apply the sleep
-        // timer theme; connectionLost stays YES so ticks don't touch the bar
-        // in the meantime.
         NSUInteger seq = ++slimBarReconnectSequence;
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
             if (seq != slimBarReconnectSequence) return; // flapped again meanwhile

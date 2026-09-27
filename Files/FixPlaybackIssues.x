@@ -658,10 +658,6 @@ willPerformHTTPRedirection:(id)response
 //    PART 5: EXPERIMENTAL PoToken BYPASS (Special Thanks to @tywtyw2002 for the idea)
 // ========================================================================================
 
-@interface YTIIosPlaybackOnesieConfig : GPBMessage
-- (BOOL)hasCommonConfig;
-@end
-
 // In order to use the base_url from YTIOnesieHotConfig, we have to hook this class in order for url and ustreamer_config from YTIIosPlaybackOnesieConfig to become null. This MAY bypass PoToken.
 
 %hook YTIIosPlaybackOnesieConfig

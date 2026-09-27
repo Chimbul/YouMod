@@ -10,7 +10,7 @@ static const NSInteger kYMLibraryIconType = 18;
         UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:24 weight:UIImageSymbolWeightMedium];
         return [UIImage systemImageNamed:(isSelected ? @"arrow.down.circle.fill" : @"arrow.down.circle") withConfiguration:config];
     }
-    if (type == 1 || type == 2 || type == 3 || type == 4 || type == 5 || type == 6 || type == 7 || type == 8 || type == 9 || type == 10 || type == 11 || type == 12 || type == 13 || type == 14 || type == 15 || type == 16 || type == 17) {
+    if (type >= 1 && type <= 17) {
         NSString *imageName;
         if (type == 1) imageName = isSelected ? @"icons/history_selected" : @"icons/history";
         else if (type == 2) imageName = isSelected ? @"icons/gaming_selected" : @"icons/gaming";
@@ -38,69 +38,69 @@ static const NSInteger kYMLibraryIconType = 18;
 
 static NSString *ymPivotIDForTabID(NSString *tabID) {
     if ([tabID isEqualToString:@"home"]) return [%c(YTIBrowseRequest) browseIDForWhatToWatch];
-    if ([tabID isEqualToString:@"shorts"]) return @"FEshorts";
-    if ([tabID isEqualToString:@"create"]) return @"FEuploads";
-    if ([tabID isEqualToString:@"subscriptions"]) return [%c(YTIBrowseRequest) browseIDForSubscriptionsTab];
-    if ([tabID isEqualToString:@"library"]) return [%c(YTIBrowseRequest) browseIDForLibraryTab];
-    if ([tabID isEqualToString:@"history"]) return [%c(YTIBrowseRequest) browseIDForHistory];
-    if ([tabID isEqualToString:@"gaming"]) return [%c(YTIBrowseRequest) browseIDForGamingDestination];
-    if ([tabID isEqualToString:@"sports"]) return [%c(YTIBrowseRequest) browseIDForSportsDestination];
-    if ([tabID isEqualToString:@"notifications"]) return [%c(YTIBrowseRequest) browseIDForNotificationsInbox];
-    if ([tabID isEqualToString:@"news"]) return @"UCYfdidRxbB8Qhf0Nx7ioOYw"; // FEnews_destination
-    if ([tabID isEqualToString:@"music"]) return @"UC-9-kyTW8ZkZNDHQJ6FgpwQ";
-    if ([tabID isEqualToString:@"watchlater"]) return @"VLWL";
-    if ([tabID isEqualToString:@"playlist"]) return @"FEplaylist_aggregation";
-    if ([tabID isEqualToString:@"like"]) return @"VLLL";
-    if ([tabID isEqualToString:@"live"]) return @"UC4R8DWoMoI7CAwX8_LjQHig";
-    if ([tabID isEqualToString:@"post"]) return @"FEpost_home";
-    if ([tabID isEqualToString:@"video"]) return [%c(YTIBrowseRequest) browseIDForMyVideos];
-    if ([tabID isEqualToString:@"movie"]) return @"FEstorefront";
-    if ([tabID isEqualToString:@"course"]) return @"FEcourses";
-    if ([tabID isEqualToString:@"minigame"]) return @"FEmini_app_destination";
-    if ([tabID isEqualToString:@"fashion"]) return @"UCrpQ4p1Ql_hG8rKXIKM1MOQ";
-    if ([tabID isEqualToString:@"learning"]) return [%c(YTIBrowseRequest) browseIDForLearningDestination];
+    else if ([tabID isEqualToString:@"shorts"]) return @"FEshorts";
+    else if ([tabID isEqualToString:@"create"]) return @"FEuploads";
+    else if ([tabID isEqualToString:@"subscriptions"]) return [%c(YTIBrowseRequest) browseIDForSubscriptionsTab];
+    else if ([tabID isEqualToString:@"library"]) return [%c(YTIBrowseRequest) browseIDForLibraryTab];
+    else if ([tabID isEqualToString:@"history"]) return [%c(YTIBrowseRequest) browseIDForHistory];
+    else if ([tabID isEqualToString:@"gaming"]) return [%c(YTIBrowseRequest) browseIDForGamingDestination];
+    else if ([tabID isEqualToString:@"sports"]) return [%c(YTIBrowseRequest) browseIDForSportsDestination];
+    else if ([tabID isEqualToString:@"notifications"]) return [%c(YTIBrowseRequest) browseIDForNotificationsInbox];
+    else if ([tabID isEqualToString:@"news"]) return @"UCYfdidRxbB8Qhf0Nx7ioOYw"; // FEnews_destination
+    else if ([tabID isEqualToString:@"music"]) return @"UC-9-kyTW8ZkZNDHQJ6FgpwQ";
+    else if ([tabID isEqualToString:@"watchlater"]) return @"VLWL";
+    else if ([tabID isEqualToString:@"playlist"]) return @"FEplaylist_aggregation";
+    else if ([tabID isEqualToString:@"like"]) return @"VLLL";
+    else if ([tabID isEqualToString:@"live"]) return @"UC4R8DWoMoI7CAwX8_LjQHig";
+    else if ([tabID isEqualToString:@"post"]) return @"FEpost_home";
+    else if ([tabID isEqualToString:@"video"]) return @"UC3qapbGAd2-S75NkBY3XWww";
+    else if ([tabID isEqualToString:@"movie"]) return @"FEstorefront";
+    else if ([tabID isEqualToString:@"course"]) return @"FEcourses";
+    else if ([tabID isEqualToString:@"minigame"]) return @"FEmini_app_destination";
+    else if ([tabID isEqualToString:@"fashion"]) return @"UCrpQ4p1Ql_hG8rKXIKM1MOQ";
+    else if ([tabID isEqualToString:@"learning"]) return [%c(YTIBrowseRequest) browseIDForLearningDestination];
     return nil;
 }
 
 static NSInteger ymIconTypeForTabID(NSString *tabID) {
     if ([tabID isEqualToString:@"history"]) return 1;
-    if ([tabID isEqualToString:@"gaming"]) return 2;
-    if ([tabID isEqualToString:@"sports"]) return 3;
-    if ([tabID isEqualToString:@"notifications"]) return 4;
-    if ([tabID isEqualToString:@"news"]) return 5;
-    if ([tabID isEqualToString:@"music"]) return 6;
-    if ([tabID isEqualToString:@"watchlater"]) return 7;
-    if ([tabID isEqualToString:@"playlist"]) return 8;
-    if ([tabID isEqualToString:@"like"]) return 9;
-    if ([tabID isEqualToString:@"live"]) return 10;
-    if ([tabID isEqualToString:@"post"]) return 11;
-    if ([tabID isEqualToString:@"video"]) return 12;
-    if ([tabID isEqualToString:@"movie"]) return 13;
-    if ([tabID isEqualToString:@"course"]) return 14;
-    if ([tabID isEqualToString:@"minigame"]) return 15;
-    if ([tabID isEqualToString:@"fashion"]) return 16;
-    if ([tabID isEqualToString:@"learning"]) return 17;
+    else if ([tabID isEqualToString:@"gaming"]) return 2;
+    else if ([tabID isEqualToString:@"sports"]) return 3;
+    else if ([tabID isEqualToString:@"notifications"]) return 4;
+    else if ([tabID isEqualToString:@"news"]) return 5;
+    else if ([tabID isEqualToString:@"music"]) return 6;
+    else if ([tabID isEqualToString:@"watchlater"]) return 7;
+    else if ([tabID isEqualToString:@"playlist"]) return 8;
+    else if ([tabID isEqualToString:@"like"]) return 9;
+    else if ([tabID isEqualToString:@"live"]) return 10;
+    else if ([tabID isEqualToString:@"post"]) return 11;
+    else if ([tabID isEqualToString:@"video"]) return 12;
+    else if ([tabID isEqualToString:@"movie"]) return 13;
+    else if ([tabID isEqualToString:@"course"]) return 14;
+    else if ([tabID isEqualToString:@"minigame"]) return 15;
+    else if ([tabID isEqualToString:@"fashion"]) return 16;
+    else if ([tabID isEqualToString:@"learning"]) return 17;
     return 0;
 }
 
 static NSString *ymTitleForTabID(NSString *tabID) {
     if ([tabID isEqualToString:@"history"]) return LOC(@"HISTORY_TAB");
-    if ([tabID isEqualToString:@"gaming"]) return LOC(@"GAMING_TAB");
-    if ([tabID isEqualToString:@"sports"]) return LOC(@"SPORTS_TAB");
-    if ([tabID isEqualToString:@"notifications"]) return LOC(@"NOTI_TAB");
-    if ([tabID isEqualToString:@"news"]) return LOC(@"NEWS_TAB");
-    if ([tabID isEqualToString:@"music"]) return LOC(@"MUSIC_TAB");
-    if ([tabID isEqualToString:@"watchlater"]) return LOC(@"WATCH_LATER_TAB");
-    if ([tabID isEqualToString:@"playlist"]) return LOC(@"PLAYLIST_TAB");
-    if ([tabID isEqualToString:@"like"]) return LOC(@"LIKE_TAB");
-    if ([tabID isEqualToString:@"live"]) return LOC(@"LIVE_TAB");
-    if ([tabID isEqualToString:@"post"]) return LOC(@"POST_TAB");
-    if ([tabID isEqualToString:@"video"]) return LOC(@"VIDEO_TAB");
-    if ([tabID isEqualToString:@"movie"]) return LOC(@"MOVIE_TAB");
-    if ([tabID isEqualToString:@"course"]) return LOC(@"COURSE_TAB");
-    if ([tabID isEqualToString:@"minigame"]) return LOC(@"MINIGAME_TAB");
-    if ([tabID isEqualToString:@"fashion"]) return LOC(@"FASHION_TAB");
-    if ([tabID isEqualToString:@"learning"]) return LOC(@"LEARNING_TAB");
+    else if ([tabID isEqualToString:@"gaming"]) return LOC(@"GAMING_TAB");
+    else if ([tabID isEqualToString:@"sports"]) return LOC(@"SPORTS_TAB");
+    else if ([tabID isEqualToString:@"notifications"]) return LOC(@"NOTI_TAB");
+    else if ([tabID isEqualToString:@"news"]) return LOC(@"NEWS_TAB");
+    else if ([tabID isEqualToString:@"music"]) return LOC(@"MUSIC_TAB");
+    else if ([tabID isEqualToString:@"watchlater"]) return LOC(@"WATCH_LATER_TAB");
+    else if ([tabID isEqualToString:@"playlist"]) return LOC(@"PLAYLIST_TAB");
+    else if ([tabID isEqualToString:@"like"]) return LOC(@"LIKE_TAB");
+    else if ([tabID isEqualToString:@"live"]) return LOC(@"LIVE_TAB");
+    else if ([tabID isEqualToString:@"post"]) return LOC(@"POST_TAB");
+    else if ([tabID isEqualToString:@"video"]) return LOC(@"VIDEO_TAB");
+    else if ([tabID isEqualToString:@"movie"]) return LOC(@"MOVIE_TAB");
+    else if ([tabID isEqualToString:@"course"]) return LOC(@"COURSE_TAB");
+    else if ([tabID isEqualToString:@"minigame"]) return LOC(@"MINIGAME_TAB");
+    else if ([tabID isEqualToString:@"fashion"]) return LOC(@"FASHION_TAB");
+    else if ([tabID isEqualToString:@"learning"]) return LOC(@"LEARNING_TAB");
     return nil;
 }
 
@@ -115,7 +115,7 @@ static NSString *ymTitleForTabID(NSString *tabID) {
             NSString *pID = [[item pivotBarItemRenderer] pivotIdentifier];
             NSString *pID2 = [[item pivotBarIconOnlyItemRenderer] pivotIdentifier];
             if (pID) lookup[pID] = item;
-            if (pID2) lookup[pID2] = item;
+            else if (pID2) lookup[pID2] = item;
         }
 
         // Build ordered array from saved data
@@ -162,13 +162,13 @@ static NSString *ymTitleForTabID(NSString *tabID) {
 
 // Hide Tab Bar Indicators
 %hook YTPivotBarIndicatorView
-- (void)setFillColor:(UIColor *)arg1 {
-    UIColor *temp = IS_ENABLED(HideTabIndi) ? [UIColor clearColor] : arg1;
-    %orig(temp);
+- (void)setFillColor:(UIColor *)arg {
+    if (IS_ENABLED(HideTabIndi)) arg = [UIColor clearColor];
+    %orig(arg);
 }
-- (void)setBorderColor:(UIColor *)arg1 {
-    UIColor *temp = IS_ENABLED(HideTabIndi) ? [UIColor clearColor] : arg1;
-    %orig(temp);
+- (void)setBorderColor:(UIColor *)arg {
+    if (IS_ENABLED(HideTabIndi)) arg = [UIColor clearColor];
+    %orig(arg);
 }
 %end
 
@@ -177,9 +177,7 @@ static NSString *YMExtractYouTubeVideoID(NSString *urlString) {
 
     NSString *cleanString = [urlString stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
 
-    if (cleanString.length == 11 && ![cleanString containsString:@"/"] && ![cleanString containsString:@"?"]) {
-        return cleanString;
-    }
+    if (cleanString.length == 11 && ![cleanString containsString:@"/"] && ![cleanString containsString:@"?"]) return cleanString;
 
     NSString *extractedID = nil;
     NSURL *url = [NSURL URLWithString:cleanString];
@@ -187,18 +185,12 @@ static NSString *YMExtractYouTubeVideoID(NSString *urlString) {
     if (url) {
         if ([url.host containsString:@"youtu.be"]) {
             NSString *path = [url.path stringByReplacingOccurrencesOfString:@"/" withString:@""];
-            if (path.length >= 11) {
-                extractedID = [path substringToIndex:11];
-            }
+            if (path.length >= 11) extractedID = [path substringToIndex:11];
         } else if ([url.host containsString:@"youtube.com"]) {
             if ([url.path containsString:@"/shorts/"] || [url.path containsString:@"/live/"] || [url.path containsString:@"/clip/"]) {
                 NSString *lastPath = [url.path lastPathComponent];
-                if ([lastPath containsString:@"?"]) {
-                    lastPath = [[lastPath componentsSeparatedByString:@"?"] firstObject];
-                }
-                if (lastPath.length >= 11) {
-                    extractedID = [lastPath substringToIndex:11];
-                }
+                if ([lastPath containsString:@"?"]) lastPath = [[lastPath componentsSeparatedByString:@"?"] firstObject];
+                if (lastPath.length >= 11) extractedID = [lastPath substringToIndex:11];
             } else {
                 NSURLComponents *components = [NSURLComponents componentsWithURL:url resolvingAgainstBaseURL:NO];
                 for (NSURLQueryItem *item in components.queryItems) {
@@ -217,9 +209,7 @@ static NSString *YMExtractYouTubeVideoID(NSString *urlString) {
                                                                                 options:NSRegularExpressionCaseInsensitive
                                                                                   error:&error];
         NSTextCheckingResult *match = [regex firstMatchInString:cleanString options:0 range:NSMakeRange(0, cleanString.length)];
-        if (match && match.numberOfRanges > 1) {
-            extractedID = [cleanString substringWithRange:[match rangeAtIndex:1]];
-        }
+        if (match && match.numberOfRanges > 1) extractedID = [cleanString substringWithRange:[match rangeAtIndex:1]];
     }
 
     return (extractedID && extractedID.length == 11) ? extractedID : nil;
@@ -236,8 +226,7 @@ static void YMOpenLinkFromClipboard(UIViewController *presentingVC, BOOL isRunti
     NSString *videoID = YMExtractYouTubeVideoID(rawString);
 
     if (!videoID || videoID.length == 0) return;
-
-    if (gLastOpenedVideoID && [gLastOpenedVideoID isEqualToString:videoID] && IS_ENABLED(AutoOpenLink) && !isRuntime) return;
+    else if (gLastOpenedVideoID && [gLastOpenedVideoID isEqualToString:videoID] && IS_ENABLED(AutoOpenLink) && !isRuntime) return;
 
     NSString *schemeURLString = [NSString stringWithFormat:@"youtube://%@", videoID];
     NSURL *targetURL = [NSURL URLWithString:schemeURLString];
@@ -332,7 +321,7 @@ static BOOL isTabSelected = NO;
             for (NSDictionary *entry in savedOrder) {
                 if (![entry[@"enabled"] boolValue]) continue;
                 NSString *tabID = entry[@"id"];
-                if ([tabID isEqualToString:@"create"]) continue;
+                else if ([tabID isEqualToString:@"create"]) continue;
                 NSString *pivot = ymPivotIDForTabID(tabID);
                 if (pivot) [pivotIdentifiers addObject:pivot];
             }
@@ -350,11 +339,8 @@ static BOOL isTabSelected = NO;
 }
 // Translucent tab bar
 - (BOOL)isFrostedPivotBarPermitted {
-    if (INTFORVAL(UseFrostedTabBar) == 1) {
-        return YES;
-    } else if (INTFORVAL(UseFrostedTabBar) == 2) {
-        return NO;
-    }
+    if (INTFORVAL(UseFrostedTabBar) == 1) return YES;
+    else if (INTFORVAL(UseFrostedTabBar) == 2) return NO;
     return %orig;
 }
 %end

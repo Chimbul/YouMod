@@ -443,18 +443,15 @@ static void sbSendViewedSegment(SBSegment *segment) {
         [strongSelf sbShowFullVideoLabelIfNeeded:segments];
     }];
 }
-
 - (void)singleVideo:(YTSingleVideoController *)video currentVideoTimeDidChange:(YTSingleVideoTime *)time {
     %orig;
     [self sbCheckSegmentsAtCurrentTime];
 }
-
 // Time-change hook for YouTube versions that use the renamed selector.
 - (void)potentiallyMutatedSingleVideo:(YTSingleVideoController *)video currentVideoTimeDidChange:(YTSingleVideoTime *)time {
     %orig;
     [self sbCheckSegmentsAtCurrentTime];
 }
-
 // Evaluates the loaded segments against the current playback time and performs
 // the configured skip / ask action for the first matching segment. Shared by
 // both time-change hooks so the skip logic lives in one place.
@@ -515,7 +512,6 @@ static void sbSendViewedSegment(SBSegment *segment) {
         }
     }
 }
-
 %new
 - (void)sbUpdateMuteAtTime:(CGFloat)currentTime {
     SBSegment *muting = nil;
@@ -542,7 +538,6 @@ static void sbSendViewedSegment(SBSegment *segment) {
         [video setMuted:NO];
     }
 }
-
 %new
 - (void)sbShowFullVideoLabelIfNeeded:(NSArray<SBSegment *> *)segments {
     if (!sbActiveForVideo(self) || self.isPlayingAd) return;
@@ -556,7 +551,6 @@ static void sbSendViewedSegment(SBSegment *segment) {
         return;
     }
 }
-
 %new
 - (void)sbPerformSkip:(SBSegment *)segment {
     // "Always auto-skip" segments stay out of the once-per-segment set so
@@ -597,7 +591,6 @@ static void sbSendViewedSegment(SBSegment *segment) {
         });
     }
 }
-
 %new
 - (void)sbShowAskNotification:(SBSegment *)segment {
     [self.sbSkippedSegments addObject:segment.UUID];
@@ -628,7 +621,6 @@ static void sbSendViewedSegment(SBSegment *segment) {
         }
         duration:alertDuration];
 }
-
 %new
 - (void)sbShowHighlightBannerIfNeeded:(NSArray<SBSegment *> *)segments {
     if (!sbActiveForVideo(self) || self.isPlayingAd) return;
@@ -669,7 +661,6 @@ static void sbSendViewedSegment(SBSegment *segment) {
         }
     }
 }
-
 %new
 - (void)sbSkipToHighlight {
     self.sbNotificationView.isHighlightPill = NO;
@@ -705,17 +696,11 @@ static void sbSendViewedSegment(SBSegment *segment) {
         }
     }
 }
-
 %end
 
 %ctor {
     sbSegmentCache = [NSMutableDictionary dictionary];
     %init;
-
-    // Register the SponsorBlock entry in the player overlay's custom button row.
-    // sortOrder 100 keeps it right-most (directly under YouTube's settings gear).
-    // Tapping opens the SponsorBlock menu (enable/disable, voting, whitelist);
-    // the icon stays a plain white outline shield regardless of state.
     YMOverlayButtonSpec *toggle = [[YMOverlayButtonSpec alloc] init];
     toggle.identifier = @"sponsorblock.toggle";
     toggle.symbolName = @"shield";

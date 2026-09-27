@@ -1,5 +1,7 @@
 #import "Headers.h"
 
+static const void *kOLEDKey = &kOLEDKey;
+
 %group OLEDTheme
 %hook YTColor
 + (UIColor *)black0 { return [UIColor blackColor]; }
@@ -81,42 +83,48 @@ void YouModApplyOLEDCollectionView(ASCollectionView *self, NSString *iden) {
 %hook YTContextualWrapView
 - (void)didMoveToWindow {
     %orig;
-    if (![self.superview isKindOfClass:%c(YTContextualSheetView)]) return;
+    if (![self.superview isKindOfClass:%c(YTContextualSheetView)] || objc_getAssociatedObject(self, kOLEDKey)) return;
     self.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor * _Nonnull(UITraitCollection * _Nonnull traitCollection) {
         return isDarkMode(self) ? [UIColor blackColor] : [UIColor whiteColor];
     }];
+    objc_setAssociatedObject(self, kOLEDKey, @YES, OBJC_ASSOCIATION_ASSIGN);
 }
 %end
 
 %hook MDCInkView
 - (void)didMoveToWindow {
     %orig;
-    if (![self.superview isKindOfClass:%c(GOODialogActionMDCButton)]) return;
+    if (![self.superview isKindOfClass:%c(GOODialogActionMDCButton)] || objc_getAssociatedObject(self, kOLEDKey)) return;
     UIViewController *controller = self._viewControllerForAncestor;
     if ([controller isKindOfClass:%c(YTBottomSheetController)] || [controller isKindOfClass:%c(GOOModalWindowViewController)]) return;
     self.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor * _Nonnull(UITraitCollection * _Nonnull traitCollection) {
         return isDarkMode(self) ? [UIColor blackColor] : [UIColor clearColor];
     }];
+    objc_setAssociatedObject(self, kOLEDKey, @YES, OBJC_ASSOCIATION_ASSIGN);
 }
 %end
 
 %hook YTRiveStartupAnimationViewController
 - (void)viewWillAppear:(BOOL)animated {
     %orig;
+    if (objc_getAssociatedObject(self, kOLEDKey)) return;
     UIView *mainView = self.view;
     mainView.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor * _Nonnull(UITraitCollection * _Nonnull traitCollection) {
         return isDarkMode(mainView) ? [UIColor blackColor] : [UIColor whiteColor];
     }];
+    objc_setAssociatedObject(self, kOLEDKey, @YES, OBJC_ASSOCIATION_ASSIGN);
 }
 %end
 
 %hook YTStartupAnimationViewController
 - (void)viewWillAppear:(BOOL)animated {
     %orig;
+    if (objc_getAssociatedObject(self, kOLEDKey)) return;
     UIView *mainView = self.view;
     mainView.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor * _Nonnull(UITraitCollection * _Nonnull traitCollection) {
         return isDarkMode(mainView) ? [UIColor blackColor] : [UIColor whiteColor];
     }];
+    objc_setAssociatedObject(self, kOLEDKey, @YES, OBJC_ASSOCIATION_ASSIGN);
 }
 %end
 
@@ -125,9 +133,11 @@ void YouModApplyOLEDCollectionView(ASCollectionView *self, NSString *iden) {
     %orig;
     if (!view) return;
     UIView *sub = view.subviews.firstObject;
+    if (objc_getAssociatedObject(sub, kOLEDKey)) return;
     sub.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor * _Nonnull(UITraitCollection * _Nonnull traitCollection) {
         return isDarkMode(sub) ? [UIColor blackColor] : [UIColor clearColor];
     }];
+    objc_setAssociatedObject(sub, kOLEDKey, @YES, OBJC_ASSOCIATION_ASSIGN);
 }
 %end
 %end

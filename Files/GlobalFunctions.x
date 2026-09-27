@@ -80,16 +80,14 @@ UIViewController *YouModTopViewController(UIViewController *root) {
     while (root.presentedViewController) root = root.presentedViewController;
     if ([root isKindOfClass:UINavigationController.class])
         return YouModTopViewController(((UINavigationController *)root).topViewController);
-    if ([root isKindOfClass:UITabBarController.class])
+    else if ([root isKindOfClass:UITabBarController.class])
         return YouModTopViewController(((UITabBarController *)root).selectedViewController);
     return root;
 }
 
 // OLEDKeyboard (https://github.com/dayanch96/OledKeyboard)
 BOOL isDarkMode(UIView *view) {
-    if ([view respondsToSelector:@selector(_mapkit_isDarkModeEnabled)]) {
-        return view._mapkit_isDarkModeEnabled;
-    }
+    if ([view respondsToSelector:@selector(_mapkit_isDarkModeEnabled)]) return view._mapkit_isDarkModeEnabled;
     return view.traitCollection.userInterfaceStyle == UIUserInterfaceStyleDark;
 }
 

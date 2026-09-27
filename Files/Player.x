@@ -587,8 +587,9 @@ static void YouModAddEndTime(YTInlinePlayerBarContainerView *playerbar, YTPlayer
                 percentage = 0.0;
             } else if (relativeX >= barWidth - snapThreshold) {
                 percentage = 1.0;
-            } else if (percentage < 0.0 || percentage > 1.0) {
-                return;
+            } else {
+                if (percentage < 0.0) percentage = 0.0;
+                else if (percentage > 1.0) percentage = 1.0;
             }
 
             YTMainAppVideoPlayerOverlayViewController *ovcon = (YTMainAppVideoPlayerOverlayViewController *)self._viewControllerForAncestor;
@@ -601,11 +602,8 @@ static void YouModAddEndTime(YTInlinePlayerBarContainerView *playerbar, YTPlayer
 }
 // Disable toggle time remaining - @bhackel
 - (void)setShouldDisplayTimeRemaining:(BOOL)arg {
-    if (IS_ENABLED(DisablesShowRemaining)) {
-        arg = NO;
-    } else if (IS_ENABLED(AlwaysShowRemaining)) {
-        arg = YES;
-    }
+    if (IS_ENABLED(DisablesShowRemaining)) arg = NO;
+    else if (IS_ENABLED(AlwaysShowRemaining)) arg = YES;
     %orig(arg);
 }
 // Always show seekbar
@@ -793,29 +791,22 @@ static void YouModAddEndTime(YTInlinePlayerBarContainerView *playerbar, YTPlayer
 - (BOOL)shouldExitFullScreenOnFinish { return IS_ENABLED(AutoExitFullScreen) ? YES : %orig; }
 %end
 
-// Always use remaining time in the video player - @bhackel
 %hook YTPlayerBarController
-// When a new video is played, enable time remaining flag
 - (void)setActiveSingleVideo:(YTSingleVideoController *)singleVideoController {
     %orig;
     if (IS_ENABLED(AlwaysShowRemaining) && !IS_ENABLED(DisablesShowRemaining)) {
-        // Get the player bar view
         YTInlinePlayerBarContainerView *playerBar = self.playerBar;
-        if (playerBar) {
-            // Enable the time remaining flag
-            playerBar.shouldDisplayTimeRemaining = YES;
-        }
+        if (playerBar) playerBar.shouldDisplayTimeRemaining = YES;
     }
-    if (singleVideoController) {
-        YTPlayerView *playerview = [singleVideoController valueForKey:@"_playerView"];
-        YTPlayerViewController *playerviewController = [playerview valueForKey:@"_playerViewDelegate"];
-        YouModConfigureRemoteSkipCommands();
-        if (INTFORVAL(AutoDRCAudioIndex) != 0) [playerviewController YouModAutoDRCAudio];
-        if (INTFORVAL(AudioTrack) != 0 || IS_ENABLED(NoDubbedAudioTrack)) [playerviewController performSelector:@selector(YouModAutoAudioTrack) withObject:nil afterDelay:0.5];
-        if (IS_ENABLED(AutoFullScreen)) [playerviewController performSelector:@selector(YouModAutoFullscreen) withObject:nil afterDelay:0.5];
-        if (INTFORVAL(CaptionTrack) != 0) [playerviewController performSelector:@selector(YouModAutoCaptions) withObject:nil afterDelay:0.5];
-        if (INTFORVAL(AutoSpeedIndex) != 0) [playerviewController YouModSetAutoSpeed];
-    }
+    if (!singleVideoController) return;
+    YTPlayerView *playerview = [singleVideoController valueForKey:@"_playerView"];
+    YTPlayerViewController *playerviewController = [playerview valueForKey:@"_playerViewDelegate"];
+    YouModConfigureRemoteSkipCommands();
+    if (INTFORVAL(AutoDRCAudioIndex) != 0) [playerviewController YouModAutoDRCAudio];
+    if (INTFORVAL(AudioTrack) != 0 || IS_ENABLED(NoDubbedAudioTrack)) [playerviewController performSelector:@selector(YouModAutoAudioTrack) withObject:nil afterDelay:0.5];
+    if (IS_ENABLED(AutoFullScreen)) [playerviewController performSelector:@selector(YouModAutoFullscreen) withObject:nil afterDelay:0.5];
+    if (INTFORVAL(CaptionTrack) != 0) [playerviewController performSelector:@selector(YouModAutoCaptions) withObject:nil afterDelay:0.5];
+    if (INTFORVAL(AutoSpeedIndex) != 0) [playerviewController YouModSetAutoSpeed];
 }
 %end
 
@@ -867,9 +858,7 @@ static void YouModAddEndTime(YTInlinePlayerBarContainerView *playerbar, YTPlayer
 
 // Extra speed - adapted from YouSpeed
 %group Speed
-
 #define itemCount 13
-
 // Class on 19.x/20.x, protocol from 21.32.4 where the class is ...Impl. Hook both.
 static void YouModApplyExtraSpeedOptions(id controller) {
     float speeds[] = {0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0, 5.0, 7.5, 10.0};
@@ -883,41 +872,33 @@ static void YouModApplyExtraSpeedOptions(id controller) {
 }
 
 %hook YTVarispeedSwitchController
-
 - (id)init {
     self = %orig;
     YouModApplyExtraSpeedOptions(self);
     return self;
 }
-
 %end
 
 %hook YTVarispeedSwitchControllerImpl
-
 - (id)init {
     self = %orig;
     YouModApplyExtraSpeedOptions(self);
     return self;
 }
-
 %end
 
 %hook YTIPlayerHotConfig
-
 %new(f@:)
 - (float)maximumPlaybackRate {
     return 10.0;
 }
-
 %end
 
 %hook YTIGranularVariableSpeedConfig
-
 %new(d@:)
 - (int)maximumPlaybackRate {
     return 10.0 * 100;
 }
-
 %end
 %end
 
@@ -963,13 +944,11 @@ static CGFloat YouModSpeedForHoldIndex(NSInteger index) {
 %end
 
 %hook YTSingleVideoController
-
 - (void)playerItem:(id)arg1 hasSelectableVideoFormats:(id)arg2 {
     %orig;
     if (!arg2) return;
     [self YouModAutoQuality];
 }
-
 %new
 - (void)YouModAutoQuality {
     NSArray *videoFormats = self.selectableVideoFormats;
@@ -1063,7 +1042,6 @@ static CGFloat YouModSpeedForHoldIndex(NSInteger index) {
 %end
 %end
 
-// Gestures - @bhackel (YTLitePlus)
 %hook YTWatchLayerViewController
 // invoked when the player view controller is either created or destroyed
 - (void)watchController:(YTWatchController *)watchController didSetPlayerViewController:(YTPlayerViewController *)playerViewController {
@@ -1425,9 +1403,7 @@ static UISlider *YouModVolumeSlider(void) {
 
 %new
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer {
-    if (gestureRecognizer == self.YouModPanGesture) {
-        return NO; 
-    }
+    if (gestureRecognizer == self.YouModPanGesture) return NO; 
     if (gestureRecognizer == self.YouModHoldGesture || otherGestureRecognizer == self.YouModHoldGesture) {
         if ([gestureRecognizer isKindOfClass:[UIPanGestureRecognizer class]] || [otherGestureRecognizer isKindOfClass:[UIPanGestureRecognizer class]]) {
             return NO;
@@ -1538,9 +1514,7 @@ static UISlider *YouModVolumeSlider(void) {
     }
 
     // If found, change to it
-    if (matchedTrack) {
-        [self setAudioTrack:matchedTrack source:0];
-    }
+    if (matchedTrack) [self setAudioTrack:matchedTrack source:0];
 }
 
 %new
@@ -1555,9 +1529,7 @@ static UISlider *YouModVolumeSlider(void) {
     MLInnerTubeCaptionTrack *matchedTrack;
 
     if (INTFORVAL(CaptionTrack) == 1) {
-        if (currentTrack != nil) {
-            [self setActiveCaptionTrack:nil source:0];
-        }
+        if (currentTrack != nil) [self setActiveCaptionTrack:nil source:0];
         return;
     }
 
@@ -1567,6 +1539,7 @@ static UISlider *YouModVolumeSlider(void) {
             break;
         }
     }
+
     if (matchedTrack && ([matchedTrack.VSSID hasPrefix:@"a."] || [matchedTrack.VSSID hasPrefix:@"ta."] || [matchedTrack.VSSID hasPrefix:@"t."]) && IS_ENABLED(DisablesCaptionTrack)) {
         matchedTrack = nil;
         [self setActiveCaptionTrack:nil source:0];
@@ -1575,9 +1548,8 @@ static UISlider *YouModVolumeSlider(void) {
         [self setActiveCaptionTrack:nil source:0];
         return;
     }
-    if (matchedTrack && matchedTrack != currentTrack) {
-        [self setActiveCaptionTrack:matchedTrack source:0];
-    }
+
+    if (matchedTrack && matchedTrack != currentTrack) [self setActiveCaptionTrack:matchedTrack source:0];
 }
 
 %new
@@ -1784,9 +1756,7 @@ static UISlider *YouModVolumeSlider(void) {
 %new
 - (void)YouModAutoDRCAudio {
     BOOL value = NO;
-    if (INTFORVAL(AutoDRCAudioIndex) == 1) {
-        value = YES;
-    }
+    if (INTFORVAL(AutoDRCAudioIndex) == 1) value = YES;
     [self setAudioDRCEnabled:value];
 }
 %end
@@ -1965,9 +1935,7 @@ void YouModFilterVideoButtons(_ASDisplayView *view, NSString *iden) {
         UIView *elementView = [action.button valueForKey:@"_elementView"];
         elementView.userInteractionEnabled = NO;
     }
-    if (sleepTimerIndex != NSNotFound && INTFORVAL(SleepTimerEntry) != 0) {
-        [actions removeObjectAtIndex:sleepTimerIndex];
-    }
+    if (sleepTimerIndex != NSNotFound && INTFORVAL(SleepTimerEntry) != 0) [actions removeObjectAtIndex:sleepTimerIndex];
     return actions;
 }
 %end
