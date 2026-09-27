@@ -1,16 +1,11 @@
 #import "Headers.h"
 
 static NSString * const kYMLibraryPivotIdentifier = @"YouModDownloadLibrary";
-static const NSInteger kYMLibraryIconType = 18;
 
 // Tab icons
 %hook YTAppPivotBarItemStyle
 - (UIImage *)pivotBarItemIconImageWithIconType:(int)type color:(UIColor *)color useNewIcons:(BOOL)isNew selected:(BOOL)isSelected {
-    if (type == kYMLibraryIconType) {
-        UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:24 weight:UIImageSymbolWeightMedium];
-        return [UIImage systemImageNamed:(isSelected ? @"arrow.down.circle.fill" : @"arrow.down.circle") withConfiguration:config];
-    }
-    if (type >= 1 && type <= 17) {
+    if (type >= 1 && type <= 18) {
         NSString *imageName;
         if (type == 1) imageName = isSelected ? @"icons/history_selected" : @"icons/history";
         else if (type == 2) imageName = isSelected ? @"icons/gaming_selected" : @"icons/gaming";
@@ -29,6 +24,7 @@ static const NSInteger kYMLibraryIconType = 18;
         else if (type == 15) imageName = isSelected ? @"icons/minigame_selected" : @"icons/minigame";
         else if (type == 16) imageName = isSelected ? @"icons/fashion_selected" : @"icons/fashion";
         else if (type == 17) imageName = isSelected ? @"icons/learning_selected" : @"icons/learning";
+        else if (type == 18) imageName = isSelected ? @"icons/download_selected" : @"icons/download";
         YTAssetLoader *al = [[%c(YTAssetLoader) alloc] initWithBundle:YouModBundle()];
         return [al imageNamed:imageName];
     }
@@ -152,7 +148,7 @@ static NSString *ymTitleForTabID(NSString *tabID) {
             if ([pID isEqualToString:kYMLibraryPivotIdentifier]) { alreadyPresent = YES; break; }
         }
         if (!alreadyPresent) {
-            YTIPivotBarSupportedRenderers *libraryTab = [%c(YTIPivotBarRenderer) pivotSupportedRenderersWithBrowseId:kYMLibraryPivotIdentifier title:LOC(@"DOWNLOAD_LIBRARY_TAB") iconType:kYMLibraryIconType];
+            YTIPivotBarSupportedRenderers *libraryTab = [%c(YTIPivotBarRenderer) pivotSupportedRenderersWithBrowseId:kYMLibraryPivotIdentifier title:LOC(@"DOWNLOAD_LIBRARY_TAB") iconType:18];
             if (libraryTab) [items addObject:libraryTab];
         }
     }
