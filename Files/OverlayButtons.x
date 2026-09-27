@@ -264,17 +264,9 @@ static UIFont *YMOverlayTextButtonFont(NSString *text, CGSize maxSize) {
 
 static UIImage *YMOverlayButtonIcon(NSString *symbolName) {
     UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:20 weight:UIImageSymbolWeightMedium];
-    UIImage *symbol = [UIImage systemImageNamed:symbolName withConfiguration:config];
-    return [symbol imageWithTintColor:[UIColor whiteColor]];
-}
-
-// Sleep timer button: red moon (not filled) while a timer is running, white otherwise.
-// AlwaysOriginal so YTQTMButton's own white tint can't repaint the icon.
-static UIImage *YMSleepTimerOverlayIcon(void) {
-    UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:20 weight:UIImageSymbolWeightMedium];
-    UIImage *symbol = [UIImage systemImageNamed:@"moon" withConfiguration:config];
-    UIColor *tint = YMSleepTimerIsActive() ? [UIColor systemRedColor] : [UIColor whiteColor];
-    return [[symbol imageWithTintColor:tint] imageWithRenderingMode:UIImageRenderingModeAlwaysOriginal];
+    UIColor *tint = [UIColor whiteColor];
+    if ([symbolName isEqualToString:@"sleep.timer"]) tint = YMSleepTimerIsActive() ? [UIColor systemRedColor] : [UIColor whiteColor];
+    return [[UIImage systemImageNamed:symbolName withConfiguration:config] imageWithTintColor:tint];
 }
 
 static YTQTMButton *YMCreateOverlayButton(UIView *parent, YMOverlayButtonSpec *spec) {
@@ -294,11 +286,8 @@ static YTQTMButton *YMCreateOverlayButton(UIView *parent, YMOverlayButtonSpec *s
         button.contentVerticalAlignment = UIControlContentVerticalAlignmentCenter;
         button.contentHorizontalAlignment = UIControlContentHorizontalAlignmentCenter;
     } else {
-        // The sleep button bakes its own state color (red while active), so a
-        // freshly created button reflects the timer without waiting for a notification.
-        UIImage *icon = [spec.identifier isEqualToString:@"sleep.timer"] ? YMSleepTimerOverlayIcon() : YMOverlayButtonIcon(spec.symbolName);
         button = [%c(YTQTMButton) iconButton];
-        [button setImage:icon forState:UIControlStateNormal];
+        [button setImage:YMOverlayButtonIcon(spec.symbolName) forState:UIControlStateNormal];
         button.imageView.contentMode = UIViewContentModeScaleAspectFit;
         [button setTintColor:[UIColor whiteColor]];
     }
@@ -317,7 +306,6 @@ static YTQTMButton *YMCreateOverlayButton(UIView *parent, YMOverlayButtonSpec *s
 static BOOL isRelatedVideosExpanded = NO;
 
 %hook YTMainAppControlsOverlayView
-
 - (void)layoutSubviews {
     %orig;
     YouModApplyPrevNextReplacement(self);
@@ -384,7 +372,6 @@ static BOOL isRelatedVideosExpanded = NO;
         [self bringSubviewToFront:btn];
     }
 }
-
 - (void)setOverlayVisible:(BOOL)visible {
     %orig;
     for (YMOverlayButtonSpec *spec in YMRegisteredOverlayButtons()) {
@@ -392,7 +379,6 @@ static BOOL isRelatedVideosExpanded = NO;
         if (btn) btn.alpha = visible && !isRelatedVideosExpanded;
     }
 }
-
 %new
 - (void)ymOverlayButtonTapped:(YTQTMButton *)sender {
     YMOverlayButtonSpec *matched = nil;
@@ -404,7 +390,6 @@ static BOOL isRelatedVideosExpanded = NO;
     YTPlayerViewController *player = YMPlayerVCFromOverlay(self);
     matched.onTap(player, sender);
 }
-
 - (id)initWithDelegate:(id)delegate {
     self = %orig;
     [self updateSpeedButton:nil];
@@ -413,7 +398,6 @@ static BOOL isRelatedVideosExpanded = NO;
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(ymUpdateSleepButtonIcon:) name:YouModUpdateNotification object:nil];
     return self;
 }
-
 - (id)initWithDelegate:(id)delegate autoplaySwitchEnabled:(BOOL)autoplaySwitchEnabled {
     self = %orig;
     [self updateSpeedButton:nil];
@@ -422,13 +406,11 @@ static BOOL isRelatedVideosExpanded = NO;
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(ymUpdateSleepButtonIcon:) name:YouModUpdateNotification object:nil];
     return self;
 }
-
 - (void)dealloc {
     [[NSNotificationCenter defaultCenter] removeObserver:self name:YouModUpdateSpeedLabel object:nil];
     [[NSNotificationCenter defaultCenter] removeObserver:self name:YouModUpdateNotification object:nil];
     %orig;
 }
-
 %new
 - (void)updateSpeedButton:(id)arg {
     for (YMOverlayButtonSpec *spec in YMRegisteredOverlayButtons()) {
@@ -444,7 +426,6 @@ static BOOL isRelatedVideosExpanded = NO;
         }
     }
 }
-
 %new
 - (void)updateQualityButton:(id)arg {
     for (YMOverlayButtonSpec *spec in YMRegisteredOverlayButtons()) {
@@ -460,15 +441,12 @@ static BOOL isRelatedVideosExpanded = NO;
         }
     }
 }
-
-// Refresh the sleep timer icon (white/red) when the timer state changes
-// outside the button itself — start/cancel from the tab menu, expiry, etc.
 %new
 - (void)ymUpdateSleepButtonIcon:(id)arg {
     for (YMOverlayButtonSpec *spec in YMRegisteredOverlayButtons()) {
         if ([spec.identifier isEqualToString:@"sleep.timer"]) {
             YTQTMButton *btn = (YTQTMButton *)[self viewWithTag:spec.viewTag];
-            if (btn) [btn setImage:YMSleepTimerOverlayIcon() forState:UIControlStateNormal];
+            if (btn) [btn setImage:YMOverlayButtonIcon(@"sleep.timer") forState:UIControlStateNormal];
             break;
         }
     }
@@ -491,19 +469,8 @@ static BOOL isRelatedVideosExpanded = NO;
 
 #pragma mark - Frosted Glass Background
 
-// View-tag for the frosted-glass pill behind the bottom button row. Sits just
-// below YMOverlayButtonBaseTag so it never collides with button tags.
 static const NSInteger YMFrostedBackgroundTag = 9905;
 
-// Padding around the button union. Vertical padding stays 0 — the pill must
-// match the button height exactly (30pt) rather than grow taller than it.
-static const CGFloat YMFrostedBackgroundHPadding = 7.0;
-static const CGFloat YMFrostedBackgroundVPadding = 0.0;
-
-// Applies YouTube's own frosted-glass effect to `view` (the pill that covers
-// every bottom overlay button). Pass nil for frostedGlassView and one is
-// created with YouTube's current blur style (falls back to style 16 when the
-// class-level accessor is missing, matching YouTube's own default).
 static void maybeApplyFrostedGlassToView(YTFrostedGlassView *frostedGlassView, UIView *view) {
     Class YTFrostedGlassViewClass = %c(YTFrostedGlassView);
     if (!YTFrostedGlassViewClass || !view) return;
@@ -533,7 +500,7 @@ static void YMFrostedBackgroundUpdate(YTInlinePlayerBarContainerView *self_, NSA
     for (UIView *btn in buttons) {
         unionFrame = CGRectIsNull(unionFrame) ? btn.frame : CGRectUnion(unionFrame, btn.frame);
     }
-    unionFrame = CGRectInset(unionFrame, -YMFrostedBackgroundHPadding, -YMFrostedBackgroundVPadding);
+    unionFrame = CGRectInset(unionFrame, 0, 0);
 
     if (!background) {
         background = [[UIView alloc] initWithFrame:unionFrame];
@@ -558,7 +525,6 @@ static void YMFrostedBackgroundUpdate(YTInlinePlayerBarContainerView *self_, NSA
 }
 
 %hook YTInlinePlayerBarContainerView
-
 - (id)init {
     self = %orig;
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(ymUpdateBarButtonLabels:) name:YouModUpdateSpeedLabel object:nil];
@@ -569,7 +535,6 @@ static void YMFrostedBackgroundUpdate(YTInlinePlayerBarContainerView *self_, NSA
     }
     return self;
 }
-
 - (void)layoutSubviews {
     %orig;
     if (![self._viewControllerForAncestor isKindOfClass:%c(YTMainAppVideoPlayerOverlayViewController)]) return;
@@ -645,7 +610,6 @@ static void YMFrostedBackgroundUpdate(YTInlinePlayerBarContainerView *self_, NSA
     // Wrap the whole bottom row in one frosted-glass pill.
     YMFrostedBackgroundUpdate(self, laidOutButtons);
 }
-
 - (void)setPeekableViewVisible:(BOOL)visible {
     %orig;
     if (![self._viewControllerForAncestor isKindOfClass:%c(YTMainAppVideoPlayerOverlayViewController)]) return;
@@ -655,7 +619,6 @@ static void YMFrostedBackgroundUpdate(YTInlinePlayerBarContainerView *self_, NSA
     }
     [[self viewWithTag:YMFrostedBackgroundTag] setAlpha:visible];
 }
-
 %new
 - (void)ymOverlayButtonTapped:(YTQTMButton *)sender {
     YMOverlayButtonSpec *matched = nil;
@@ -670,6 +633,7 @@ static void YMFrostedBackgroundUpdate(YTInlinePlayerBarContainerView *self_, NSA
 }
 %new
 - (void)ymUpdateBarButtonLabels:(id)arg {
+    if (![self._viewControllerForAncestor isKindOfClass:%c(YTMainAppVideoPlayerOverlayViewController)]) return;
     for (YMOverlayButtonSpec *spec in YMRegisteredOverlayButtons()) {
         NSString *label = nil;
         if ([spec.identifier isEqualToString:@"speed.video"]) label = currentSpeedLabel;
@@ -686,10 +650,11 @@ static void YMFrostedBackgroundUpdate(YTInlinePlayerBarContainerView *self_, NSA
 }
 %new
 - (void)ymUpdateSleepButtonIcon:(id)arg {
+    if (![self._viewControllerForAncestor isKindOfClass:%c(YTMainAppVideoPlayerOverlayViewController)]) return;
     for (YMOverlayButtonSpec *spec in YMRegisteredOverlayButtons()) {
         if ([spec.identifier isEqualToString:@"sleep.timer"]) {
             YTQTMButton *btn = (YTQTMButton *)[self viewWithTag:spec.viewTag];
-            if (btn) [btn setImage:YMSleepTimerOverlayIcon() forState:UIControlStateNormal];
+            if (btn) [btn setImage:YMOverlayButtonIcon(@"sleep.timer") forState:UIControlStateNormal];
             break;
         }
     }
@@ -896,7 +861,7 @@ static NSString *getCompactQualityLabel(MLFormat *format) {
     YMRegisterOverlayButton(caption);
     YMOverlayButtonSpec *sleep = [[YMOverlayButtonSpec alloc] init];
     sleep.identifier = @"sleep.timer";
-    sleep.symbolName = @"moon"; // drawn red via YMSleepTimerOverlayIcon while active
+    sleep.symbolName = @"moon";
     sleep.settingsSymbolName = @"moon";
     sleep.displayName = LOC(@"SLEEP_TIMER");
     sleep.sortOrder = 900;
@@ -906,7 +871,7 @@ static NSString *getCompactQualityLabel(MLFormat *format) {
     };
     sleep.onTap = ^(YTPlayerViewController *player, YTQTMButton *button) {
         YMSleepTimerPresentPicker(button);
-        [button setImage:YMSleepTimerOverlayIcon() forState:UIControlStateNormal];
+        [button setImage:YMOverlayButtonIcon(@"sleep.timer") forState:UIControlStateNormal];
     };
     YMRegisterOverlayButton(sleep);
     %init;
