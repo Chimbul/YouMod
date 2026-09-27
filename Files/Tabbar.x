@@ -118,10 +118,13 @@ static NSString *ymTitleForTabID(NSString *tabID) {
         NSMutableArray *ordered = [NSMutableArray array];
         for (NSDictionary *entry in savedOrder) {
             NSString *tabID = entry[@"id"];
-            BOOL enabled = [entry[@"enabled"] boolValue];
+            // The download tab is ordered here like the rest, but its on/off
+            // state always comes from the Downloading settings (DownloadLibraryTab).
+            BOOL isDownloadTab = [tabID isEqualToString:@"download"];
+            BOOL enabled = isDownloadTab ? IS_ENABLED(DownloadLibraryTab) : [entry[@"enabled"] boolValue];
             if (!enabled) continue;
 
-            NSString *pivotID = ymPivotIDForTabID(tabID);
+            NSString *pivotID = isDownloadTab ? kYMLibraryPivotIdentifier : ymPivotIDForTabID(tabID);
             if (!pivotID) continue;
 
             YTIPivotBarSupportedRenderers *existing = lookup[pivotID];
@@ -129,8 +132,8 @@ static NSString *ymTitleForTabID(NSString *tabID) {
                 [ordered addObject:existing];
             } else {
                 // Custom tab not in YouTube's default items — create it
-                NSInteger iconType = ymIconTypeForTabID(tabID);
-                NSString *title = ymTitleForTabID(tabID);
+                NSInteger iconType = isDownloadTab ? 18 : ymIconTypeForTabID(tabID);
+                NSString *title = isDownloadTab ? LOC(@"DOWNLOAD_LIBRARY_TAB") : ymTitleForTabID(tabID);
                 if (iconType > 0 && title) {
                     YTIPivotBarSupportedRenderers *newTab = [%c(YTIPivotBarRenderer) pivotSupportedRenderersWithBrowseId:pivotID title:title iconType:iconType];
                     if (newTab) [ordered addObject:newTab];
@@ -301,6 +304,20 @@ static BOOL isTabSelected = NO;
     }
     %orig(item);
 }
+// Startup-tab support: the Download tab has no native browse destination, so when the
+// saved Default Tab resolves to it, present the download library exactly like a real
+// tap instead of letting YouTube resolve a pivot identifier it doesn't know.
+- (void)selectItemWithPivotIdentifier:(id)pivotIdentifier {
+    if ([pivotIdentifier isKindOfClass:[NSString class]] && [(NSString *)pivotIdentifier isEqualToString:kYMLibraryPivotIdentifier]) {
+        [self cacheCurrentViewControllers];
+        [self updateViewsWithSelectedPivotIdentifier:kYMLibraryPivotIdentifier];
+        UIViewController *libraryVC = YouModDownloadLibraryViewController(self);
+        YTIPivotBarSupportedRenderers *item = [%c(YTIPivotBarRenderer) pivotSupportedRenderersWithBrowseId:kYMLibraryPivotIdentifier title:LOC(@"DOWNLOAD_LIBRARY_TAB") iconType:18];
+        [[self delegate] didTapPivotBarItem:item withViewControllers:@[libraryVC] animated:YES];
+        return;
+    }
+    %orig;
+}
 - (void)viewDidAppear:(BOOL)animated {
     %orig;
     sbUpdateOverlayInsetForPivotBar();
@@ -310,16 +327,29 @@ static BOOL isTabSelected = NO;
         return;
     }
     if (!isTabSelected) {
-        // Build pivot identifiers from enabled tabs (skip Create — matches Settings.x segment logic)
+        // Build pivot identifiers from enabled tabs (skip Create — matches Settings.x segment logic).
+        // Mirrors the real bar: the Download tab follows the Downloading settings, and when the
+        // saved order has no entry for it yet, it sits at the end of the bar.
         NSMutableArray *pivotIdentifiers = [NSMutableArray array];
         NSArray *savedOrder = [[NSUserDefaults standardUserDefaults] arrayForKey:TabOrder];
         if (savedOrder.count > 0) {
+            BOOL downloadInOrder = NO;
             for (NSDictionary *entry in savedOrder) {
-                if (![entry[@"enabled"] boolValue]) continue;
                 NSString *tabID = entry[@"id"];
+                BOOL isDownloadTab = [tabID isEqualToString:@"download"];
+                BOOL enabled = isDownloadTab ? IS_ENABLED(DownloadLibraryTab) : [entry[@"enabled"] boolValue];
+                if (!enabled) continue;
                 if ([tabID isEqualToString:@"create"]) continue;
+                if (isDownloadTab) {
+                    [pivotIdentifiers addObject:kYMLibraryPivotIdentifier];
+                    downloadInOrder = YES;
+                    continue;
+                }
                 NSString *pivot = ymPivotIDForTabID(tabID);
                 if (pivot) [pivotIdentifiers addObject:pivot];
+            }
+            if (!downloadInOrder && IS_ENABLED(DownloadLibraryTab)) {
+                [pivotIdentifiers addObject:kYMLibraryPivotIdentifier];
             }
         }
         if (pivotIdentifiers.count == 0) {

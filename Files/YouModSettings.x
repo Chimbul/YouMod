@@ -1382,9 +1382,9 @@ YMSettingsItem *YMImageSegment(NSString *title, NSString *key, NSArray<UIImage *
 #pragma mark - YMTabOrderViewController
 
 static NSString * const kYMTabIDs[] = {
-    @"home", @"shorts", @"create", @"subscriptions", @"library", @"history", @"gaming", @"sports", @"notifications", @"news", @"music", @"watchlater", @"playlist", @"like", @"live", @"post", @"video", @"movie", @"course", @"minigame", @"fashion", @"learning"
+    @"home", @"shorts", @"create", @"subscriptions", @"library", @"history", @"gaming", @"sports", @"notifications", @"news", @"music", @"watchlater", @"playlist", @"like", @"live", @"post", @"video", @"movie", @"course", @"minigame", @"fashion", @"learning", @"download"
 };
-static const NSInteger kYMTabCount = 22;
+static const NSInteger kYMTabCount = 23;
 static const NSInteger kYMTabMaxEnabled = 6;
 static const NSInteger kYMTabMinEnabled = 1;
 
@@ -1439,6 +1439,7 @@ static const void *kYMTabSavedScrollEdgeAppearanceKey = &kYMTabSavedScrollEdgeAp
     if ([tabID isEqualToString:@"minigame"]) return LOC(@"MINIGAME_TAB");
     if ([tabID isEqualToString:@"fashion"]) return LOC(@"FASHION_TAB");
     if ([tabID isEqualToString:@"learning"]) return LOC(@"LEARNING_TAB");
+    if ([tabID isEqualToString:@"download"]) return LOC(@"DOWNLOAD_LIBRARY_TAB");
     return tabID;
 }
 
@@ -1454,7 +1455,7 @@ static const void *kYMTabSavedScrollEdgeAppearanceKey = &kYMTabSavedScrollEdgeAp
         return [[UIImage systemImageNamed:@"plus" withConfiguration:config] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
     }
     NSDictionary *ytIconTypes = @{@"home": @(65), @"shorts": @(769), @"subscriptions": @(66), @"library": @(61)};
-    NSDictionary *bundleIcons = @{@"history": @"icons/history", @"gaming": @"icons/gaming", @"sports": @"icons/sports", @"notifications": @"icons/noti", @"news": @"icons/news", @"music": @"icons/music", @"watchlater": @"icons/watchlater", @"playlist": @"icons/playlist", @"like": @"icons/like", @"live": @"icons/live", @"post": @"icons/post", @"video": @"icons/video", @"movie": @"icons/movie", @"course": @"icons/course", @"minigame": @"icons/minigame", @"fashion": @"icons/fashion", @"learning": @"icons/learning"};
+    NSDictionary *bundleIcons = @{@"history": @"icons/history", @"gaming": @"icons/gaming", @"sports": @"icons/sports", @"notifications": @"icons/noti", @"news": @"icons/news", @"music": @"icons/music", @"watchlater": @"icons/watchlater", @"playlist": @"icons/playlist", @"like": @"icons/like", @"live": @"icons/live", @"post": @"icons/post", @"video": @"icons/video", @"movie": @"icons/movie", @"course": @"icons/course", @"minigame": @"icons/minigame", @"fashion": @"icons/fashion", @"learning": @"icons/learning", @"download": @"icons/download"};
 
     NSNumber *iconType = ytIconTypes[tabID];
     if (iconType) {
@@ -1576,6 +1577,7 @@ static const void *kYMTabSavedScrollEdgeAppearanceKey = &kYMTabSavedScrollEdgeAp
 
 - (void)loadTabData {
     NSArray *savedOrder = [[NSUserDefaults standardUserDefaults] arrayForKey:TabOrder];
+    BOOL downloadTabEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:DownloadLibraryTab];
     NSMutableArray *data = [NSMutableArray array];
 
     if (savedOrder.count > 0) {
@@ -1594,14 +1596,17 @@ static const void *kYMTabSavedScrollEdgeAppearanceKey = &kYMTabSavedScrollEdgeAp
                 if ([d[@"id"] isEqualToString:tabID]) { found = YES; break; }
             }
             if (!found) {
-                [data addObject:[@{@"id": tabID, @"enabled": @NO} mutableCopy]];
+                BOOL defaultEnabled = [tabID isEqualToString:@"download"] ? downloadTabEnabled : NO;
+                [data addObject:[@{@"id": tabID, @"enabled": @(defaultEnabled)} mutableCopy]];
             }
         }
     } else {
         // Default: Home, Shorts, Create, Subscriptions, Library enabled
         for (NSInteger i = 0; i < kYMTabCount; i++) {
+            NSString *tabID = kYMTabIDs[i];
             BOOL defaultEnabled = i < 5;
-            [data addObject:[@{@"id": kYMTabIDs[i], @"enabled": @(defaultEnabled)} mutableCopy]];
+            if ([tabID isEqualToString:@"download"]) defaultEnabled = downloadTabEnabled;
+            [data addObject:[@{@"id": tabID, @"enabled": @(defaultEnabled)} mutableCopy]];
         }
     }
 
@@ -1611,7 +1616,13 @@ static const void *kYMTabSavedScrollEdgeAppearanceKey = &kYMTabSavedScrollEdgeAp
 - (void)saveTabData {
     NSMutableArray *toSave = [NSMutableArray array];
     for (NSMutableDictionary *entry in self.tabData) {
-        [toSave addObject:@{@"id": entry[@"id"], @"enabled": entry[@"enabled"]}];
+        if ([entry[@"id"] isEqualToString:@"download"]) {
+            // The download tab's on/off state lives in the Downloading settings
+            // (DownloadLibraryTab), not here — keep the saved entry in sync with it.
+            [toSave addObject:@{@"id": entry[@"id"], @"enabled": @([[NSUserDefaults standardUserDefaults] boolForKey:DownloadLibraryTab])}];
+        } else {
+            [toSave addObject:@{@"id": entry[@"id"], @"enabled": entry[@"enabled"]}];
+        }
     }
     [[NSUserDefaults standardUserDefaults] setObject:toSave forKey:TabOrder];
     [[NSUserDefaults standardUserDefaults] synchronize];
@@ -1629,6 +1640,9 @@ static const void *kYMTabSavedScrollEdgeAppearanceKey = &kYMTabSavedScrollEdgeAp
 - (NSInteger)enabledCount {
     NSInteger count = 0;
     for (NSDictionary *entry in self.tabData) {
+        // The download tab is governed by the Downloading settings, not by the
+        // per-tab limit here — same as before it joined this list.
+        if ([entry[@"id"] isEqualToString:@"download"]) continue;
         if ([entry[@"enabled"] boolValue]) count++;
     }
     return count;
@@ -1679,7 +1693,16 @@ static const void *kYMTabSavedScrollEdgeAppearanceKey = &kYMTabSavedScrollEdgeAp
     cell.imageView.image = tabIcon;
     cell.imageView.tintColor = [UIColor labelColor];
 
-    sw.on = enabled;
+    BOOL isDownloadTab = [tabID isEqualToString:@"download"];
+    if (isDownloadTab) {
+        // The download tab can only be turned on/off from the Downloading
+        // settings section — the switch here just mirrors that state.
+        sw.on = [[NSUserDefaults standardUserDefaults] boolForKey:DownloadLibraryTab];
+        sw.enabled = NO;
+    } else {
+        sw.on = enabled;
+        sw.enabled = YES;
+    }
     objc_setAssociatedObject(sw, kYMSwitchKeyAssoc, tabID, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 
     return cell;
@@ -1688,6 +1711,10 @@ static const void *kYMTabSavedScrollEdgeAppearanceKey = &kYMTabSavedScrollEdgeAp
 - (void)tabToggleChanged:(UISwitch *)sender {
     NSString *tabID = objc_getAssociatedObject(sender, kYMSwitchKeyAssoc);
     if (!tabID) return;
+    if ([tabID isEqualToString:@"download"]) {
+        sender.on = [[NSUserDefaults standardUserDefaults] boolForKey:DownloadLibraryTab];
+        return;
+    }
 
     NSMutableDictionary *entry = nil;
     for (NSMutableDictionary *d in self.tabData) {

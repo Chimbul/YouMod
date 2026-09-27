@@ -104,18 +104,6 @@ void YouModApplyOLEDCollectionView(ASCollectionView *self, NSString *iden) {
 }
 %end
 
-%hook YTRiveStartupAnimationViewController
-- (void)viewWillAppear:(BOOL)animated {
-    %orig;
-    if (objc_getAssociatedObject(self, kOLEDKey)) return;
-    UIView *mainView = self.view;
-    mainView.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor * _Nonnull(UITraitCollection * _Nonnull traitCollection) {
-        return isDarkMode(mainView) ? [UIColor blackColor] : [UIColor whiteColor];
-    }];
-    objc_setAssociatedObject(self, kOLEDKey, @YES, OBJC_ASSOCIATION_ASSIGN);
-}
-%end
-
 %hook YTStartupAnimationViewController
 - (void)viewWillAppear:(BOOL)animated {
     %orig;

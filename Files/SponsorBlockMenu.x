@@ -64,18 +64,7 @@ static UIImage *sbDotImage(UIColor *color) {
 // into an exact 24x24 canvas (aspect-fit, centered), so every row's icon box
 // is identical regardless of the symbol's natural proportions.
 static UIImage *sbSheetIcon(NSString *symbolName) {
-    UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:22 weight:UIImageSymbolWeightMedium];
-    UIImage *symbol = [[UIImage systemImageNamed:symbolName withConfiguration:config] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
-    UIGraphicsImageRendererFormat *format = [UIGraphicsImageRendererFormat defaultFormat];
-    UIGraphicsImageRenderer *renderer = [[UIGraphicsImageRenderer alloc] initWithSize:CGSizeMake(24, 24) format:format];
-    return [renderer imageWithActions:^(UIGraphicsImageRendererContext *ctx) {
-        CGFloat width = symbol.size.width;
-        CGFloat height = symbol.size.height;
-        if (width <= 0 || height <= 0) return;
-        CGFloat scale = MIN(24.0 / width, 24.0 / height);
-        CGSize fitted = CGSizeMake(width * scale, height * scale);
-        [symbol drawInRect:CGRectMake((24.0 - fitted.width) / 2.0, (24.0 - fitted.height) / 2.0, fitted.width, fitted.height)];
-    }];
+    return YouModSymbolImageInCanvas(symbolName, 24, 22, UIImageSymbolWeightMedium);
 }
 
 #pragma mark - User ID

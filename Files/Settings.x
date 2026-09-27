@@ -411,18 +411,24 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
     // Section 7
     // Tab bar
     YTSettingsSectionItem *tabgroup = [YTSettingsSectionItemClass itemWithTitle:YMLOC(@"TABBAR") accessibilityIdentifier:nil detailTextBlock:nil selectBlock:^BOOL (YTSettingsCell *cell, NSUInteger arg1) {
-        // Build dynamic image list from enabled tabs (standard + custom)
+        // Build dynamic image list from enabled tabs (standard + custom).
+        // Mirrors the real bar (Tabbar.x): the Download tab follows the Downloading
+        // settings, and when the saved order has no entry for it yet, it sits at the end.
         NSDictionary *tabYTIconMap = @{@"home": @(65), @"shorts": @(769), @"subscriptions": @(66), @"library": @(61)};
-        NSDictionary *tabBundleIconMap = @{@"history": @"icons/history", @"gaming": @"icons/gaming", @"sports": @"icons/sports", @"notifications": @"icons/noti", @"news": @"icons/news", @"music": @"icons/music", @"watchlater": @"icons/watchlater", @"playlist": @"icons/playlist", @"like": @"icons/like", @"live": @"icons/live", @"post": @"icons/post", @"video": @"icons/video", @"movie": @"icons/movie", @"course": @"icons/course", @"minigame": @"icons/minigame", @"fashion": @"icons/fashion", @"learning": @"icons/learning"};
+        NSDictionary *tabBundleIconMap = @{@"history": @"icons/history", @"gaming": @"icons/gaming", @"sports": @"icons/sports", @"notifications": @"icons/noti", @"news": @"icons/news", @"music": @"icons/music", @"watchlater": @"icons/watchlater", @"playlist": @"icons/playlist", @"like": @"icons/like", @"live": @"icons/live", @"post": @"icons/post", @"video": @"icons/video", @"movie": @"icons/movie", @"course": @"icons/course", @"minigame": @"icons/minigame", @"fashion": @"icons/fashion", @"learning": @"icons/learning", @"download": @"icons/download"};
         YTAssetLoader *assetLoader = [[%c(YTAssetLoader) alloc] initWithBundle:YouModBundle()];
 
         NSMutableArray<UIImage *> *defaultTabImages = [NSMutableArray array];
         NSArray *savedOrder = [[NSUserDefaults standardUserDefaults] arrayForKey:TabOrder];
         if (savedOrder.count > 0) {
+            BOOL downloadInOrder = NO;
             for (NSDictionary *entry in savedOrder) {
-                if (![entry[@"enabled"] boolValue]) continue;
                 NSString *tabID = entry[@"id"];
+                BOOL isDownloadTab = [tabID isEqualToString:@"download"];
+                BOOL enabled = isDownloadTab ? IS_ENABLED(DownloadLibraryTab) : [entry[@"enabled"] boolValue];
+                if (!enabled) continue;
                 if ([tabID isEqualToString:@"create"]) continue;
+                if (isDownloadTab) downloadInOrder = YES;
                 NSNumber *ytIconType = tabYTIconMap[tabID];
                 if (ytIconType) {
                     UIImage *img = YouModYTIconImage([ytIconType intValue], YES, [UIColor whiteColor]);
@@ -436,6 +442,13 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
                             [defaultTabImages addObject:whiteImg];
                         }
                     }
+                }
+            }
+            if (!downloadInOrder && IS_ENABLED(DownloadLibraryTab)) {
+                UIImage *img = [assetLoader imageNamed:@"icons/download"];
+                if (img) {
+                    UIImage *whiteImg = [img imageWithTintColor:[UIColor whiteColor] renderingMode:UIImageRenderingModeAlwaysOriginal];
+                    [defaultTabImages addObject:whiteImg];
                 }
             }
         }

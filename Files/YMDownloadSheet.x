@@ -231,13 +231,43 @@ static NSString *YMByteCountString(unsigned long long bytes) {
     return out;
 }
 
+// Applies the model rebuilt by rebuildRows on top of the previous section list:
+// fades sections in/out when they appear or disappear, and cross-fades the
+// row content of the sections whose rows actually changed.
+- (void)applyRebuiltRowsFrom:(NSArray<NSNumber *> *)oldSections
+                changedKinds:(NSArray<NSNumber *> *)changedKinds {
+    [self.tableView performBatchUpdates:^{
+        for (NSUInteger i = 0; i < oldSections.count; i++) {
+            if ([self.sections indexOfObject:oldSections[i]] == NSNotFound) {
+                [self.tableView deleteSections:[NSIndexSet indexSetWithIndex:i]
+                              withRowAnimation:UITableViewRowAnimationFade];
+            }
+        }
+        for (NSUInteger i = 0; i < self.sections.count; i++) {
+            if ([oldSections indexOfObject:self.sections[i]] == NSNotFound) {
+                [self.tableView insertSections:[NSIndexSet indexSetWithIndex:i]
+                              withRowAnimation:UITableViewRowAnimationFade];
+            }
+        }
+    } completion:nil];
+    NSMutableIndexSet *reload = [NSMutableIndexSet indexSet];
+    for (NSNumber *kind in changedKinds) {
+        NSInteger index = [self.sections indexOfObject:kind];
+        if (index != NSNotFound) [reload addIndex:index];
+    }
+    if (reload.count > 0) {
+        [self.tableView reloadSections:reload withRowAnimation:UITableViewRowAnimationAutomatic];
+    }
+    [self refreshChrome];
+}
+
 - (void)videoCodecChanged {
     NSInteger index = self.videoCodecControl.selectedSegmentIndex;
     if (index >= 0 && index < (NSInteger)self.tabs.count) {
         self.selectedTab = self.tabs[index];
+        NSArray<NSNumber *> *oldSections = self.sections;
         [self rebuildRows];
-        [self.tableView reloadData];
-        [self refreshChrome];
+        [self applyRebuiltRowsFrom:oldSections changedKinds:@[@(YMDownloadSheetSectionVideo)]];
     }
 }
 
@@ -245,9 +275,9 @@ static NSString *YMByteCountString(unsigned long long bytes) {
         NSInteger index = self.audioCodecControl.selectedSegmentIndex;
         if (index >= 0 && index < (NSInteger)self.audioCodecs.count) {
             self.selectedAudioCodec = self.audioCodecs[index];
+            NSArray<NSNumber *> *oldSections = self.sections;
             [self rebuildRows];
-            [self.tableView reloadData];
-            [self refreshChrome];
+            [self applyRebuiltRowsFrom:oldSections changedKinds:@[@(YMDownloadSheetSectionAudio)]];
         }
 }
 
@@ -324,7 +354,7 @@ static NSString *YMByteCountString(unsigned long long bytes) {
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
     static NSString *keys[] = {@"VIDEO_CODEC", @"AUDIO_CODEC", @"QUALITY", @"SOUNDTRACK", @"SUBTITLES"};
     NSInteger kind = [self kindForSection:section];
-    if (kind < 0 || kind > 3) return nil;
+    if (kind < 0 || kind > 4) return nil;
     return LOC(keys[kind]);
 }
 

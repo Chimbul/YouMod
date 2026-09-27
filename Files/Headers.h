@@ -929,6 +929,7 @@ extern NSArray<YMSearchRow *> *sbSearchRows(UIViewController *host);
 
 extern NSBundle *YouModBundle();
 extern UIImage *YouModYTIconImage(NSInteger iconType, BOOL useCustomColor, UIColor *customColor);
+extern UIImage *YouModSymbolImageInCanvas(NSString *symbolName, CGFloat canvasSize, CGFloat pointSize, UIImageSymbolWeight weight);
 extern NSArray *getAllSystemLanguageTitles();
 extern NSArray *getAllSystemLanguageValues();
 extern UIViewController *YouModTopViewController(UIViewController *root);

@@ -197,8 +197,9 @@ static NSString *ymMediaInfoStringForFile(NSURL *fileURL, unsigned long long byt
         _sizeLabel.translatesAutoresizingMaskIntoConstraints = NO;
 
         _menuButton = [UIButton buttonWithType:UIButtonTypeSystem];
-        _menuButton.imageEdgeInsets = UIEdgeInsetsMake(4, 4, 4, 4);
-        [_menuButton setImage:[UIImage systemImageNamed:@"ellipsis"] forState:UIControlStateNormal];
+        // Rendered into an exact 24x24 canvas so the ellipsis never gets
+        // squished or cropped inside the button's hit area.
+        [_menuButton setImage:YouModSymbolImageInCanvas(@"ellipsis", 24, 22, UIImageSymbolWeightMedium) forState:UIControlStateNormal];
         _menuButton.tintColor = [UIColor labelColor];
         [_menuButton addTarget:self action:@selector(menuTapped) forControlEvents:UIControlEventTouchUpInside];
         _menuButton.translatesAutoresizingMaskIntoConstraints = NO;
@@ -318,10 +319,11 @@ static UIColor *ymYouTubeBackgroundColor(void) {
     _searchBar.tintColor = [UIColor colorWithRed:0.6 green:0.2 blue:0.9 alpha:1.0];
     _searchBar.translatesAutoresizingMaskIntoConstraints = NO;
 
-    UIButton *settingsButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    YTQTMButton *settingsButton = [%c(YTQTMButton) iconButton];
     [settingsButton setImage:YouModYTIconImage(44, NO, nil) forState:UIControlStateNormal];
     settingsButton.tintColor = [UIColor labelColor];
     [settingsButton addTarget:self action:@selector(openSettingsTapped) forControlEvents:UIControlEventTouchUpInside];
+    if ([settingsButton respondsToSelector:@selector(enableNewTouchFeedback)]) [settingsButton enableNewTouchFeedback];
     settingsButton.translatesAutoresizingMaskIntoConstraints = NO;
 
     [topBar addSubview:_searchBar];
@@ -361,7 +363,8 @@ static UIColor *ymYouTubeBackgroundColor(void) {
         [settingsButton.leadingAnchor constraintEqualToAnchor:_searchBar.trailingAnchor constant:4],
         [settingsButton.trailingAnchor constraintEqualToAnchor:headerContentGuide.trailingAnchor constant:-14],
         [settingsButton.centerYAnchor constraintEqualToAnchor:_searchBar.centerYAnchor],
-        [settingsButton.widthAnchor constraintEqualToConstant:32],
+        [settingsButton.widthAnchor constraintEqualToConstant:35],
+        [settingsButton.heightAnchor constraintEqualToConstant:35],
 
         [_collectionView.topAnchor constraintEqualToAnchor:topBar.bottomAnchor],
         [_collectionView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor],
@@ -440,7 +443,12 @@ static UIColor *ymYouTubeBackgroundColor(void) {
             row.bytes = size.unsignedLongLongValue;
             row.sizeText = ymFormattedFileSize(row.bytes);
             row.isAudio = ymIsAudioOnlyExtension(fileURL.pathExtension);
-            row.thumbnail = row.isAudio ? [UIImage systemImageNamed:@"music.note"] : ymThumbnailForVideoFile(fileURL);
+            // Audio rows have no real artwork: render the note into a fixed
+            // 48pt canvas so it stays a medium icon centered in the frame
+            // instead of scaling up with the 16:9 thumbnail view.
+            row.thumbnail = row.isAudio
+                ? YouModSymbolImageInCanvas(@"music.note", 48, 24, UIImageSymbolWeightRegular)
+                : ymThumbnailForVideoFile(fileURL);
             [rows addObject:row];
         }
         dispatch_async(dispatch_get_main_queue(), ^{
@@ -493,6 +501,9 @@ static UIColor *ymYouTubeBackgroundColor(void) {
     YMLibraryRow *row = self.rows[indexPath.item];
     cell.titleLabel.text = row.title;
     cell.sizeLabel.text = row.sizeText;
+    // Audio rows show a small centered icon on the placeholder fill; video
+    // rows fill the frame with their real thumbnail.
+    cell.thumbnailImageView.contentMode = row.isAudio ? UIViewContentModeCenter : UIViewContentModeScaleAspectFill;
     cell.thumbnailImageView.image = row.thumbnail;
     cell.thumbnailImageView.tintColor = row.isAudio ? [UIColor secondaryLabelColor] : nil;
     __weak typeof(self) weakSelf = self;
@@ -519,73 +530,47 @@ static UIColor *ymYouTubeBackgroundColor(void) {
     }
 }
 
-- (UIContextMenuConfiguration *)collectionView:(UICollectionView *)collectionView contextMenuConfigurationForItemAtIndexPath:(NSIndexPath *)indexPath point:(CGPoint)point {
-    return [UIContextMenuConfiguration configurationWithIdentifier:nil previewProvider:nil actionProvider:^UIMenu * _Nullable(NSArray<UIMenuElement *> * _Nonnull suggestedActions) {
-        return [self contextMenuForRowAtIndexPath:indexPath];
-    }];
-}
-
-// Same options as the long-press context menu, presented as an action sheet
+// Options for a library item, presented as the YouTube-style bottom sheet
 // from the cell's ellipsis button.
 - (void)showActionSheetForRowAtIndexPath:(NSIndexPath *)indexPath sourceView:(UIView *)sourceView {
     YMLibraryRow *row = self.rows[indexPath.item];
     NSURL *fileURL = [NSURL fileURLWithPath:row.path];
+    id parentResponder = self.hostParentResponder ?: self;
 
-    UIAlertController *sheet = [UIAlertController alertControllerWithTitle:row.title message:nil preferredStyle:UIAlertControllerStyleActionSheet];
-    [sheet addAction:[UIAlertAction actionWithTitle:LOC(@"LIBRARY_SHARE")
-                                              style:UIAlertActionStyleDefault
-                                            handler:^(__unused UIAlertAction *action) {
+    YTDefaultSheetController *sheet = [%c(YTDefaultSheetController) sheetControllerWithParentResponder:parentResponder];
+
+    [sheet addAction:[%c(YTActionSheetAction) actionWithTitle:LOC(@"LIBRARY_SHARE")
+                                                    iconImage:YouModSymbolImageInCanvas(@"square.and.arrow.up", 24, 22, UIImageSymbolWeightMedium)
+                                                        style:0
+                                                      handler:^(__unused YTActionSheetAction *action) {
         YouModShareItem(fileURL, self);
     }]];
-    [sheet addAction:[UIAlertAction actionWithTitle:LOC(@"LIBRARY_SAVE_THUMBNAIL")
-                                              style:UIAlertActionStyleDefault
-                                            handler:^(__unused UIAlertAction *action) {
+    [sheet addAction:[%c(YTActionSheetAction) actionWithTitle:LOC(@"LIBRARY_SAVE_THUMBNAIL")
+                                                    iconImage:YouModSymbolImageInCanvas(@"photo", 24, 22, UIImageSymbolWeightMedium)
+                                                        style:0
+                                                      handler:^(__unused YTActionSheetAction *action) {
         [self saveThumbnailToPhotosForRow:row];
     }]];
-    [sheet addAction:[UIAlertAction actionWithTitle:LOC(@"LIBRARY_OPEN_VIDEO")
-                                              style:UIAlertActionStyleDefault
-                                            handler:^(__unused UIAlertAction *action) {
+    [sheet addAction:[%c(YTActionSheetAction) actionWithTitle:LOC(@"LIBRARY_OPEN_VIDEO")
+                                                    iconImage:YouModSymbolImageInCanvas(@"play.rectangle", 24, 22, UIImageSymbolWeightMedium)
+                                                        style:0
+                                                      handler:^(__unused YTActionSheetAction *action) {
         [self openOriginalVideoForRow:row];
     }]];
-    [sheet addAction:[UIAlertAction actionWithTitle:LOC(@"LIBRARY_VIEW_INFO")
-                                              style:UIAlertActionStyleDefault
-                                            handler:^(__unused UIAlertAction *action) {
-        [self presentInfoForFileURL:fileURL bytes:row.bytes];
+    [sheet addAction:[%c(YTActionSheetAction) actionWithTitle:LOC(@"LIBRARY_VIEW_INFO")
+                                                    iconImage:YouModSymbolImageInCanvas(@"info.circle", 24, 22, UIImageSymbolWeightMedium)
+                                                        style:0
+                                                      handler:^(__unused YTActionSheetAction *action) {
+        [self presentInfoForRow:row];
     }]];
-    [sheet addAction:[UIAlertAction actionWithTitle:LOC(@"LIBRARY_DELETE")
-                                              style:UIAlertActionStyleDestructive
-                                            handler:^(__unused UIAlertAction *action) {
+    [sheet addAction:[%c(YTActionSheetAction) actionWithTitle:LOC(@"LIBRARY_DELETE")
+                                                    iconImage:YouModSymbolImageInCanvas(@"trash", 24, 22, UIImageSymbolWeightMedium)
+                                                        style:1
+                                                      handler:^(__unused YTActionSheetAction *action) {
         [self deleteRowAtIndexPath:indexPath];
     }]];
-    [sheet addAction:[UIAlertAction actionWithTitle:LOC(@"CANCEL")
-                                              style:UIAlertActionStyleCancel
-                                            handler:nil]];
-    sheet.popoverPresentationController.sourceView = sourceView;
-    sheet.popoverPresentationController.sourceRect = sourceView.bounds;
-    [self presentViewController:sheet animated:YES completion:nil];
-}
 
-- (UIMenu *)contextMenuForRowAtIndexPath:(NSIndexPath *)indexPath {    YMLibraryRow *row = self.rows[indexPath.item];
-    NSURL *fileURL = [NSURL fileURLWithPath:row.path];
-
-    UIAction *openVideo = [UIAction actionWithTitle:LOC(@"LIBRARY_OPEN_VIDEO") image:[UIImage systemImageNamed:@"play.rectangle"] identifier:nil handler:^(UIAction *action) {
-        [self openOriginalVideoForRow:row];
-    }];
-    UIAction *share = [UIAction actionWithTitle:LOC(@"LIBRARY_SHARE") image:[UIImage systemImageNamed:@"square.and.arrow.up"] identifier:nil handler:^(UIAction *action) {
-        YouModShareItem(fileURL, self);
-    }];
-    UIAction *saveThumbnail = [UIAction actionWithTitle:LOC(@"LIBRARY_SAVE_THUMBNAIL") image:[UIImage systemImageNamed:@"photo"] identifier:nil handler:^(UIAction *action) {
-        [self saveThumbnailToPhotosForRow:row];
-    }];
-    UIAction *viewInfo = [UIAction actionWithTitle:LOC(@"LIBRARY_VIEW_INFO") image:[UIImage systemImageNamed:@"info.circle"] identifier:nil handler:^(UIAction *action) {
-        [self presentInfoForFileURL:fileURL bytes:row.bytes];
-    }];
-    UIAction *delete = [UIAction actionWithTitle:LOC(@"LIBRARY_DELETE") image:[UIImage systemImageNamed:@"trash"] identifier:nil handler:^(UIAction *action) {
-        [self deleteRowAtIndexPath:indexPath];
-    }];
-    delete.attributes = UIMenuElementAttributesDestructive;
-
-    return [UIMenu menuWithTitle:row.title children:@[share, saveThumbnail, openVideo, viewInfo, delete]];
+    [sheet presentFromView:sourceView animated:YES completion:nil];
 }
 
 - (void)openOriginalVideoForRow:(YMLibraryRow *)row {
@@ -623,13 +608,16 @@ static UIColor *ymYouTubeBackgroundColor(void) {
     });
 }
 
-- (void)presentInfoForFileURL:(NSURL *)fileURL bytes:(unsigned long long)bytes {
+- (void)presentInfoForRow:(YMLibraryRow *)row {
+    NSURL *fileURL = [NSURL fileURLWithPath:row.path];
     dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
-        NSString *info = ymMediaInfoStringForFile(fileURL, bytes);
+        NSString *info = ymMediaInfoStringForFile(fileURL, row.bytes);
         dispatch_async(dispatch_get_main_queue(), ^{
-            UIAlertController *alert = [UIAlertController alertControllerWithTitle:LOC(@"LIBRARY_VIEW_INFO") message:info preferredStyle:UIAlertControllerStyleAlert];
-            [alert addAction:[UIAlertAction actionWithTitle:LOC(@"OK") style:UIAlertActionStyleDefault handler:nil]];
-            [self presentViewController:alert animated:YES completion:nil];
+            YTAlertView *alertView = [%c(YTAlertView) infoDialog];
+            alertView.title = row.title;
+            alertView.subtitle = info;
+            alertView.shouldDismissOnBackgroundTap = YES;
+            [alertView show];
         });
     });
 }
