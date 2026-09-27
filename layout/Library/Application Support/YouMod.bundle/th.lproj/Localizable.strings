@@ -639,7 +639,7 @@
 "LIBRARY_NO_VIDEO_ID" = "หา ID ของวิดีโอนี้ไม่ได้";
 "LIBRARY_SHARE" = "แชร์";
 "LIBRARY_SAVE_THUMBNAIL" = "บันทึกปกคลิปไปยังรูปภาพ";
-"LIBRARY_VIEW_INFO" = "ดูข้อมูล";
+"LIBRARY_VIEW_INFO" = "ข้อมูลวิดีโอ";
 "LIBRARY_DELETE" = "ลบ";
 "OK" = "ตกลง";
 "LIBRARY_INFO_SIZE" = "ขนาด";
