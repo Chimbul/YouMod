@@ -630,16 +630,15 @@
 "SLEEP_TIMER_ENTRY_OVERLAY" = "โอเวอร์เลย์ตัวเล่น";
 "SLEEP_TIMER_ENTRY_BOTH" = "ทั้งคู่";
 
-// Keys synced from en.lproj (English base)
 "HIDE_AUTO_DUBBED_DOWNLOADS" = "ซ่อนแทร็กเสียงที่พากย์อัตโนมัติ";
 "HIDE_AUTO_DUBBED_DOWNLOADS_DESC" = "ซ่อนแทร็กเสียงที่ AI พากย์อัตโนมัติออกจากตัวเลือกแทร็กเสียงในชีตดาวน์โหลด";
-"DOWNLOAD_LIBRARY_TAB" = "ดาวน์โหลด";
-"DOWNLOAD_LIBRARY_TAB_DESC" = "เพิ่มแท็บที่แสดงรายการวิดีโอที่ดาวน์โหลดไว้ทั้งหมดพร้อมรูปภาพขนาดย่อและขนาดไฟล์";
+"DOWNLOAD_LIBRARY_TAB" = "แท็บคลังดาวน์โหลด";
+"DOWNLOAD_LIBRARY_TAB_DESC" = "เพิ่มแท็บที่แสดงรายการวิดีโอที่ดาวน์โหลดไว้ทั้งหมด";
 "DOWNLOAD_LIBRARY_EMPTY" = "ยังไม่มีรายการดาวน์โหลด";
 "LIBRARY_OPEN_VIDEO" = "เปิดวิดีโอบน YouTube";
 "LIBRARY_NO_VIDEO_ID" = "หา ID ของวิดีโอนี้ไม่ได้";
 "LIBRARY_SHARE" = "แชร์";
-"LIBRARY_SAVE_THUMBNAIL" = "บันทึกรูปภาพขนาดย่อไปยังรูปภาพ";
+"LIBRARY_SAVE_THUMBNAIL" = "บันทึกปกคลิปไปยังรูปภาพ";
 "LIBRARY_VIEW_INFO" = "ดูข้อมูล";
 "LIBRARY_DELETE" = "ลบ";
 "OK" = "ตกลง";
