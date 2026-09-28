@@ -1830,7 +1830,6 @@ void YouModFilterVideoButtons(_ASDisplayView *view, NSString *iden) {
                     [node removeYogaChild:child];
                     int boolCount = 0;
                     if (isSpecialButton) {
-
                         if (IS_ENABLED(RemoveVideoLikeButton)) boolCount++;
                         if (IS_ENABLED(RemoveVideoDislikeButton)) boolCount++;
                         if (boolCount == 1) break;
