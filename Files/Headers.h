@@ -1144,7 +1144,7 @@ typedef NS_ENUM(NSInteger, YouModTranslationState) {
 + (void)cancelCurrent;
 @end
 
-// ASDisplayView centralized helpers
+// _ASDisplayView/YTELMViewController centralized helpers
 extern void YouModApplyOLEDToDisplayView(_ASDisplayView *view, NSString *iden);
 extern void YouModFilterAdsDisplayView(_ASDisplayView *view, NSString *iden);
 extern void YouModConfigureDownloadButton(_ASDisplayView *view, NSString *iden);
@@ -1157,5 +1157,4 @@ extern void YouModFilterShortsDisplayView(_ASDisplayView *view, NSString *iden);
 extern void YouModRemoveShortsPausedButtons(_ASDisplayView *view, NSString *iden);
 extern void YouModApplyOLEDCollectionView(ASCollectionView *self, NSString *iden);
 extern void YouModRemoveDrawerAds(YTELMViewController *self);
-extern void YouModFilterNonScrollableVideoButtons(_ASDisplayView *view, NSString *iden);
 extern void YouModRemoveFullscreenActionsButtons(YTELMViewController *controller);

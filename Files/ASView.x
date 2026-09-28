@@ -4,16 +4,14 @@ static const void *kASViewKey = &kASViewKey;
 
 %hook _ASDisplayView
 %property (nonatomic, assign) _ASDisplayView *currentDownloadButton;
-- (void)didMoveToWindow {
+- (void)didMoveToSuperview {
     %orig;
-    NSLog(@"[WaterDev] didMoveToWindow got called");
     if (objc_getAssociatedObject(self, kASViewKey)) return;
     NSString *iden = self.accessibilityIdentifier;
     YouModApplyOLEDToDisplayView(self, iden);
     YouModConfigureDownloadButton(self, iden);
     YouModSetupDownloadGestures(self, iden);
     if (IS_ENABLED(RemoveAds)) YouModFilterAdsDisplayView(self, iden);
-    YouModFilterNonScrollableVideoButtons(self, iden);
     YouModFilterVideoButtons(self, iden);
     YouModFilterShortsDisplayView(self, iden);
     YouModRemoveShortsPausedButtons(self, iden);
@@ -43,13 +41,8 @@ static const void *kASViewKey = &kASViewKey;
         YouModHandleDownloadButtonAction(moreButton);
     }];
 }
-- (void)didMoveToSuperview {
-    %orig;
-    NSLog(@"[WaterDev] didMoveToSuperview got called");
-}
 %end
 
-/*
 static BOOL isLikeDislikeButtonSeperator(ASDisplayNode *node) {
     NSString *desc = nil;
     @try {
@@ -64,22 +57,6 @@ static BOOL isLikeDislikeButtonSeperator(ASDisplayNode *node) {
 %hook ELMContainerNode
 - (void)insertYogaChild:(ASDisplayNode *)child atIndex:(NSUInteger)index {
     if (isLikeDislikeButtonSeperator(child)) return;
-    %orig;
-}
-%end
-*/
-
-%hook ELMContainerNode
-- (void)addYogaChild:(ASDisplayNode *)child {
-    NSLog(@"[WaterDev] addYogaChild called");
-    %orig;
-}
-- (void)insertYogaChild:(ASDisplayNode *)child atIndex:(NSUInteger)index {
-    NSLog(@"[WaterDev] insertYogaChild called");
-    %orig;
-}
-- (void)appendYogaChild:(ASDisplayNode *)child {
-    NSLog(@"[WaterDev] appendYogaChild called");
     %orig;
 }
 %end

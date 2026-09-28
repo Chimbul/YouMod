@@ -1841,56 +1841,26 @@ void YouModRemoveFullscreenActionsButtons(YTELMViewController *controller) {
 
 // Video buttons filtering
 void YouModFilterVideoButtons(_ASDisplayView *view, NSString *iden) {
-    if (!iden || iden.length == 0 || !isPad()) return;
-    BOOL shouldFilter = NO;
-    if ([iden isEqualToString:@"id.video.share.button"] && IS_ENABLED(RemoveVideoShareButton)) {
-        shouldFilter = YES;
-    } else if ([iden isEqualToString:@"id.video.add_to.button"] && IS_ENABLED(RemoveVideoSaveButton)) {
-        shouldFilter = YES;
-    } else if ([iden isEqualToString:@"id.ui.add_to.offline.button"] && IS_ENABLED(RemoveVideoDownloadButton)) {
-        shouldFilter = YES;
-    } else if ([iden isEqualToString:@"clip_button.eml"] && IS_ENABLED(RemoveVideoClipButton)) {
-        shouldFilter = YES;
-    } else if ([iden isEqualToString:@"id.video.remix.button"] && IS_ENABLED(RemoveVideoRemixButton)) {
-        shouldFilter = YES;
-    } else if ([iden isEqualToString:@"id.video.like.button"] && IS_ENABLED(RemoveVideoLikeButton)) {
-        shouldFilter = YES;
-    } else if ([iden isEqualToString:@"id.video.dislike.button"] && IS_ENABLED(RemoveVideoDislikeButton)) {
-        shouldFilter = YES;
-    } else if ([iden isEqualToString:@"id.player.chat.toggle.button"] && IS_ENABLED(RemoveVideoLiveChatButton)) {
-        shouldFilter = YES;
-    }
-    if (!shouldFilter) return;
-
-    UIViewController *con = view._viewControllerForAncestor;
-    if ([con isKindOfClass:%c(YTWatchNextResultsViewController)]) {
-        BOOL isSpecialButton = ([iden isEqualToString:@"id.video.like.button"] || [iden isEqualToString:@"id.video.dislike.button"]);
-        if (!isSpecialButton) {
-            UIView *actualMainView = view.superview;
-            while (actualMainView != nil && ![actualMainView isKindOfClass:%c(_ASCollectionViewCell)]) {
-                actualMainView = actualMainView.superview;
-            }
-            if (actualMainView) {
-                ASCellNode *node = ((_ASCollectionViewCell *)actualMainView).node;
-                NSArray *children = [node.yogaChildren copy];
-                for (UIView *child in children) {
-                    [node removeYogaChild:child];
-                }
-                [actualMainView removeFromSuperview];
-            }
-        } else {
+    if (!iden || iden.length == 0) return;
+    NSDictionary *buttonsList = @{
+        @"id.video.like.button": @(IS_ENABLED(RemoveVideoLikeButton)),
+        @"id.video.dislike.button": @(IS_ENABLED(RemoveVideoDislikeButton)),
+        @"id.video.share.button": @(IS_ENABLED(RemoveVideoShareButton)),
+        @"id.video.add_to.button": @(IS_ENABLED(RemoveVideoSaveButton)),
+        @"clip_button.eml": @(IS_ENABLED(RemoveVideoClipButton)),
+        @"id.video.remix.button": @(IS_ENABLED(RemoveVideoRemixButton)),
+        @"id.ui.add_to.offline.button": @(IS_ENABLED(RemoveVideoDownloadButton)),
+        @"id.player.chat.toggle.button" : @(IS_ENABLED(RemoveVideoLiveChatButton))
+    };
+    for (NSString *button in buttonsList) {
+        if ([iden isEqualToString:button] && [buttonsList[button] boolValue]) {
             _ASDisplayView *dpView = (_ASDisplayView *)view.superview;
-            if (dpView) {
-                ASDisplayNode *node = dpView.keepalive_node;
-                NSArray *children = [node.yogaChildren copy];
-                for (UIView *child in children) {
-                    NSString *desc = [child description];
-                    if ([desc containsString:iden]) {
-                        [node removeYogaChild:child];
-                        [view removeFromSuperview];
-                    } else if (![desc containsString:@"id.video.like.button"] && ![desc containsString:@"id.video.dislike.button"]) {
-                        [node removeYogaChild:child];
-                    }
+            ASDisplayNode *node = dpView.keepalive_node;
+            for (ASDisplayNode *child in node.yogaChildren) {
+                if ([child.description containsString:button]) {
+                    [node removeYogaChild:child];
+                    [dpView removeFromSuperview];
+                    break;
                 }
             }
         }
