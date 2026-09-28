@@ -714,7 +714,7 @@ static BOOL SBGetDecorationViewTimeRange(UIView *view, CGFloat *outStart, CGFloa
 static BOOL SBDecorationCanApplyRoundedCorners(UIView *view) {
     YTIPlayerBarDecorationModel *model = [view valueForKey:@"_model"];
     if (!model.style.hasRoundedCorners) return NO;
-    return [((YTMainAppVideoPlayerOverlayViewController *)view._viewControllerForAncestor).videoPlayerOverlayView isFullscreen];
+    return [((YTMainAppVideoPlayerOverlayViewController *)view._viewControllerForAncestor) isFullscreen];
 }
 
 static void SBRemoveMarkerContainerFromLayer(CALayer *hostLayer) {

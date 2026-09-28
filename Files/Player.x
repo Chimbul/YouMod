@@ -1846,6 +1846,7 @@ void YouModFilterVideoButtons(_ASDisplayView *view, NSString *iden) {
                     }
                     ASDisplayNode *superNode;
                     if (isNonScrollable) superNode = dpView.keepalive_node;
+                    else if (isSpecialButton && boolCount == 2) for (i=0; i<3; i++) superNode = superNode.subviews.firstObject;
                     else superNode = [dpView performSelector:@selector(node)];
                     for (ASDisplayNode *child in superNode.yogaChildren) [superNode removeYogaChild:child];
                     [dpView removeFromSuperview];
