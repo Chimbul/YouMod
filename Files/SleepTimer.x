@@ -506,7 +506,7 @@ void YMSleepTimerPresentPicker(UIView *sourceView) {
             return;
         }
         NSUInteger seq = ++slimBarReconnectSequence;
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2.75 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
             if (seq != slimBarReconnectSequence) return; // flapped again meanwhile
             timer.connectionLost = NO;
             // YouTube may have reset the bar's appearance while disconnected,
