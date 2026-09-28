@@ -1828,8 +1828,9 @@ void YouModFilterVideoButtons(_ASDisplayView *view, NSString *iden) {
             for (ASDisplayNode *child in node.yogaChildren) {
                 if ([child.description containsString:button]) {
                     [node removeYogaChild:child];
+                    int boolCount = 0;
                     if (isSpecialButton) {
-                        int boolCount = 0;
+
                         if (IS_ENABLED(RemoveVideoLikeButton)) boolCount++;
                         if (IS_ENABLED(RemoveVideoDislikeButton)) boolCount++;
                         if (boolCount == 1) break;
@@ -1845,9 +1846,14 @@ void YouModFilterVideoButtons(_ASDisplayView *view, NSString *iden) {
                         dpView = (_ASDisplayView *)dpView.superview;
                     }
                     ASDisplayNode *superNode;
-                    if (isNonScrollable) superNode = dpView.keepalive_node;
-                    else if (isSpecialButton && boolCount == 2) for (i=0; i<3; i++) superNode = superNode.subviews.firstObject;
-                    else superNode = [dpView performSelector:@selector(node)];
+                    if (isNonScrollable) {
+                        superNode = dpView.keepalive_node;
+                    } else if (isSpecialButton && boolCount == 2) {
+                        for (int i=0; i<3; i++) dpView = dpView.subviews.firstObject;
+                        superNode = dpView.keepalive_node;
+                    } else {
+                        superNode = [dpView performSelector:@selector(node)];
+                    }
                     for (ASDisplayNode *child in superNode.yogaChildren) [superNode removeYogaChild:child];
                     [dpView removeFromSuperview];
                     break;
