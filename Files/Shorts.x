@@ -58,7 +58,7 @@ static void YouModRemoveShortsOverlayButton(_ASDisplayView *dpView) {
                     ASDisplayNode *subNode = sub.keepalive_node;
                     NSString *desc = nil;
                     @try {
-                        desc = [[[[subNode performSelector:@selector(nodeController)] performSelector:@selector(owningComponent)] performSelector:@selector(owningComponent)] description];
+                        desc = [[[[subNode nodeController] performSelector:@selector(owningComponent)] performSelector:@selector(owningComponent)] description];
                     } @catch (id ex) {
                         continue;
                     }
@@ -71,7 +71,7 @@ static void YouModRemoveShortsOverlayButton(_ASDisplayView *dpView) {
                 } else if (IS_ENABLED(RemoveShortsSaveButton)) {
                     NSString *desc = nil;
                     @try {
-                        desc = [[[[child performSelector:@selector(nodeController)] performSelector:@selector(owningComponent)] performSelector:@selector(owningComponent)] description];
+                        desc = [[[[child nodeController] performSelector:@selector(owningComponent)] performSelector:@selector(owningComponent)] description];
                     } @catch (id ex) {
                         continue;
                     }

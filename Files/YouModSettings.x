@@ -1117,6 +1117,23 @@ static const void *kYMCachedDisplayedItemsKey = &kYMCachedDisplayedItemsKey;
         NSString *itemKey = item.key;
         UIAction *action = [UIAction actionWithTitle:optionTitle image:nil identifier:nil handler:^(__kindof UIAction *a) {
             [[NSUserDefaults standardUserDefaults] setInteger:i forKey:itemKey];
+            if ([itemKey isEqualToString:SleepTimerEntry]) {
+                // Keep the locked sleep.timer overlay-button toggle and the
+                // player in sync with the picker.
+                NSMutableArray *order = [NSMutableArray arrayWithArray:[[NSUserDefaults standardUserDefaults] arrayForKey:OverlayButtonOrder] ?: @[]];
+                NSMutableDictionary *sleepEntry = nil;
+                for (NSMutableDictionary *d in order) {
+                    if ([d[@"id"] isEqualToString:@"sleep.timer"]) { sleepEntry = d; break; }
+                }
+                if (!sleepEntry) {
+                    sleepEntry = [NSMutableDictionary dictionaryWithDictionary:@{@"id": @"sleep.timer", @"bottom": @(NO)}];
+                    [order addObject:sleepEntry];
+                }
+                sleepEntry[@"enabled"] = @(i == 2 || i == 3);
+                [[NSUserDefaults standardUserDefaults] setObject:order forKey:OverlayButtonOrder];
+                [[NSUserDefaults standardUserDefaults] synchronize];
+                [[NSNotificationCenter defaultCenter] postNotificationName:@"YouModUpdateOverlayButtons" object:nil];
+            }
             if (weakButton) {
                 [weakSelf updatePickerButton:weakButton item:item];
             }
@@ -1867,6 +1884,13 @@ void YMPresentTabOrderModally(id parentResponder) {
 
 #pragma mark - YMOverlayButtonOrderViewController
 
+// The sleep.timer toggle is locked in the manage screen; its state is derived
+// from the SleepTimerEntry picker (2 = overlay, 3 = both) instead.
+static BOOL YMSleepTimerOverlayEnabled(void) {
+    NSInteger entry = INTFORVAL(SleepTimerEntry);
+    return entry == 2 || entry == 3;
+}
+
 static NSString * const kYMOverlayButtonIDs[] = {
     @"sponsorblock.toggle",
     @"download.video",
@@ -2093,6 +2117,13 @@ static const void *kYMOverlayMoveInFlightKey = &kYMOverlayMoveInFlightKey;
         }
     }
 
+    // sleep.timer tracks the SleepTimerEntry picker, never the stored flag.
+    for (NSMutableDictionary *d in data) {
+        if ([d[@"id"] isEqualToString:@"sleep.timer"]) {
+            d[@"enabled"] = @(YMSleepTimerOverlayEnabled());
+        }
+    }
+
     self.buttonData = data;
 }
 
@@ -2103,6 +2134,9 @@ static const void *kYMOverlayMoveInFlightKey = &kYMOverlayMoveInFlightKey;
         BOOL enabled = [entry[@"enabled"] boolValue];
         if ([buttonID isEqualToString:@"sponsorblock.toggle"]) {
             enabled = YMIsOverlayButtonEnabled(buttonID);
+        }
+        if ([buttonID isEqualToString:@"sleep.timer"]) {
+            enabled = YMSleepTimerOverlayEnabled();
         }
         [toSave addObject:@{@"id": buttonID, @"enabled": @(enabled), @"bottom": @([entry[@"bottom"] boolValue])}];
     }
@@ -2221,10 +2255,10 @@ static const void *kYMOverlayMoveInFlightKey = &kYMOverlayMoveInFlightKey;
     cell.imageView.image = btnIcon;
     cell.imageView.tintColor = [UIColor labelColor];
 
-    if ([buttonID isEqualToString:@"download.video"] || [buttonID isEqualToString:@"sponsorblock.toggle"]) {
-        sw.hidden = YES;
-    } else {
-        sw.hidden = NO;
+    if ([buttonID isEqualToString:@"download.video"] 
+        || [buttonID isEqualToString:@"sponsorblock.toggle"] 
+        || [buttonID isEqualToString:@"sleep.timer"]) {
+        sw.enabled = NO;
     }
 
     sw.on = enabled;

@@ -422,7 +422,6 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 
 @interface YTQTMButton (YouMod)
 - (void)enableNewTouchFeedback;
-- (void)applyTintColors;
 @end
 
 @interface YTHeaderView : UIView
@@ -555,6 +554,7 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 
 @interface ASDisplayNode (YouMod)
 - (void)removeYogaChild:(id)arg;
+- (ELMNodeController *)nodeController;
 @end
 
 @interface _ASDisplayView (YouMod)

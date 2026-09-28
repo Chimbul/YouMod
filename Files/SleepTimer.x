@@ -5,7 +5,7 @@
 // main player when it fires. Started from the overlay moon button or the tab
 // long-press menu.
 
-#pragma mark - Slim status bar classes (only exist on newer YouTube versions)
+#pragma mark - Slim status bar classes
 
 @interface YTSlimStatusBarView : UIView
 - (void)updateAppearanceToSleepTimerActiveWithText:(NSString *)text;
@@ -259,7 +259,7 @@ static NSString *YMSleepTimerFormatClock(NSTimeInterval interval) {
 #pragma mark Slim status bar
 
 - (void)notifyButtons {
-    [[NSNotificationCenter defaultCenter] postNotificationName:@"YouModUpdateNotification" object:nil];
+    [[NSNotificationCenter defaultCenter] postNotificationName:@"YouModUpdateSleepTimerButton" object:nil];
 }
 
 - (void)updateSlimBars {

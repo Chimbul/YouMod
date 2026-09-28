@@ -585,53 +585,37 @@ static UIColor *ymYouTubeBackgroundColor(void) {
     [sheet presentFromView:sourceView animated:YES completion:nil];
 }
 
-// Rename dialog, styled after the SponsorBlock user-ID dialog: a YouTube
-// alert with a plain system text field on top and Cancel / Rename buttons.
-// The video ID suffix (and the file extension) are preserved automatically.
+// Rename dialog via the system alert: a text field prefilled with the
+// current name plus Cancel / Rename buttons. The video ID suffix (and the
+// file extension) are preserved automatically.
 - (void)presentRenameDialogForRow:(YMLibraryRow *)row {
-    YTAlertView *alertView = [%c(YTAlertView) dialog];
-    alertView.title = LOC(@"LIBRARY_RENAME_TITLE");
-    alertView.shouldDismissOnBackgroundTap = YES;
-
-    UITextField *field = [[UITextField alloc] initWithFrame:CGRectMake(0, 0, 238, 44)];
-    field.autoresizingMask = UIViewAutoresizingFlexibleWidth;
-    field.text = ymDisplayTitleForFileName(row.path.lastPathComponent.stringByDeletingPathExtension);
-    field.font = [UIFont systemFontOfSize:15];
-    field.textColor = [UIColor labelColor];
-    field.borderStyle = UITextBorderStyleRoundedRect;
-    field.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor *(UITraitCollection *trait) {
-        return (trait.userInterfaceStyle == UIUserInterfaceStyleDark)
-            ? [UIColor secondarySystemBackgroundColor]
-            : [UIColor systemGray5Color];
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:LOC(@"LIBRARY_RENAME_TITLE")
+                                                                   message:nil
+                                                            preferredStyle:UIAlertControllerStyleAlert];
+    __weak typeof(self) weakSelf = self;
+    [alert addTextFieldWithConfigurationHandler:^(UITextField *field) {
+        field.text = ymDisplayTitleForFileName(row.path.lastPathComponent.stringByDeletingPathExtension);
+        field.autocorrectionType = UITextAutocorrectionTypeNo;
+        field.spellCheckingType = UITextSpellCheckingTypeNo;
+        field.clearButtonMode = UITextFieldViewModeWhileEditing;
     }];
-    field.clearButtonMode = UITextFieldViewModeWhileEditing;
-    field.autocorrectionType = UITextAutocorrectionTypeNo;
-    field.spellCheckingType = UITextSpellCheckingTypeNo;
-    field.returnKeyType = UIReturnKeyDone;
-
-    alertView.customContentView = field;
-    alertView.customContentViewInsets = UIEdgeInsetsMake(0, 8, 4, 8);
-
-    [alertView addCancelButtonWithAction:nil];
-    [alertView addTitle:LOC(@"LIBRARY_RENAME") withAction:^{
+    [alert addAction:[UIAlertAction actionWithTitle:LOC(@"CANCEL") style:UIAlertActionStyleCancel handler:nil]];
+    [alert addAction:[UIAlertAction actionWithTitle:LOC(@"LIBRARY_RENAME") style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) {
+        UITextField *field = alert.textFields.firstObject;
         NSString *newBase = [field.text stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
         if (newBase.length == 0) {
             YouModSendError(LOC(@"LIBRARY_RENAME_EMPTY"));
             return;
         }
-        if ([self applyRename:newBase toRow:row]) {
+        __strong typeof(weakSelf) strongSelf = weakSelf;
+        if ([strongSelf applyRename:newBase toRow:row]) {
             YouModSendSuccess(LOC(@"LIBRARY_RENAMED"));
-            [self.collectionView reloadData];
+            [strongSelf.collectionView reloadData];
         } else {
             YouModSendError(LOC(@"LIBRARY_RENAME_FAILED"));
         }
-    }];
-    [alertView show];
-
-    // Focus the field once the alert has finished fading in.
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        [field becomeFirstResponder];
-    });
+    }]];
+    [self presentViewController:alert animated:YES completion:nil];
 }
 
 // Moves the media file (plus its sidecar thumbnail) and updates the row in

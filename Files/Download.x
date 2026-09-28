@@ -317,7 +317,7 @@ void YouModConfigureDownloadButton(_ASDisplayView *view, NSString *iden) {
         ASDisplayNode *node = view.keepalive_node;
         NSString *desc = nil;
         @try {
-            desc = [[[[node performSelector:@selector(nodeController)] performSelector:@selector(owningComponent)] performSelector:@selector(owningComponent)] description];
+            desc = [[[[node nodeController] performSelector:@selector(owningComponent)] performSelector:@selector(owningComponent)] description];
         } @catch (id ex) {
             return;
         }
@@ -400,7 +400,7 @@ static NSString *YouModExtractCommentText(UIView *cellView, BOOL isPost) {
                 }
                 NSString *desc = nil;
                 @try {
-                    desc = [[[[node performSelector:@selector(nodeController)] performSelector:@selector(parent)] performSelector:@selector(owningComponent)] description];
+                    desc = [[[[node nodeController] performSelector:@selector(parent)] performSelector:@selector(owningComponent)] description];
                 } @catch (id ex) {}
                 if (desc != nil && [desc containsString:@"post_text.eml"]) {
                     NSAttributedString *strings = [node valueForKey:@"_attributedText"];
@@ -587,11 +587,10 @@ void YouModHandleDownloadButtonAction(_ASDisplayView *view) {
     YTQTMButton *downloadBtn = (YTQTMButton *)[self viewWithTag:1501];
     if (!downloadBtn) {
         UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:20 weight:UIImageSymbolWeightMedium];
-        // Baked-white AlwaysOriginal image: immune to YouTube recoloring via tint.
         UIImage *icon = [UIImage systemImageNamed:@"arrow.down.circle" withConfiguration:config];
         downloadBtn = [%c(YTQTMButton) iconButton];
         [downloadBtn setImage:icon forState:UIControlStateNormal];
-        [downloadBtn applyTintColors];
+        [downloadBtn setTintColor:[UIColor whiteColor]];
         downloadBtn.exclusiveTouch = YES;
         downloadBtn.tag = 1501;
         [downloadBtn addTarget:self action:@selector(didTapYouModShortsDownload:) forControlEvents:UIControlEventTouchUpInside];
