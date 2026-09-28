@@ -202,8 +202,8 @@
 "AUDIO_TRACK_SELECT_DESC" = "指定播放时使用的首选音轨语言（如可用）。";
 "NO_AUTO_DUBBED" = "使用原声音轨";
 "NO_AUTO_DUBBED_DESC" = "如果首选语言音轨是自动配音或未找到，则使用原声音轨。";
-"NO_AUTO_TRANSLATED_TITLES" = "Original titles";
-"NO_AUTO_TRANSLATED_TITLES_DESC" = "Shows video titles in their original language instead of YouTube's automatic translation, where the original title is provided (search results and video lists).";
+"NO_AUTO_TRANSLATED_TITLES" = "Original video titles";
+"NO_AUTO_TRANSLATED_TITLES_DESC" = "Shows video titles in their original language instead of YouTube's automatic translation, where the original title is provided.";
 "CAPTION_TRACK" = "首选字幕";
 "CAPTION_TRACK_SELECT" = "已选字幕";
 "CAPTION_TRACK_SELECT_DESC" = "指定显示的首选字幕语言（如可用）。";

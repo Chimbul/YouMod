@@ -4,7 +4,7 @@ static const void *kASViewKey = &kASViewKey;
 
 %hook _ASDisplayView
 %property (nonatomic, assign) _ASDisplayView *currentDownloadButton;
-- (void)didMoveToSuperview {
+- (void)didMoveToWindow {
     %orig;
     if (objc_getAssociatedObject(self, kASViewKey)) return;
     NSString *iden = self.accessibilityIdentifier;

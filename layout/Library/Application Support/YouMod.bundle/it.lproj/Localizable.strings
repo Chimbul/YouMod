@@ -202,8 +202,8 @@
 "AUDIO_TRACK_SELECT_DESC" = "Specifica la lingua preferita della traccia audio da usare per la riproduzione, se disponibile.";
 "NO_AUTO_DUBBED" = "Usa traccia audio originale";
 "NO_AUTO_DUBBED_DESC" = "Usa la traccia audio originale se la traccia nella lingua preferita è doppiata automaticamente o non viene trovata.";
-"NO_AUTO_TRANSLATED_TITLES" = "Original titles";
-"NO_AUTO_TRANSLATED_TITLES_DESC" = "Shows video titles in their original language instead of YouTube's automatic translation, where the original title is provided (search results and video lists).";
+"NO_AUTO_TRANSLATED_TITLES" = "Original video titles";
+"NO_AUTO_TRANSLATED_TITLES_DESC" = "Shows video titles in their original language instead of YouTube's automatic translation, where the original title is provided.";
 "CAPTION_TRACK" = "Sottotitoli preferiti";
 "CAPTION_TRACK_SELECT" = "Sottotitoli selezionati";
 "CAPTION_TRACK_SELECT_DESC" = "Specifica la lingua preferita dei sottotitoli da visualizzare, se disponibile.";

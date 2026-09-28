@@ -1119,8 +1119,14 @@ static const void *kYMCachedDisplayedItemsKey = &kYMCachedDisplayedItemsKey;
             [[NSUserDefaults standardUserDefaults] setInteger:i forKey:itemKey];
             if ([itemKey isEqualToString:SleepTimerEntry]) {
                 // Keep the locked sleep.timer overlay-button toggle and the
-                // player in sync with the picker.
-                NSMutableArray *order = [NSMutableArray arrayWithArray:[[NSUserDefaults standardUserDefaults] arrayForKey:OverlayButtonOrder] ?: @[]];
+                // player in sync with the picker. Entries coming back from
+                // NSUserDefaults are immutable dictionaries, so deep-copy each
+                // one — mutating a shared entry would crash on an immutable
+                // object ("mutating method sent to immutable object").
+                NSMutableArray *order = [NSMutableArray array];
+                for (NSDictionary *entry in [[NSUserDefaults standardUserDefaults] arrayForKey:OverlayButtonOrder] ?: @[]) {
+                    if ([entry isKindOfClass:[NSDictionary class]]) [order addObject:[entry mutableCopy]];
+                }
                 NSMutableDictionary *sleepEntry = nil;
                 for (NSMutableDictionary *d in order) {
                     if ([d[@"id"] isEqualToString:@"sleep.timer"]) { sleepEntry = d; break; }
@@ -1615,6 +1621,7 @@ static const void *kYMTabSavedScrollEdgeAppearanceKey = &kYMTabSavedScrollEdgeAp
 
     if (savedOrder.count > 0) {
         for (NSDictionary *entry in savedOrder) {
+            if (![entry isKindOfClass:[NSDictionary class]]) continue;
             NSString *tabID = entry[@"id"];
             BOOL enabled = [entry[@"enabled"] boolValue];
             if (tabID) {
@@ -2089,6 +2096,7 @@ static const void *kYMOverlayMoveInFlightKey = &kYMOverlayMoveInFlightKey;
 
     if (savedOrder.count > 0) {
         for (NSDictionary *entry in savedOrder) {
+            if (![entry isKindOfClass:[NSDictionary class]]) continue;
             NSString *buttonID = entry[@"id"];
             BOOL enabled = [entry[@"enabled"] boolValue];
             BOOL bottom = [entry[@"bottom"] boolValue];

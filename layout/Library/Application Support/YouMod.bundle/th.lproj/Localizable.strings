@@ -201,8 +201,8 @@
 "AUDIO_TRACK_SELECT_DESC" = "เลือกแทร็กเสียงที่ต้องการโดยอัตโนมัติ ถ้ามี";
 "NO_AUTO_DUBBED" = "ใช้เสียงต้นฉบับ";
 "NO_AUTO_DUBBED_DESC" = "ใช้เสียงต้นฉบับถ้าไม่พบภาษาที่ต้องการหรือเป็นเสียงแบบพากย์อัตโนมัติ";
-"NO_AUTO_TRANSLATED_TITLES" = "Original titles";
-"NO_AUTO_TRANSLATED_TITLES_DESC" = "Shows video titles in their original language instead of YouTube's automatic translation, where the original title is provided (search results and video lists).";
+"NO_AUTO_TRANSLATED_TITLES" = "ชื่อวิดีโอต้นฉบับ";
+"NO_AUTO_TRANSLATED_TITLES_DESC" = "แสดงชื่อวิดีโอเป็นภาษาต้นฉบับแทนคำแปลอัตโนมัติของ YouTube ในกรณีที่มีชื่อต้นฉบับให้แสดง";
 "CAPTION_TRACK" = "คำบรรยายที่ต้องการ";
 "CAPTION_TRACK_SELECT" = "คำบรรยายที่เลือก";
 "CAPTION_TRACK_SELECT_DESC" = "เลือกภาษาของคำบรรยายที่ต้องการให้แสดง ถ้ามี";
