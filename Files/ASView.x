@@ -48,7 +48,7 @@ static BOOL isLikeDislikeButtonOrSeperator(ASDisplayNode *node) {
     if (IS_ENABLED(RemoveVideoLikeButton)) boolCount++;
     if (IS_ENABLED(RemoveVideoDislikeButton)) boolCount++;
     if (boolCount == 2) return NO;
-    else if (([node.description containsString:@"id.video.like.button"]) return IS_ENABLED(RemoveVideoLikeButton);
+    else if ([node.description containsString:@"id.video.like.button"]) return IS_ENABLED(RemoveVideoLikeButton);
     else if ([node.description containsString:@"id.video.dislike.button"]) return IS_ENABLED(RemoveVideoDislikeButton);
     NSString *desc = nil;
     @try {
