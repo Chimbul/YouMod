@@ -677,26 +677,25 @@ static NSArray<SBSegment *> *sbActivePlayerSegments = nil;
 
 static NSString *const SBSegmentMarkerLayerName = @"SBSegmentMarkerLayer";
 
-// Round a segment marker to match YouTube's own player bar.
-//
-// The bar is a capsule, and YouTube shapes it with `layer.mask = CAShapeLayer` on the
-// decoration view rather than a cornerRadius — a mask composites a layer AND all its
-// sublayers, so our markers are already trimmed to the capsule silhouette, caps
-// included. That means no per-corner logic is needed: rounding all four corners is
-// correct both mid-bar and at the bar's ends, and anything overflowing gets clipped.
-//
-// The radius is clamped to half the marker's width so a narrow marker
-// (SBMarkerMinWidth / SBPoiMarkerWidth) stays a pill instead of collapsing to a dot.
-//
-// The corner curve is left at CALayer's default (circular), which is what produces a
-// stadium shape at radius = height/2 — the bar's silhouette. A continuous curve is the
-// wrong tool here: its control points run roughly 1.5x the radius along each edge, so
-// on a 2pt-tall bar the two corners' curves overlap and the path degenerates.
-static void SBApplyMarkerRounding(CALayer *layer) {
-    if (!layer) return;
-    CGFloat height = layer.bounds.size.height, width = layer.bounds.size.width;
-    if (height <= 0 || width <= 0) return;
-    layer.cornerRadius = MIN(height / 2.0, width / 2.0);
+static void SBApplyMarkerContainerRounding(CALayer *container, CGFloat barHeight) {
+    if (!container || barHeight <= 0) return;
+    container.masksToBounds = YES;
+    container.cornerRadius = barHeight / 2.0;
+}
+
+static const NSInteger SBMarkerRoundsLeft = 1;
+static const NSInteger SBMarkerRoundsRight = 2;
+
+static void SBApplyMarkerEndRounding(CALayer *markerLayer, NSInteger mode, CGFloat barWidth, CGFloat barHeight) {
+    if (!markerLayer || barHeight <= 0 || barWidth <= 0) return;
+    if (mode == 0) {
+        markerLayer.cornerRadius = 0.0;
+        return;
+    }
+    markerLayer.cornerRadius = MIN(barHeight / 2.0, barWidth / 2.0);
+    if ((mode & SBMarkerRoundsLeft) && (mode & SBMarkerRoundsRight)) return;
+    markerLayer.maskedCorners = ((mode & SBMarkerRoundsLeft) ? kCALayerMinXMinYCorner | kCALayerMinXMaxYCorner : 0)
+                              | ((mode & SBMarkerRoundsRight) ? kCALayerMaxXMinYCorner | kCALayerMaxXMaxYCorner : 0);
 }
 
 static BOOL SBGetDecorationViewTimeRange(UIView *view, CGFloat *outStart, CGFloat *outEnd) {
@@ -712,24 +711,11 @@ static BOOL SBGetDecorationViewTimeRange(UIView *view, CGFloat *outStart, CGFloa
     return NO;
 }
 
-// The feed's inline-muted-playback bar and the windowed main player are both excluded:
-// only the fullscreen main player's markers are rounded. isFullscreen is private on the
-// overlay view, so a view that does not answer it counts as not fullscreen.
-static BOOL SBDecorationViewIsInFullscreenMainPlayer(UIView *view) {
-    if (![view respondsToSelector:@selector(enableRoundedCorners)] || ![view isKindOfClass:%c(YTPlayerBarProgressDecorationView)]) return NO;
-    UIView *currentView = view.superview;
-    while (currentView != nil && currentView.superview != nil && ![currentView isKindOfClass:%c(YTMainAppVideoPlayerOverlayView)]) {
-        currentView = currentView.superview;
-    }
-    if (![currentView isKindOfClass:%c(YTMainAppVideoPlayerOverlayView)]) return NO;
-    return [(YTMainAppVideoPlayerOverlayView *)currentView isFullscreen];
+static BOOL SBDecorationCanApplyRoundedCorners(UIView *view) {
+    YTIPlayerBarDecorationModel *model = [view valueForKey:@"_model"];
+    if (!model.style.hasRoundedCorners) return NO;
+    return [((YTMainAppVideoPlayerOverlayViewController *)view._viewControllerForAncestor).videoPlayerOverlayView isFullscreen];
 }
-
-// Every marker for one bar lives as a sublayer of a single container (a CALayer
-// named SBSegmentMarkerLayer, or a UIView tagged SBSegmentMarkerTag on the bar
-// paths that need z-ordering among subviews). Rebuilds and repositions only
-// ever touch that one container, so a host view or bar parent gains exactly one
-// marker element no matter how many segments are showing.
 
 static void SBRemoveMarkerContainerFromLayer(CALayer *hostLayer) {
     for (CALayer *layer in [hostLayer.sublayers copy]) {
@@ -739,60 +725,53 @@ static void SBRemoveMarkerContainerFromLayer(CALayer *hostLayer) {
     }
 }
 
-static CALayer *SBFindMarkerContainerInLayer(CALayer *hostLayer) {
-    for (CALayer *layer in hostLayer.sublayers) {
-        if ([layer.name isEqualToString:SBSegmentMarkerLayerName]) return layer;
-    }
-    return nil;
-}
-
-// Builds one marker sublayer for a segment, clipped to the visible time range
-// [rangeStart, rangeEnd]. The layer's frame is in container coordinates; the
-// fractions are stored on it so re-layouts can recompute the frame without the
-// segment or the video duration.
-static CALayer *SBMakeMarkerLayer(SBSegment *segment, CGFloat rangeStart, CGFloat rangeEnd, CGFloat barWidth, CGFloat barHeight, BOOL rounded) {
+// Builds one marker sublayer for a segment, clipped to the visible time range [rangeStart, rangeEnd].
+// videoStart/videoEnd are the video's first/last second (from the bar's model
+// and playingState): a segment matching either, compared as whole seconds,
+// gets that side's corners rounded.
+static CALayer *SBMakeMarkerLayer(SBSegment *segment, CGFloat rangeStart, CGFloat rangeEnd, CGFloat videoStart, CGFloat videoEnd, CGFloat barWidth, CGFloat barHeight) {
     CGFloat viewDuration = rangeEnd - rangeStart;
-    if (viewDuration <= 0) return nil;
-
     BOOL isPoi = [segment.category isEqualToString:@"poi_highlight"];
     CALayer *markerLayer = [CALayer layer];
     markerLayer.masksToBounds = YES;
     markerLayer.backgroundColor = [segment segmentColor].CGColor;
 
+    NSInteger rounding = 0;
     if (isPoi) {
         if (segment.startTime < rangeStart || segment.startTime > rangeEnd) return nil;
         CGFloat frac = (segment.startTime - rangeStart) / viewDuration;
         markerLayer.frame = CGRectMake(MAX(0.0, frac * barWidth - SBPoiMarkerXOffset), 0, SBPoiMarkerWidth, barHeight);
-        objc_setAssociatedObject(markerLayer, @selector(sbSegmentData), @[@(frac), @(frac), @(YES)], OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        objc_setAssociatedObject(markerLayer, @selector(sbSegmentData), @[@(frac), @(frac), @(YES), @(rounding)], OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     } else {
         CGFloat overlapStart = MAX((CGFloat)segment.startTime, rangeStart);
         CGFloat overlapEnd = MIN((CGFloat)segment.endTime, rangeEnd);
         if (overlapEnd <= overlapStart) return nil;
 
+        if ((NSInteger)segment.startTime == (NSInteger)videoStart) rounding |= SBMarkerRoundsLeft;
+        if ((NSInteger)segment.endTime == (NSInteger)videoEnd) rounding |= SBMarkerRoundsRight;
+
         CGFloat fracStart = (overlapStart - rangeStart) / viewDuration;
         CGFloat fracEnd = (overlapEnd - rangeStart) / viewDuration;
         markerLayer.frame = CGRectMake(fracStart * barWidth, 0, MAX(SBMarkerMinWidth, (fracEnd - fracStart) * barWidth), barHeight);
-        objc_setAssociatedObject(markerLayer, @selector(sbSegmentData), @[@(fracStart), @(fracEnd), @(NO)], OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        objc_setAssociatedObject(markerLayer, @selector(sbSegmentData), @[@(fracStart), @(fracEnd), @(NO), @(rounding)], OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        SBApplyMarkerEndRounding(markerLayer, rounding, markerLayer.bounds.size.width, barHeight);
     }
 
-    if (rounded) SBApplyMarkerRounding(markerLayer);
     return markerLayer;
 }
 
-// Repositions the marker sublayers inside a container from their stored
-// fractions. Shared by every bar style so all markers follow the same layout
-// rules.
 static void SBLayoutMarkerLayers(CALayer *container, CGFloat barWidth, CGFloat barHeight, BOOL rounded) {
     if (!container) return;
     [CATransaction begin];
     [CATransaction setDisableActions:YES];
+    if (rounded) SBApplyMarkerContainerRounding(container, barHeight);
     for (CALayer *layer in container.sublayers) {
         NSArray *data = objc_getAssociatedObject(layer, @selector(sbSegmentData));
         if (!data || data.count < 3) continue;
         CGFloat fracStart = [data[0] floatValue];
         CGFloat fracEnd = [data[1] floatValue];
         BOOL isPoi = [data[2] boolValue];
-
+        NSInteger rounding = data.count > 3 ? [data[3] integerValue] : 0;
         CGFloat x, w;
         if (isPoi) {
             x = MAX(0.0, fracStart * barWidth - SBPoiMarkerXOffset);
@@ -802,9 +781,7 @@ static void SBLayoutMarkerLayers(CALayer *container, CGFloat barWidth, CGFloat b
             w = MAX(SBMarkerMinWidth, (fracEnd - fracStart) * barWidth);
         }
         layer.frame = CGRectMake(x, 0, w, barHeight);
-        // Re-derive the radius: the bar is 2pt windowed and 4pt fullscreen, and
-        // the width changes on every re-layout.
-        if (rounded) SBApplyMarkerRounding(layer);
+        SBApplyMarkerEndRounding(layer, rounding, w, barHeight);
     }
     [CATransaction commit];
 }
@@ -817,6 +794,7 @@ static void SBRebuildMarkersInDecorationView(UIView *view) {
     CGFloat start = 0.0, end = 0.0;
     if (!SBGetDecorationViewTimeRange(view, &start, &end)) return;
 
+    CGFloat videoEnd = [[[view valueForKey:@"_model"] playingState] totalTimeSec];
     CGFloat barWidth = view.bounds.size.width;
     CGFloat barHeight = view.bounds.size.height;
     if (barWidth <= 0 || barHeight <= 0) return;
@@ -824,17 +802,18 @@ static void SBRebuildMarkersInDecorationView(UIView *view) {
     NSArray<SBSegment *> *segments = sbActivePlayerSegments;
     if (!segments || segments.count == 0) return;
 
-    BOOL rounded = SBDecorationViewIsInFullscreenMainPlayer(view);
+    BOOL rounded = SBDecorationCanApplyRoundedCorners(view);
     [CATransaction begin];
     [CATransaction setDisableActions:YES];
 
     CALayer *container = [CALayer layer];
     container.name = SBSegmentMarkerLayerName;
     container.frame = view.bounds;
+    if (rounded) SBApplyMarkerContainerRounding(container, barHeight);
     for (SBSegment *segment in segments) {
         SBSegmentAction action = [segment configuredAction];
         if (action == SBSegmentActionDisable) continue;
-        CALayer *markerLayer = SBMakeMarkerLayer(segment, start, end, barWidth, barHeight, rounded);
+        CALayer *markerLayer = SBMakeMarkerLayer(segment, start, end, start, videoEnd, barWidth, barHeight);
         if (markerLayer) [container addSublayer:markerLayer];
     }
     [view.layer addSublayer:container];
@@ -847,14 +826,13 @@ static void SBRenderMarkersInDecorationView(UIView *view) {
     CGFloat barHeight = view.bounds.size.height;
     if (barWidth <= 0 || barHeight <= 0) return;
 
-    CALayer *container = SBFindMarkerContainerInLayer(view.layer);
-
-    // layoutSubviews fires on every scrub/progress pass on every decoration
-    // view, so this must stay near-free when nothing changed. Marker frames
-    // only depend on the bar's size (rounding follows the 2pt↔4pt height
-    // change), so an unchanged size means the container is already correct —
-    // skip the defaults reads, the fullscreen hierarchy walk and all layer
-    // writes below.
+    CALayer *container = nil;
+    for (CALayer *layer in view.layer.sublayers) {
+        if ([layer.name isEqualToString:SBSegmentMarkerLayerName]) {
+            container = layer;
+            break;
+        }
+    }
     if (container && container.frame.size.width == barWidth && container.frame.size.height == barHeight) return;
 
     if (!IS_ENABLED(SBEnabled) || !IS_ENABLED(SBButtonKey) || (!IS_ENABLED(SBSegmentsInPlayer) && !IS_ENABLED(SBSegmentsInFeed))) {
@@ -863,15 +841,12 @@ static void SBRenderMarkersInDecorationView(UIView *view) {
     }
 
     if (!container) {
-        // Fallback rebuild for bars that never got sb_updateSegmentMarkers;
-        // without segments there is nothing to rebuild and this fires on every
-        // layout pass, so gate it.
         if (sbActivePlayerSegments.count > 0) SBRebuildMarkersInDecorationView(view);
         return;
     }
 
     container.frame = view.bounds;
-    SBLayoutMarkerLayers(container, barWidth, barHeight, SBDecorationViewIsInFullscreenMainPlayer(view));
+    SBLayoutMarkerLayers(container, barWidth, barHeight, SBDecorationCanApplyRoundedCorners(view));
 }
 
 %hook YTPlayerBarProgressDecorationView
@@ -1055,7 +1030,7 @@ static void SBRenderMarkersInDecorationView(UIView *view) {
     for (SBSegment *segment in segments) {
         SBSegmentAction action = [segment configuredAction];
         if (action == SBSegmentActionDisable) continue;
-        CALayer *markerLayer = SBMakeMarkerLayer(segment, 0.0, totalTime, containerFrame.size.width, containerFrame.size.height, NO);
+        CALayer *markerLayer = SBMakeMarkerLayer(segment, 0.0, totalTime, 0.0, totalTime, containerFrame.size.width, containerFrame.size.height);
         if (markerLayer) [container.layer addSublayer:markerLayer];
     }
 

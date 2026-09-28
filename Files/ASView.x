@@ -44,6 +44,11 @@ static const void *kASViewKey = &kASViewKey;
 %end
 
 static BOOL isLikeDislikeButtonSeperator(ASDisplayNode *node) {
+    int boolCount = 0;
+    if (IS_ENABLED(RemoveVideoLikeButton)) boolCount++;
+    if (IS_ENABLED(RemoveVideoDislikeButton)) boolCount++;
+    if (boolCount == 0 || boolCount == 2) return NO;
+    else if ([node.description containsString:@"id.video."] && [node.description hasSuffix:@"like.button"]) return NO;
     NSString *desc = nil;
     @try {
         desc = [[[[[[node nodeController] performSelector:@selector(parent)] performSelector:@selector(parent)] performSelector:@selector(owningComponent)] performSelector:@selector(owningComponent)] description];

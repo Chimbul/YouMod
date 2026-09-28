@@ -77,7 +77,6 @@
 #import <objc/NSObjCRuntime.h>
 #import <YouTubeHeader/ELMTouchCommandPropertiesHandler.h>
 #import <YouTubeHeader/YTReelNonVideoContentModel.h>
-#import <YouTubeHeader/YTIPlayerBarPlayingState.h>
 
 // For Settings.x and SponsorBlockSettings.x
 #import <roothide.h>
@@ -764,6 +763,11 @@ typedef NS_ENUM(NSInteger, SBSegmentAction) {
 
 @interface YTIPlayerBarDecorationModel (YouMod)
 - (YTIPlayerBarItemData *)itemData;
+- (YTIPlayerBarPlayingState *)playingState;
+@end
+
+@interface YTIPlayerBarDecorationStyle (YouMod)
+@property (nonatomic, assign, readwrite) BOOL hasRoundedCorners;
 @end
 
 @interface YTPlayerBarProgressDecorationView (YouMod)
