@@ -47,9 +47,9 @@ static BOOL isLikeDislikeButtonOrSeperator(ASDisplayNode *node) {
     int boolCount = 0;
     if (IS_ENABLED(RemoveVideoLikeButton)) boolCount++;
     if (IS_ENABLED(RemoveVideoDislikeButton)) boolCount++;
-    if (boolCount == 0 || boolCount == 2) return NO;
-    else if (([node.description containsString:@"id.video.like.button"] && !IS_ENABLED(RemoveVideoLikeButton))
-            || ([node.description containsString:@"id.video.dislike.button"] && !IS_ENABLED(RemoveVideoDislikeButton))) return NO;
+    if (boolCount == 2) return NO;
+    else if (([node.description containsString:@"id.video.like.button"]) return IS_ENABLED(RemoveVideoLikeButton);
+    else if ([node.description containsString:@"id.video.dislike.button"]) return IS_ENABLED(RemoveVideoDislikeButton);
     NSString *desc = nil;
     @try {
         desc = [[[[[[node nodeController] performSelector:@selector(parent)] performSelector:@selector(parent)] performSelector:@selector(owningComponent)] performSelector:@selector(owningComponent)] description];
