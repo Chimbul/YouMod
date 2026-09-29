@@ -828,25 +828,6 @@ static void SBRebuildMarkersInDecorationView(UIView *view) {
     SBRebuildMarkersInLayer(container, segments, start, end, start, videoEnd);
 }
 
-static void SBRenderMarkersInDecorationView(UIView *view) {
-    CGFloat barWidth = view.bounds.size.width;
-    CGFloat barHeight = view.bounds.size.height;
-    if (barWidth <= 0 || barHeight <= 0) return;
-
-    CALayer *container = nil;
-    for (CALayer *layer in view.layer.sublayers) {
-        if ([layer.name isEqualToString:SBSegmentMarkerLayerName]) {
-            container = layer;
-            break;
-        }
-    }
-    if (!container) return;
-    else if (container.frame.size.width == barWidth && container.frame.size.height == barHeight) return;
-
-    container.frame = view.bounds;
-    SBLayoutMarkerLayers(container, barWidth, barHeight, SBDecorationCanApplyRoundedCorners(view));
-}
-
 %hook YTPlayerBarProgressDecorationView
 - (void)layoutSubviews {
     %orig;
