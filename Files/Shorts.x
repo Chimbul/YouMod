@@ -193,7 +193,7 @@ void YouModRemoveShortsPausedButtons(_ASDisplayView *self, NSString *iden) {
 }
 
 void YouModFilterShortsDisplayView(_ASDisplayView *view, NSString *iden) {
-    if (!iden || iden.length == 0 || ![view isKindOfClass:%c(YTShortsPlayerViewController)]) return;
+    if (!iden || iden.length == 0) return;
     if (([iden isEqualToString:@"product_sticker.main_target"] || [iden isEqualToString:@"product_sticker.secondary_target"]) && IS_ENABLED(HideShortsProducts)) {
         view.hidden = YES;
     } else if ([iden isEqualToString:@"id.elements.components.suggested_action"] && IS_ENABLED(HideShortsRecbar)) {
@@ -211,6 +211,7 @@ void YouModFilterShortsDisplayView(_ASDisplayView *view, NSString *iden) {
     } else if ([iden isEqualToString:@"eml.animated_subscribe_button"] && IS_ENABLED(RemoveShortsSubButton) && [view isKindOfClass:%c(YTShortsPlayerViewController)]) {
         view.hidden = YES;
     } else {
+        if (![view isKindOfClass:%c(YTShortsPlayerViewController)]) return;
         ASDisplayNode *no = view.keepalive_node;
         NSString *desc = nil;
         @try {
