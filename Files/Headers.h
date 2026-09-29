@@ -305,6 +305,7 @@
 #define SBEnabled @"YouModSBEnabled"
 #define SBShowButton @"YouModSBShowButton"
 #define SBShowNotifications @"YouModSBShowNotifications"
+#define SBShowFullVideoLabel @"YouModSBShowFullVideoLabel"
 #define SBAudioNotification @"YouModSBAudioNotification"
 #define SBSegmentsInPlayer @"YouModSBSegmentsInPlayer"
 #define SBSegmentsInFeed @"YouModSBSegmentsInFeed"

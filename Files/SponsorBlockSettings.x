@@ -50,6 +50,7 @@ static NSArray<SBToggleRow *> *sbToggleRows() {
         [SBToggleRow key:SBEnabled title:@"SB_ENABLE" desc:@"SB_ENABLE_DESC"],
         [SBToggleRow key:SBShowButton title:@"SB_SHOW_BUTTON" desc:@"SB_SHOW_BUTTON_DESC"],
         [SBToggleRow key:SBShowNotifications title:@"SB_SHOW_NOTIFICATIONS" desc:@"SB_SHOW_NOTIFICATIONS_DESC"],
+        [SBToggleRow key:SBShowFullVideoLabel title:@"SB_SHOW_FULL_VIDEO_LABEL" desc:@"SB_SHOW_FULL_VIDEO_LABEL_DESC"],
         [SBToggleRow key:SBSegmentsInPlayer title:@"SB_SEGMENTS_IN_PLAYER" desc:@"SB_SEGMENTS_IN_PLAYER_DESC"],
         [SBToggleRow key:SBSegmentsInFeed title:@"SB_SEGMENTS_IN_FEED" desc:@"SB_SEGMENTS_IN_FEED_DESC"],
         [SBToggleRow key:SBSegmentsInMiniPlayer title:@"SB_SEGMENTS_IN_MINIPLAYER" desc:@"SB_SEGMENTS_IN_MINIPLAYER_DESC"],

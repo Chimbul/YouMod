@@ -540,6 +540,7 @@ static void sbSendViewedSegment(SBSegment *segment) {
 }
 %new
 - (void)sbShowFullVideoLabelIfNeeded:(NSArray<SBSegment *> *)segments {
+    if (!IS_ENABLED(SBShowFullVideoLabel)) return;
     if (!sbActiveForVideo(self) || self.isPlayingAd) return;
     for (SBSegment *segment in segments) {
         if (![segment.actionType isEqualToString:@"full"]) continue;

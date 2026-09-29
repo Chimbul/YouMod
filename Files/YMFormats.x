@@ -42,17 +42,12 @@ static void YMFormatsLogMsg(NSString *format, ...) {
             if (nameSaysOriginal) name = [name substringToIndex:originalSuffix.location];
             if (self.isAutoDubbed) {
                 return [NSString stringWithFormat:LOC(@"AUDIO_AUTO_DUBBED"), name];
-            } else if (self.isOriginal || nameSaysOriginal) {
-                return [NSString stringWithFormat:LOC(@"AUDIO_ORIGINAL_LANG"), name];
-            } else if (self.isDubbed) {
-                return [NSString stringWithFormat:LOC(@"AUDIO_DUBBED"), name];
             }
-            return [NSString stringWithFormat:LOC(@"AUDIO_ORIGINAL_LANG"), name];
+            return name;
         }
         NSString *first = [self.audioTrackID componentsSeparatedByString:@"."].firstObject;
         if (first.length > 0) {
-            NSString *lang = [[NSLocale currentLocale] localizedStringForLanguageCode:first] ?: first;
-            return [NSString stringWithFormat:LOC(@"AUDIO_ORIGINAL_LANG"), lang];
+            return [[NSLocale currentLocale] localizedStringForLanguageCode:first] ?: first;
         }
         return LOC(@"AUDIO_ORIGINAL");
     }

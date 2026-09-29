@@ -542,6 +542,8 @@
 "SB_SEGMENTS_IN_MINIPLAYER_DESC" = "미니플레이어의 진행 바에 색상으로 구간을 표시합니다.";
 "SB_SHOW_DURATION" = "구간 제외 재생 시간 표시";
 "SB_SHOW_DURATION_DESC" = "건너뛸 수 있는 구간을 제외한 전체 동영상 재생 시간을 표시합니다.";
+"SB_SHOW_FULL_VIDEO_LABEL" = "전체 동영상 라벨 표시";
+"SB_SHOW_FULL_VIDEO_LABEL_DESC" = "동영상 전체를 대상으로 하는 카테고리(예: Exclusive Access)로 라벨이 지정되면 배너를 표시합니다.";
 "SB_CATEGORIES_HEADER" = "구간 카테고리";
 "SB_SEGMENT_COLOR" = "구간 색상";
 
@@ -553,25 +555,15 @@
 "SB_ACTION_SKIP_TO" = "구간으로 건너뛰기";
 
 "SB_CAT_sponsor" = "스폰서";
-"SB_CAT_sponsor_DESC" = "크리에이터와 직접적인 관련이 없는 제품 또는 서비스에 대한 유료 프로모션입니다.";
 "SB_CAT_intro" = "인트로/오프닝";
-"SB_CAT_intro_DESC" = "일반적으로 동영상 시작 부분에 표시되는 인트로 애니메이션 또는 막간입니다.";
 "SB_CAT_outro" = "엔딩 카드/크레딧";
-"SB_CAT_outro_DESC" = "동영상 끝부분의 엔딩 카드, 크레딧 또는 아웃트로입니다.";
 "SB_CAT_interaction" = "상호작용 알림";
-"SB_CAT_interaction_DESC" = "좋아요, 구독 또는 소셜 미디어 팔로우를 요청하는 구간입니다.";
 "SB_CAT_selfpromo" = "자체 프로모션";
-"SB_CAT_selfpromo_DESC" = "크리에이터 본인의 제품, 굿즈 또는 기타 콘텐츠에 대한 무료 홍보입니다.";
 "SB_CAT_music_offtopic" = "비음악 구간";
-"SB_CAT_music_offtopic_DESC" = "뮤직비디오 내의 비음악 구간(예: 대화, 인트로 등)입니다.";
 "SB_CAT_preview" = "미리보기/요약";
-"SB_CAT_preview_DESC" = "이전 에피소드 요약 또는 다른 동영상의 미리보기 콘텐츠입니다.";
 "SB_CAT_hook" = "하이라이트 미리보기/인사";
-"SB_CAT_hook_DESC" = "동영상에 나올 내용의 간단한 티저 또는 오프닝 인사말입니다.";
 "SB_CAT_poi_highlight" = "주요 하이라이트";
-"SB_CAT_poi_highlight_DESC" = "동영상의 핵심 포인트나 하이라이트입니다. '건너뛰기'를 사용하여 바로 이동하세요.";
 "SB_CAT_filler" = "군더더기/잡담";
-"SB_CAT_filler_DESC" = "동영상 주제와 직접 관련 없는 잡담, 개그 또는 부가적인 장면입니다.";
 
 "SB_SKIPPED" = "%@ 구간을 건너뛰었습니다";
 "SB_DETECTED" = "%@ 구간이 감지되었습니다.\n이 구간을 건너뛰시겠습니까?";
@@ -602,7 +594,6 @@
 "SB_VOTE_FAILED" = "투표에 실패했습니다";
 "SB_VOTE_NO_SEGMENTS" = "이 동영상에는 구간이 없습니다";
 "SB_CAT_exclusive_access" = "Exclusive Access";
-"SB_CAT_exclusive_access_DESC" = "The whole video showcases a product, service or location the creator received free or subsidised access to.";
 "SB_FULL_VIDEO_LABEL" = "This video is labeled: %@";
 "SB_DETECTED_MUTE" = "%@ segment detected.\nWould you like to mute the segment?";
 "SB_MUTE_NOW" = "Mute";
@@ -692,9 +683,7 @@
 "FILES_HINT_COMPATIBLE" = "H.264 동영상과 AAC 오디오 — iOS 기본 플레이어에서 재생됩니다.";
 "FILES_HINT_AUDIO_COMPATIBLE" = "AAC 오디오 — iOS 기본 플레이어에서 재생됩니다.";
 "AUDIO_ORIGINAL" = "원본";
-"AUDIO_ORIGINAL_LANG" = "%@";
 "AUDIO_AUTO_DUBBED" = "%@ [AI]";
-"AUDIO_DUBBED" = "%@";
 "SLEEP_TIMER" = "수면 타이머";
 "SLEEP_TIMER_OFF" = "타이머 끄기";
 "SLEEP_TIMER_REMAINING_FMT" = "남은 시간: %@";

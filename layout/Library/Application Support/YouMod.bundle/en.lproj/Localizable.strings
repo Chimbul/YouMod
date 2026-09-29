@@ -568,6 +568,8 @@
 "SB_SEGMENTS_IN_MINIPLAYER_DESC" = "Display colored segments on the progress bar of the mini-player.";
 "SB_SHOW_DURATION" = "Show duration without segments";
 "SB_SHOW_DURATION_DESC" = "Display the total video duration excluding skippable segments.";
+"SB_SHOW_FULL_VIDEO_LABEL" = "Show full video label";
+"SB_SHOW_FULL_VIDEO_LABEL_DESC" = "Display a banner when the video is labeled with a full-video category (e.g. Exclusive Access).";
 "SB_CATEGORIES_HEADER" = "Segment categories";
 "SB_SEGMENT_COLOR" = "Segment color";
 
@@ -579,25 +581,15 @@
 "SB_ACTION_SKIP_TO" = "Skip to segment";
 
 "SB_CAT_sponsor" = "Sponsor";
-"SB_CAT_sponsor_DESC" = "Paid promotion for a product or service not directly related to the creator.";
 "SB_CAT_intro" = "Intro";
-"SB_CAT_intro_DESC" = "Intermission or intro animation typically seen at the start of a video.";
 "SB_CAT_outro" = "Endcards";
-"SB_CAT_outro_DESC" = "Endcards, credits, or outros at the end of the video.";
 "SB_CAT_interaction" = "Interaction";
-"SB_CAT_interaction_DESC" = "Reminders to like, subscribe, or follow on social media.";
 "SB_CAT_selfpromo" = "Self-promotion";
-"SB_CAT_selfpromo_DESC" = "Unpaid promotion of the creator's own products, merchandise, or other content.";
 "SB_CAT_music_offtopic" = "Non-music";
-"SB_CAT_music_offtopic_DESC" = "Non-music sections in music videos (e.g. talking, introductions).";
 "SB_CAT_preview" = "Preview";
-"SB_CAT_preview_DESC" = "Recap or preview of content from another video or previous episode.";
 "SB_CAT_hook" = "Hook/Greetings";
-"SB_CAT_hook_DESC" = "Narrated trailers for the upcoming video, greetings and goodbyes.";
 "SB_CAT_poi_highlight" = "Highlight";
-"SB_CAT_poi_highlight_DESC" = "The key moment or highlight point of the video. Use 'Skip to' to jump directly to it.";
 "SB_CAT_filler" = "Filler";
-"SB_CAT_filler_DESC" = "Tangential content, jokes, or filler that is not directly related to the main topic.";
 
 "SB_SKIPPED" = "%@ segment has been skipped";
 "SB_DETECTED" = "%@ segment detected.\nWould you like to skip the segment?";
@@ -628,7 +620,6 @@
 "SB_VOTE_FAILED" = "Vote failed";
 "SB_VOTE_NO_SEGMENTS" = "No segments for this video";
 "SB_CAT_exclusive_access" = "Exclusive Access";
-"SB_CAT_exclusive_access_DESC" = "The whole video showcases a product, service or location the creator received free or subsidised access to.";
 "SB_FULL_VIDEO_LABEL" = "This video is labeled: %@";
 "SB_DETECTED_MUTE" = "%@ segment detected.\nWould you like to mute the segment?";
 "SB_MUTE_NOW" = "Mute";
@@ -695,9 +686,7 @@
 "FILES_HINT_COMPATIBLE" = "H.264 video with AAC audio — plays in the built-in iOS player.";
 "FILES_HINT_AUDIO_COMPATIBLE" = "AAC audio — plays in the built-in iOS player.";
 "AUDIO_ORIGINAL" = "Original";
-"AUDIO_ORIGINAL_LANG" = "%@";
 "AUDIO_AUTO_DUBBED" = "%@ [AI]";
-"AUDIO_DUBBED" = "%@";
 
 // Sleep timer
 "SLEEP_TIMER" = "Sleep Timer";
