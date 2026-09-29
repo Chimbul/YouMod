@@ -63,13 +63,24 @@ void YouModApplyOLEDToDisplayView(_ASDisplayView *view, NSString *iden) {
         NSString *desc = nil;
         @try {
             desc = [[[[node nodeController] performSelector:@selector(parent)] performSelector:@selector(owningComponent)] description];
-        } @catch (id ex) {
-            return;
-        }
-        if ([desc containsString:@"live_chat_buy_flow_panel_header.eml"] || [desc containsString:@"missing_content_view.eml"]) {
+        } @catch (id ex) {}
+        if (desc != nil && ([desc containsString:@"live_chat_buy_flow_panel_header.eml"] 
+            || [desc containsString:@"missing_content_view.eml"])) {
             view.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor * _Nonnull(UITraitCollection * _Nonnull traitCollection) {
                 return isDarkMode(view) ? [UIColor blackColor] : [UIColor clearColor];
             }];
+        } else {
+            desc = nil;
+            @try {
+                desc = [[[[[node nodeController] performSelector:@selector(parent)] performSelector:@selector(parent)] performSelector:@selector(owningComponent)] description];
+            } @catch (id ex) {
+                return;
+            }
+            if (desc != nil && [desc containsString:@"macro_markers_info_item.eml"]) {
+                view.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor * _Nonnull(UITraitCollection * _Nonnull traitCollection) {
+                    return isDarkMode(view) ? [UIColor blackColor] : [UIColor clearColor];
+                }];
+            }
         }
     }
 }

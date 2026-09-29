@@ -215,21 +215,19 @@ void YouModFilterShortsDisplayView(_ASDisplayView *view, NSString *iden) {
         @try {
             desc = [[[no nodeController] performSelector:@selector(owningComponent)] description];
         } @catch (...) {}
-        if (desc != nil && [desc containsString:@"participation_composer.eml"] && IS_ENABLED(RemoveShortsCommentBar)) {
-            ASDisplayNode *node = ((_ASDisplayView *)view.superview).keepalive_node;
-            for (ASDisplayNode *child in node.yogaChildren) [node removeYogaChild:child];
+        if (desc != nil && [desc containsString:@"participation_bar.eml"] && IS_ENABLED(RemoveShortsCommentBar)) {
+            for (ASDisplayNode *child in no.yogaChildren) [no removeYogaChild:child];
+            [view removeFromSuperview];
         } else {
             desc = nil;
             @try {
-                desc = [[[[no nodeController] performSelector:@selector(parent)] performSelector:@selector(owningComponent)] description];
+                desc = [[[[[no nodeController] performSelector:@selector(parent)] performSelector:@selector(children)] performSelector:@selector(firstObject)] description];
             } @catch (...) {
                 return;
             }
             if (desc != nil && [desc containsString:@"reel_carousel.eml"] && IS_ENABLED(RemoveShortsRelatedButtons)) {
-                ASDisplayNode *node;
-                if ([view.superview isKindOfClass:%c(ASScrollView)]) node = [view.superview performSelector:@selector(scrollNode)];
-                else node = ((_ASDisplayView *)((_ASDisplayView *)view).superview).keepalive_node;
-                for (ASDisplayNode *child in node.yogaChildren) [node removeYogaChild:child];
+                for (ASDisplayNode *child in no.yogaChildren) [no removeYogaChild:child];
+                [view removeFromSuperview];
             }
         }
     }
