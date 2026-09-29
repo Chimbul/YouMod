@@ -6,16 +6,16 @@ static const void *kASViewKey = &kASViewKey;
 %property (nonatomic, assign) _ASDisplayView *currentDownloadButton;
 - (void)didMoveToWindow {
     %orig;
-    NSString *iden = self.accessibilityIdentifier;
     // YouModFilterVideoButtons(self, iden); not rn, im having a headache with this shi. no matter what i do, it just doesnt work well.
-    if (objc_getAssociatedObject(self, kASViewKey) || !iden || iden.length == 0) return;
+    if (objc_getAssociatedObject(self, kASViewKey)) return;
+    NSString *iden = self.accessibilityIdentifier;
     YouModApplyOLEDToDisplayView(self, iden);
     YouModConfigureDownloadButton(self, iden);
     YouModSetupDownloadGestures(self, iden);
     if (IS_ENABLED(RemoveAds)) YouModFilterAdsDisplayView(self, iden);
     YouModFilterShortsDisplayView(self, iden);
     YouModRemoveShortsPausedButtons(self, iden);
-    objc_setAssociatedObject(self, kASViewKey, @YES, OBJC_ASSOCIATION_ASSIGN);
+    if (iden.length > 0) objc_setAssociatedObject(self, kASViewKey, @YES, OBJC_ASSOCIATION_ASSIGN);
 }
 %new
 - (void)YouModHandleCommentLongPress:(UILongPressGestureRecognizer *)sender {
@@ -74,7 +74,7 @@ static const void *kASViewKey = &kASViewKey;
         self.view.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor * _Nonnull(UITraitCollection * _Nonnull traitCollection) {
             return isDarkMode(self.view) ? [UIColor blackColor] : [UIColor whiteColor];
         }];
-    } else if (IS_ENABLED(OLEDTheme) && [desc containsString:@"subs_channel_bar.eml"]) {
+    } else if (IS_ENABLED(OLEDTheme) && ([desc containsString:@"subs_channel_bar.eml"] || [desc containsString:@"subscriptions_channel_bar.eml"])) {
         UIView *sub = self.view.subviews[0];
         sub.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor * _Nonnull(UITraitCollection * _Nonnull traitCollection) {
             return isDarkMode(sub) ? [UIColor blackColor] : [UIColor clearColor];

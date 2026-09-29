@@ -159,6 +159,8 @@
 "HIDE_CAST_BUTTON_NAVBAR_DESC" = "Ẩn nút truyền phát trên thanh điều hướng.";
 "HIDE_MESSAGES_BUTTON" = "Hide messages button";
 "HIDE_MESSAGES_BUTTON_DESC" = "Hide messages button in the navigation bar.";
+"HIDE_MORE_BUTTON_NAV" = "Hide more button";
+"HIDE_MORE_BUTTON_NAV_DESC" = "Hide the more (three-dot) button in the navigation bar.";
 
 "FEED" = "Bảng tin";
 "HIDE_SUBBAR" = "Ẩn thanh bộ lọc";
@@ -227,6 +229,8 @@
 "OVERLAY_BUTTONS_EMPTY" = "Không có nút";
 "REMOVE_ADS" = "Xóa quảng cáo";
 "REMOVE_ADS_DESC" = "Xóa quảng cáo khỏi ứng dụng, trừ trò chơi";
+"HIDE_SPONSOR_BUTTON" = "Hide sponsor button";
+"HIDE_SPONSOR_BUTTON_DESC" = "Hide the sponsor button under the video and in the Shorts overlay.";
 "HOLD_TO_SPEED" = "Giữ để tăng tốc";
 "HOLD_TO_SPEED_DESC" = "Dùng tốc độ phát tùy chỉnh khi giữ để tăng tốc.";
 "HIDE_AUTOPLAY" = "Ẩn nút chuyển tự động phát";
@@ -382,6 +386,10 @@
 "REMOVE_SHORTS_LIKE_BUTTON_DESC" = "Xóa nút thích khỏi giao diện Shorts.";
 "REMOVE_SHORTS_COMMENT_BUTTON" = "Xóa nút bình luận";
 "REMOVE_SHORTS_COMMENT_BUTTON_DESC" = "Xóa nút bình luận khỏi giao diện Shorts.";
+"REMOVE_SHORTS_COMMENT_BAR" = "Remove comment box";
+"REMOVE_SHORTS_COMMENT_BAR_DESC" = "Removes the comment box from the Shorts overlay.";
+"REMOVE_SHORTS_RELATED_BUTTONS" = "Remove related Shorts metadata buttons";
+"REMOVE_SHORTS_RELATED_BUTTONS_DESC" = "Hide the buttons under the video title in the Shorts overlay.";
 "REMOVE_SHORTS_SAVE_BUTTON" = "Xóa nút lưu";
 "REMOVE_SHORTS_SAVE_BUTTON_DESC" = "Xóa nút lưu khỏi giao diện Shorts.";
 "REMOVE_SHORTS_SHARE_BUTTON" = "Xóa nút chia sẻ";
@@ -390,6 +398,8 @@
 "REMOVE_SHORTS_REMIX_BUTTON_DESC" = "Xóa nút phối lại khỏi giao diện Shorts.";
 "REMOVE_SHORTS_SOUNDMETADATA_BUTTON" = "Xóa nút thông tin âm thanh";
 "REMOVE_SHORTS_SOUNDMETADATA_BUTTON_DESC" = "Xóa nút thông tin âm thanh khỏi giao diện Shorts.";
+"REMOVE_SHORTS_SUB_BUTTON" = "Remove subscribe button";
+"REMOVE_SHORTS_SUB_BUTTON_DESC" = "Removes the subscribe button from the Shorts overlay.";
 "REMOVE_SHORTS_PAUSED_SUB_BUTTON" = "Xóa nút kênh đăng ký";
 "REMOVE_SHORTS_PAUSED_SUB_BUTTON_DESC" = "Xóa nút kênh đăng ký trên thanh tiêu đề khi tạm dừng Shorts.";
 "REMOVE_SHORTS_PAUSED_LIVE_BUTTON" = "Xóa nút trực tiếp";
@@ -402,6 +412,8 @@
 "ENABLES_SHORTS_QUALITY_DESC" = "Bật bắt buộc menu chọn chất lượng video trong Shorts.";
 "SHOW_SHORTS_SEEKBAR" = "Luôn hiển thị thanh tua";
 "SHOW_SHORTS_SEEKBAR_DESC" = "Giữ thanh tiến trình/thanh tua luôn hiển thị ở dưới cùng trình phát Shorts.";
+"DEFAULT_SPEED_SHORTS" = "Default playback rate (Shorts)";
+"DEFAULT_SPEED_SHORTS_DESC" = "Overrides the default playback speed for Shorts, separate from regular videos.";
 "REMOVE_POSTS_SHORTS" = "Xóa bài đăng";
 "REMOVE_POSTS_SHORTS_DESC" = "Xóa bài đăng khỏi bảng tin.";
 "SHORTS_FULLSCREEN" = "Chụm để toàn màn hình";
@@ -516,6 +528,8 @@
 "HIDE_COMMUNITY_BUTTON_PANEL_DESC" = "Hide the community button in the engagement panel.";
 "HIDE_INFO_BUTTON_PANEL" = "Hide info button";
 "HIDE_INFO_BUTTON_PANEL_DESC" = "Hide the info button in the engagement panel.";
+"HIDE_SORT_FILTER_PANEL" = "Hide sort & filter button";
+"HIDE_SORT_FILTER_PANEL_DESC" = "Hide the sort and filter button from the top of the panel.";
 "DISABLES_RTL" = "Tắt định dạng RTL";
 "DISABLES_RTL_DESC" = "Buộc hiển thị văn bản theo định dạng từ trái sang phải (LTR) với các ngôn ngữ vốn được viết từ phải sang trái (RTL).";
 "DEVICE_UI" = "Kiểu giao diện";

@@ -206,10 +206,8 @@
 - (void)setSubheader:(UIView *)view { if (!IS_ENABLED(HideEngagementSubbar)) %orig; }
 - (void)layoutSubviews {
     %orig;
-    if (IS_ENABLED(HideInfoButtonPanel)) {
-        YTQTMButton *button = self.informationButton;
-        if (button != nil) button.hidden = YES;
-    }
+    if (IS_ENABLED(HideInfoButtonPanel) && self.informationButton != nil) self.informationButton.hidden = YES;
+    if (IS_ENABLED(HideSortFilerPanel) && self.sortFilterMenuButton != nil) self.sortFilterMenuButton.hidden = YES;
     for (UIView *button in self.subviews) {
         if ([button isKindOfClass:%c(YTQTMButton)]) {
             YTIButtonRenderer *renderer = [button valueForKey:@"_buttonRenderer"];

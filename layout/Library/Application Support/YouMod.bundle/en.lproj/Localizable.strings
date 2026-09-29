@@ -185,6 +185,8 @@
 "HIDE_CAST_BUTTON_NAVBAR_DESC" = "Hide cast button in the navigation bar.";
 "HIDE_MESSAGES_BUTTON" = "Hide messages button";
 "HIDE_MESSAGES_BUTTON_DESC" = "Hide messages button in the navigation bar.";
+"HIDE_MORE_BUTTON_NAV" = "Hide more button";
+"HIDE_MORE_BUTTON_NAV_DESC" = "Hide the more (three-dot) button in the navigation bar.";
 
 "FEED" = "Feed";
 "HIDE_SUBBAR" = "Hide subbar";
@@ -253,6 +255,8 @@
 "OVERLAY_BUTTONS_EMPTY" = "No buttons";
 "REMOVE_ADS" = "Remove ads";
 "REMOVE_ADS_DESC" = "Removes ads from the app, except Playables";
+"HIDE_SPONSOR_BUTTON" = "Hide sponsor button";
+"HIDE_SPONSOR_BUTTON_DESC" = "Hide the sponsor button under the video and in the Shorts overlay.";
 "HOLD_TO_SPEED" = "Hold to speed";
 "HOLD_TO_SPEED_DESC" = "Uses custom hold to speed playback rate.";
 "HIDE_AUTOPLAY" = "Hide autoplay switch";
@@ -408,6 +412,10 @@
 "REMOVE_SHORTS_LIKE_BUTTON_DESC" = "Removes the like button from the Shorts overlay.";
 "REMOVE_SHORTS_COMMENT_BUTTON" = "Remove comment button";
 "REMOVE_SHORTS_COMMENT_BUTTON_DESC" = "Removes the comment button from the Shorts overlay.";
+"REMOVE_SHORTS_COMMENT_BAR" = "Remove comment box";
+"REMOVE_SHORTS_COMMENT_BAR_DESC" = "Removes the comment box from the Shorts overlay.";
+"REMOVE_SHORTS_RELATED_BUTTONS" = "Remove related Shorts metadata buttons";
+"REMOVE_SHORTS_RELATED_BUTTONS_DESC" = "Hide the buttons under the video title in the Shorts overlay.";
 "REMOVE_SHORTS_SAVE_BUTTON" = "Remove save button";
 "REMOVE_SHORTS_SAVE_BUTTON_DESC" = "Removes the save button from the Shorts overlay.";
 "REMOVE_SHORTS_SHARE_BUTTON" = "Remove share button";
@@ -416,6 +424,8 @@
 "REMOVE_SHORTS_REMIX_BUTTON_DESC" = "Removes the remix button from the Shorts overlay.";
 "REMOVE_SHORTS_SOUNDMETADATA_BUTTON" = "Remove sound metadata button";
 "REMOVE_SHORTS_SOUNDMETADATA_BUTTON_DESC" = "Removes the sound metadata button from the Shorts overlay.";
+"REMOVE_SHORTS_SUB_BUTTON" = "Remove subscribe button";
+"REMOVE_SHORTS_SUB_BUTTON_DESC" = "Removes the subscribe button from the Shorts overlay.";
 "REMOVE_SHORTS_PAUSED_SUB_BUTTON" = "Remove subscriptions button";
 "REMOVE_SHORTS_PAUSED_SUB_BUTTON_DESC" = "Removes the subscriptions button from the Shorts pause header.";
 "REMOVE_SHORTS_PAUSED_LIVE_BUTTON" = "Remove live button";
@@ -428,6 +438,8 @@
 "ENABLES_SHORTS_QUALITY_DESC" = "Force enable the video quality selection menu in Shorts.";
 "SHOW_SHORTS_SEEKBAR" = "Always show seekbar";
 "SHOW_SHORTS_SEEKBAR_DESC" = "Ensure the progress/seek bar is always visible at the bottom of the Shorts player.";
+"DEFAULT_SPEED_SHORTS" = "Default playback rate (Shorts)";
+"DEFAULT_SPEED_SHORTS_DESC" = "Overrides the default playback speed for Shorts, separate from regular videos.";
 "REMOVE_POSTS_SHORTS" = "Remove posts";
 "REMOVE_POSTS_SHORTS_DESC" = "Remove posts from the feed.";
 "SHORTS_FULLSCREEN" = "Pinch to Fullscreen";
@@ -542,6 +554,8 @@
 "HIDE_COMMUNITY_BUTTON_PANEL_DESC" = "Hide the community button in the engagement panel.";
 "HIDE_INFO_BUTTON_PANEL" = "Hide info button";
 "HIDE_INFO_BUTTON_PANEL_DESC" = "Hide the info button in the engagement panel.";
+"HIDE_SORT_FILTER_PANEL" = "Hide sort & filter button";
+"HIDE_SORT_FILTER_PANEL_DESC" = "Hide the sort and filter button from the top of the panel.";
 "DISABLES_RTL" = "Disable RTL formatting";
 "DISABLES_RTL_DESC" = "Forcefully displays text in left-to-right (LTR) format for languages that are initially displayed in right-to-left (RTL).";
 "DEVICE_UI" = "Interface style";

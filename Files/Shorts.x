@@ -94,7 +94,7 @@ static void YouModRemoveShortsOverlayButton(_ASDisplayView *dpView) {
     if ((isShortsOnlyOn && IS_ENABLED(ShortsOnly)) || (isFullscreenEnabled && IS_ENABLED(FullScreenShorts))) [[self valueForKey:@"_pivotBarProvider"] performSelector:@selector(hidePivotBar)];
     YTPlayerViewController *main = self.player;
     if (INTFORVAL(CaptionTrack) != 0) [main performSelector:@selector(YouModAutoCaptions) withObject:nil afterDelay:0.5];
-    if (INTFORVAL(AutoSpeedIndex) != 0) [main performSelector:@selector(YouModSetAutoSpeed) withObject:nil afterDelay:0.5];
+    if (INTFORVAL(ShortsAutoSpeedIndex) != 0) [main performSelector:@selector(YouModSetAutoSpeed) withObject:nil afterDelay:0.5];
     if (INTFORVAL(AudioTrack) != 0 || IS_ENABLED(NoDubbedAudioTrack)) [self performSelector:@selector(YouModAutoAudioTrack:) withObject:main afterDelay:0.5];
 }
 %new
@@ -193,7 +193,7 @@ void YouModRemoveShortsPausedButtons(_ASDisplayView *self, NSString *iden) {
 }
 
 void YouModFilterShortsDisplayView(_ASDisplayView *view, NSString *iden) {
-    if (!iden || iden.length == 0) return;
+    if (!iden || iden.length == 0 || ![view isKindOfClass:%c(YTShortsPlayerViewController)]) return;
     if (([iden isEqualToString:@"product_sticker.main_target"] || [iden isEqualToString:@"product_sticker.secondary_target"]) && IS_ENABLED(HideShortsProducts)) {
         view.hidden = YES;
     } else if ([iden isEqualToString:@"id.elements.components.suggested_action"] && IS_ENABLED(HideShortsRecbar)) {
@@ -205,6 +205,34 @@ void YouModFilterShortsDisplayView(_ASDisplayView *view, NSString *iden) {
         ASDisplayNode *mainNode = maindpView.keepalive_node;
         [mainNode removeYogaChild:node];
         [maindpView removeFromSuperview];
+    } else if ([iden isEqualToString:@"id.sponsor_button"] && IS_ENABLED(HideSponsorButton)) {
+        if (![view isKindOfClass:%c(YTWatchNextResultsViewController)] && ![view isKindOfClass:%c(YTShortsPlayerViewController)]) return;
+        view.superview.hidden = YES;
+    } else if ([iden isEqualToString:@"eml.animated_subscribe_button"] && IS_ENABLED(RemoveShortsSubButton) && [view isKindOfClass:%c(YTShortsPlayerViewController)]) {
+        view.hidden = YES;
+    } else {
+        ASDisplayNode *no = view.keepalive_node;
+        NSString *desc = nil;
+        @try {
+            desc = [[[no nodeController] performSelector:@selector(owningComponent)] description];
+        } @catch (...) {}
+        if (desc != nil && [desc containsString:@"participation_composer.eml"] && IS_ENABLED(RemoveShortsCommentBar)) {
+            ASDisplayNode *node = ((_ASDisplayView *)view.superview).keepalive_node;
+            for (ASDisplayNode *child in node.yogaChildren) [node removeYogaChild:child];
+        } else {
+            desc = nil;
+            @try {
+                desc = [[[[no nodeController] performSelector:@selector(parent)] performSelector:@selector(owningComponent)] description];
+            } @catch (...) {
+                return;
+            }
+            if (desc != nil && [desc containsString:@"reel_carousel.eml"] && IS_ENABLED(RemoveShortsRelatedButtons)) {
+                ASDisplayNode *node;
+                if ([view.superview isKindOfClass:%(ASScrollView)]) node = [view.superview performSelector:@selector(scrollNode)];
+                else node = ((_ASDisplayView *)view.superview).keepalive_node;
+                for (ASDisplayNode *child in node.yogaChildren) [node removeYogaChild:child];
+            }
+        }
     }
 }
 

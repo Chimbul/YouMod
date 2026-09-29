@@ -100,7 +100,6 @@
 + (instancetype)eventWithViewController:(UIViewController *)viewController animated:(BOOL)animated firstResponder:(id)firstResponder;
 @end
 
-
 #define SABRDownload @"YouModSABRDownload"
 
 #define IS_ENABLED(k) [[NSUserDefaults standardUserDefaults] boolForKey:k]
@@ -145,6 +144,7 @@
 #define HideVoiceSearch @"YouModHideVoiceSearchButton"
 #define HideCastButtonNav @"YouModHideCastButtonNavigationBar"
 #define HideMessages @"YouModHideMessagesButton"
+#define HideMoreButtonNav @"YouModHideMoreButtonNav"
 // Feed
 #define RemoveAds @"YouModRemoveAds"
 #define HideSubbar @"YouModHideSubbar"
@@ -169,6 +169,7 @@
 #define CaptionTrackLangIndex @"YouModCaptionTrackLangIndex"
 #define DisablesCaptionTrack @"YouModDisablesCaptionTrack"
 #define AutoSpeedIndex @"YouModAutoSpeedIndex"
+#define ShortsAutoSpeedIndex @"YouModShortsAutoSpeedIndex"
 #define HoldToSpeedIndex @"YouModHoldToSpeedIndex"
 #define HideAutoPlayToggle @"YouModHideAutoPlayToggle"
 #define HideCaptionsButton @"YouModHideCaptionsButton"
@@ -184,6 +185,7 @@
 #define HideEndScreenCards @"YouModHideEndScreenCards"
 #define HideSuggestedVideo @"YouModHideSuggestedVideoOnFinish"
 #define HidePaidPromoOverlay @"YouModHidePaidPromoOverlay"
+#define HideSponsorButton @"YouModHideSponsorButton"
 #define HideWaterMark @"YouModHideWaterMark"
 #define DisablesEngagementPanel @"YouModDisablesEngagementPanel"
 #define DontSnapToChapter @"YouModDontSnapToChapter"
@@ -243,11 +245,14 @@
 #define ShortsActionIndex @"YouModMakeAShortsAction"
 #define ShortsOnly @"YouModShortsOnly"
 #define RemoveShortsLikeButton @"YouModRemoveShortsLikeButton"
+#define RemoveShortsCommentBar @"YouModRemoveShortsCommentBar"
+#define RemoveShortsRelatedButtons @"YouModRemoveShortsRelatedButtons"
 #define RemoveShortsCommentButton @"YouModRemoveShortsCommentButton"
 #define RemoveShortsSaveButton @"YouModRemoveShortsSaveButton"
 #define RemoveShortsShareButton @"YouModRemoveShortsShareButton"
 #define RemoveShortsRemixButton @"YouModRemoveShortsRemixButton"
 #define RemoveShortsSoundMetadataButton @"YouModRemoveShortsSoundMetadataButton"
+#define RemoveShortsSubButton @"YouModRemoveShortsSubButton"
 #define RemoveShortsPausedSubButton @"YouModRemoveShortsPausedSubButton"
 #define RemoveShortsPausedLiveButton @"YouModRemoveShortsPausedLiveButton"
 #define RemoveShortsPausedLensButton @"YouModRemoveShortsPausedLensButton"
@@ -274,6 +279,7 @@
 #define HideEngagementSubbar @"YouModHideEngagementSubbar"
 #define HideInfoButtonPanel @"YouModHideInfoButtonPanel"
 #define HideCommunityButtonPanel @"YouModHideCommunityButtonPanel"
+#define HideSortFilerPanel @"YouModHideSortFilterPanel"
 #define DisablesRTL @"YouModDisablesRTL"
 #define DeviceUIIndex @"YouModDeviceUIIndex"
 #define FloatingKeyboard @"YouModFloatingKeyboard"
@@ -393,6 +399,7 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 - (YTLightweightQTMButton *)searchButton;
 - (YTLightweightQTMButton *)connectionsInboxButton;
 - (YTLightweightQTMButton *)MDXButton;
+- (YTLightweightQTMButton *)rightButton;
 @end
 
 @interface YTVideoFreeZoomOverlayController : NSObject
@@ -564,6 +571,7 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 
 @interface YTEngagementPanelHeaderView : UIView
 - (YTQTMButton *)informationButton;
+- (YTQTMButton *)sortFilterMenuButton;
 @end
 
 @interface YTEngagementPanelView : UIView
@@ -785,6 +793,9 @@ typedef NS_ENUM(NSInteger, SBSegmentAction) {
 @property (nonatomic, strong) UILabel *messageLabel;
 @property (nonatomic, strong) UIButton *actionButton;
 @property (nonatomic, strong) UIView *progressOverlay;
+@property (nonatomic, strong) UIImageView *infoIconView;
+@property (nonatomic, strong) NSLayoutConstraint *messageLabelLeadingConstraint;
+@property (nonatomic, assign) BOOL showsInfoIcon;
 @property (nonatomic, copy) void (^onAction)(void);
 @property (nonatomic, assign) NSTimeInterval totalDuration;
 @property (nonatomic, assign) NSTimeInterval remainingDuration;

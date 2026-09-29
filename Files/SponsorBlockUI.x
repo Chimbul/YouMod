@@ -94,6 +94,9 @@ static void YMDismissExistingPillsInView(UIView *parentView, void (^completion)(
     view.totalDuration = duration;
     view.remainingDuration = duration;
     view.isPaused = NO;
+    // Plain pills carry the info icon; the success/error variants opt out
+    // below since they add their own status icon.
+    view.showsInfoIcon = YES;
 
     // Base layer (revealed as progress depletes)
     view.backgroundColor = [UIColor colorWithWhite:0.08 alpha:1.0];
@@ -119,6 +122,16 @@ static void YMDismissExistingPillsInView(UIView *parentView, void (^completion)(
     view.messageLabel = label;
     [view addSubview:label];
 
+    // Info icon on the leading edge, revealed by showsInfoIcon in
+    // layoutSubviews once callers have had their say
+    UIImageSymbolConfiguration *infoConfig = [UIImageSymbolConfiguration configurationWithPointSize:15 weight:UIImageSymbolWeightMedium];
+    UIImageView *infoIcon = [[UIImageView alloc] initWithImage:[UIImage systemImageNamed:@"info.circle" withConfiguration:infoConfig]];
+    infoIcon.tintColor = [UIColor colorWithWhite:1.0 alpha:0.65];
+    infoIcon.hidden = YES;
+    infoIcon.translatesAutoresizingMaskIntoConstraints = NO;
+    view.infoIconView = infoIcon;
+    [view addSubview:infoIcon];
+
     // Icon button (right side)
     BOOL showButton = (buttonTitle != nil || action != nil);
     UIButton *button = nil;
@@ -141,22 +154,30 @@ static void YMDismissExistingPillsInView(UIView *parentView, void (^completion)(
     }
 
     // Internal layout
+    NSLayoutConstraint *labelLeading = [label.leadingAnchor constraintEqualToAnchor:view.leadingAnchor constant:16.0];
+    view.messageLabelLeadingConstraint = labelLeading;
     if (showButton) {
         [NSLayoutConstraint activateConstraints:@[
-            [label.leadingAnchor constraintEqualToAnchor:view.leadingAnchor constant:16.0],
+            labelLeading,
             [label.centerYAnchor constraintEqualToAnchor:view.centerYAnchor],
             [label.trailingAnchor constraintEqualToAnchor:button.leadingAnchor constant:-10.0],
 
             [button.trailingAnchor constraintEqualToAnchor:view.trailingAnchor constant:-8.0],
             [button.centerYAnchor constraintEqualToAnchor:view.centerYAnchor],
             [button.widthAnchor constraintEqualToConstant:32.0],
-            [button.heightAnchor constraintEqualToConstant:32.0]
+            [button.heightAnchor constraintEqualToConstant:32.0],
+
+            [infoIcon.leadingAnchor constraintEqualToAnchor:view.leadingAnchor constant:14.0],
+            [infoIcon.centerYAnchor constraintEqualToAnchor:view.centerYAnchor]
         ]];
     } else {
         [NSLayoutConstraint activateConstraints:@[
-            [label.leadingAnchor constraintEqualToAnchor:view.leadingAnchor constant:16.0],
+            labelLeading,
             [label.centerYAnchor constraintEqualToAnchor:view.centerYAnchor],
             [label.trailingAnchor constraintEqualToAnchor:view.trailingAnchor constant:-40.0],
+
+            [infoIcon.leadingAnchor constraintEqualToAnchor:view.leadingAnchor constant:14.0],
+            [infoIcon.centerYAnchor constraintEqualToAnchor:view.centerYAnchor]
         ]];
     }
 
@@ -198,6 +219,8 @@ static void YMDismissExistingPillsInView(UIView *parentView, void (^completion)(
 
 - (void)layoutSubviews {
     [super layoutSubviews];
+    self.infoIconView.hidden = !self.showsInfoIcon;
+    self.messageLabelLeadingConstraint.constant = self.showsInfoIcon ? 38.0 : 16.0;
     if (self.progressOverlay.layer.animationKeys.count == 0 || self.isPaused) {
         self.progressOverlay.frame = CGRectMake(0, 0, self.bounds.size.width, self.bounds.size.height);
     }
@@ -343,6 +366,7 @@ static void YMDismissExistingPillsInView(UIView *parentView, void (^completion)(
 + (instancetype)showSuccessInView:(UIView *)parentView message:(NSString *)message duration:(NSTimeInterval)duration {
     SBSkipNotificationView *view = [self showInView:parentView message:message buttonTitle:nil action:nil duration:duration];
     if (view) {
+        view.showsInfoIcon = NO;
         UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:16 weight:UIImageSymbolWeightMedium];
         UIImageView *iconView = [[UIImageView alloc] initWithImage:[UIImage systemImageNamed:@"checkmark.circle.fill" withConfiguration:config]];
         iconView.tintColor = [UIColor systemGreenColor];
@@ -359,6 +383,7 @@ static void YMDismissExistingPillsInView(UIView *parentView, void (^completion)(
 + (instancetype)showErrorInView:(UIView *)parentView message:(NSString *)message duration:(NSTimeInterval)duration {
     SBSkipNotificationView *view = [self showInView:parentView message:message buttonTitle:nil action:nil duration:duration];
     if (view) {
+        view.showsInfoIcon = NO;
         UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:16 weight:UIImageSymbolWeightMedium];
         UIImageView *iconView = [[UIImageView alloc] initWithImage:[UIImage systemImageNamed:@"xmark.circle.fill" withConfiguration:config]];
         iconView.tintColor = [UIColor systemRedColor];

@@ -159,6 +159,8 @@
 "HIDE_CAST_BUTTON_NAVBAR_DESC" = "Скрывает кнопку трансляции в панели навигации.";
 "HIDE_MESSAGES_BUTTON" = "Скрыть кнопку сообщений";
 "HIDE_MESSAGES_BUTTON_DESC" = "Скрывает кнопку сообщений на панели навигации.";
+"HIDE_MORE_BUTTON_NAV" = "Hide more button";
+"HIDE_MORE_BUTTON_NAV_DESC" = "Hide the more (three-dot) button in the navigation bar.";
 
 "FEED" = "Лента";
 "HIDE_SUBBAR" = "Скрыть панель фильтров";
@@ -227,6 +229,8 @@
 "OVERLAY_BUTTONS_EMPTY" = "Нет кнопок";
 "REMOVE_ADS" = "Убрать рекламу";
 "REMOVE_ADS_DESC" = "Убирает рекламу из приложения, кроме игр";
+"HIDE_SPONSOR_BUTTON" = "Hide sponsor button";
+"HIDE_SPONSOR_BUTTON_DESC" = "Hide the sponsor button under the video and in the Shorts overlay.";
 "HOLD_TO_SPEED" = "Ускорение удержанием";
 "HOLD_TO_SPEED_DESC" = "Задаёт скорость воспроизведения для режима ускорения удержанием.";
 "HIDE_AUTOPLAY" = "Скрыть переключатель автовоспроизведения";
@@ -382,6 +386,10 @@
 "REMOVE_SHORTS_LIKE_BUTTON_DESC" = "Удаляет кнопку «Нравится» в интерфейсе Shorts.";
 "REMOVE_SHORTS_COMMENT_BUTTON" = "Удалить кнопку «Комментарии»";
 "REMOVE_SHORTS_COMMENT_BUTTON_DESC" = "Удаляет кнопку «Комментарии» в интерфейсе Shorts.";
+"REMOVE_SHORTS_COMMENT_BAR" = "Remove comment box";
+"REMOVE_SHORTS_COMMENT_BAR_DESC" = "Removes the comment box from the Shorts overlay.";
+"REMOVE_SHORTS_RELATED_BUTTONS" = "Remove related Shorts metadata buttons";
+"REMOVE_SHORTS_RELATED_BUTTONS_DESC" = "Hide the buttons under the video title in the Shorts overlay.";
 "REMOVE_SHORTS_SAVE_BUTTON" = "Удалить кнопку «Сохранить»";
 "REMOVE_SHORTS_SAVE_BUTTON_DESC" = "Удаляет кнопку «Сохранить» в интерфейсе Shorts.";
 "REMOVE_SHORTS_SHARE_BUTTON" = "Удалить кнопку «Поделиться»";
@@ -390,6 +398,8 @@
 "REMOVE_SHORTS_REMIX_BUTTON_DESC" = "Удаляет кнопку «Ремикс» в интерфейсе Shorts.";
 "REMOVE_SHORTS_SOUNDMETADATA_BUTTON" = "Удалить кнопку информации о звуке";
 "REMOVE_SHORTS_SOUNDMETADATA_BUTTON_DESC" = "Удаляет кнопку с информацией о треке/звуке в интерфейсе Shorts.";
+"REMOVE_SHORTS_SUB_BUTTON" = "Remove subscribe button";
+"REMOVE_SHORTS_SUB_BUTTON_DESC" = "Removes the subscribe button from the Shorts overlay.";
 "REMOVE_SHORTS_PAUSED_SUB_BUTTON" = "Удалить кнопку «Подписки»";
 "REMOVE_SHORTS_PAUSED_SUB_BUTTON_DESC" = "Удаляет кнопку подписок в заголовке при паузе Shorts.";
 "REMOVE_SHORTS_PAUSED_LIVE_BUTTON" = "Удалить кнопку «Live»";
@@ -402,6 +412,8 @@
 "ENABLES_SHORTS_QUALITY_DESC" = "Принудительно включает меню выбора качества видео в Shorts.";
 "SHOW_SHORTS_SEEKBAR" = "Всегда показывать полосу прогресса";
 "SHOW_SHORTS_SEEKBAR_DESC" = "Полоса прогресса всегда видна в нижней части плеера Shorts.";
+"DEFAULT_SPEED_SHORTS" = "Default playback rate (Shorts)";
+"DEFAULT_SPEED_SHORTS_DESC" = "Overrides the default playback speed for Shorts, separate from regular videos.";
 "REMOVE_POSTS_SHORTS" = "Убрать публикации";
 "REMOVE_POSTS_SHORTS_DESC" = "Убирает публикации из ленты.";
 "SHORTS_FULLSCREEN" = "Полноэкранный режим щипком";
@@ -516,6 +528,8 @@
 "HIDE_COMMUNITY_BUTTON_PANEL_DESC" = "Скрывает кнопку сообщества на всплывающей панели под видео.";
 "HIDE_INFO_BUTTON_PANEL" = "Скрыть кнопку информации";
 "HIDE_INFO_BUTTON_PANEL_DESC" = "Скрывает кнопку информации на всплывающей панели под видео.";
+"HIDE_SORT_FILTER_PANEL" = "Hide sort & filter button";
+"HIDE_SORT_FILTER_PANEL_DESC" = "Hide the sort and filter button from the top of the panel.";
 "DISABLES_RTL" = "Отключить формат RTL";
 "DISABLES_RTL_DESC" = "Принудительно отображает текст слева направо (LTR) для языков, которые изначально пишутся справа налево (RTL).";
 "DEVICE_UI" = "Стиль интерфейса";

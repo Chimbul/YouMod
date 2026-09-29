@@ -58,18 +58,19 @@ void YouModApplyOLEDToDisplayView(_ASDisplayView *view, NSString *iden) {
         view.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor * _Nonnull(UITraitCollection * _Nonnull traitCollection) {
             return isDarkMode(view) ? [UIColor blackColor] : [UIColor whiteColor];
         }];
-    }
-    ASDisplayNode *node = view.keepalive_node;
-    NSString *desc = nil;
-    @try {
-        desc = [[[[node nodeController] performSelector:@selector(parent)] performSelector:@selector(owningComponent)] description];
-    } @catch (id ex) {
-        return;
-    }
-    if ([desc containsString:@"live_chat_buy_flow_panel_header.eml"] || [desc containsString:@"missing_content_view.eml"]) {
-        view.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor * _Nonnull(UITraitCollection * _Nonnull traitCollection) {
-            return isDarkMode(view) ? [UIColor blackColor] : [UIColor clearColor];
-        }];
+    } else {
+        ASDisplayNode *node = view.keepalive_node;
+        NSString *desc = nil;
+        @try {
+            desc = [[[[node nodeController] performSelector:@selector(parent)] performSelector:@selector(owningComponent)] description];
+        } @catch (id ex) {
+            return;
+        }
+        if ([desc containsString:@"live_chat_buy_flow_panel_header.eml"] || [desc containsString:@"missing_content_view.eml"]) {
+            view.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor * _Nonnull(UITraitCollection * _Nonnull traitCollection) {
+                return isDarkMode(view) ? [UIColor blackColor] : [UIColor clearColor];
+            }];
+        }
     }
 }
 

@@ -161,6 +161,8 @@
 "HIDE_CAST_BUTTON_NAVBAR_DESC" = "Gezinme çubuğundaki yayınla butonunu gizler.";
 "HIDE_MESSAGES_BUTTON" = "Hide messages button";
 "HIDE_MESSAGES_BUTTON_DESC" = "Hide messages button in the navigation bar.";
+"HIDE_MORE_BUTTON_NAV" = "Hide more button";
+"HIDE_MORE_BUTTON_NAV_DESC" = "Hide the more (three-dot) button in the navigation bar.";
 
 "FEED" = "Akış";
 "HIDE_SUBBAR" = "Alt çubuğu gizle";
@@ -229,6 +231,8 @@
 "OVERLAY_BUTTONS_EMPTY" = "Düğme yok";
 "REMOVE_ADS" = "Reklamları kaldır";
 "REMOVE_ADS_DESC" = "Uygulamadaki reklamları kaldırır, oyunlar hariç";
+"HIDE_SPONSOR_BUTTON" = "Hide sponsor button";
+"HIDE_SPONSOR_BUTTON_DESC" = "Hide the sponsor button under the video and in the Shorts overlay.";
 "HOLD_TO_SPEED" = "Hızlandırmak için basılı tut";
 "HOLD_TO_SPEED_DESC" = "Özel basılı tutarak hızlandırma oranını kullanır.";
 "HIDE_AUTOPLAY" = "Otomatik oynatma anahtarını gizle";
@@ -384,6 +388,10 @@
 "REMOVE_SHORTS_LIKE_BUTTON_DESC" = "Beğen butonunu Shorts katmanından kaldırır.";
 "REMOVE_SHORTS_COMMENT_BUTTON" = "Yorum butonunu kaldır";
 "REMOVE_SHORTS_COMMENT_BUTTON_DESC" = "Yorum butonunu Shorts katmanından kaldırır.";
+"REMOVE_SHORTS_COMMENT_BAR" = "Remove comment box";
+"REMOVE_SHORTS_COMMENT_BAR_DESC" = "Removes the comment box from the Shorts overlay.";
+"REMOVE_SHORTS_RELATED_BUTTONS" = "Remove related Shorts metadata buttons";
+"REMOVE_SHORTS_RELATED_BUTTONS_DESC" = "Hide the buttons under the video title in the Shorts overlay.";
 "REMOVE_SHORTS_SAVE_BUTTON" = "Kaydet butonunu kaldır";
 "REMOVE_SHORTS_SAVE_BUTTON_DESC" = "Kaydet butonunu Shorts katmanından kaldırır.";
 "REMOVE_SHORTS_SHARE_BUTTON" = "Paylaş butonunu kaldır";
@@ -392,6 +400,8 @@
 "REMOVE_SHORTS_REMIX_BUTTON_DESC" = "Remiks butonunu Shorts katmanından kaldırır.";
 "REMOVE_SHORTS_SOUNDMETADATA_BUTTON" = "Ses bilgisi butonunu kaldır";
 "REMOVE_SHORTS_SOUNDMETADATA_BUTTON_DESC" = "Ses bilgisi butonunu Shorts katmanından kaldırır.";
+"REMOVE_SHORTS_SUB_BUTTON" = "Remove subscribe button";
+"REMOVE_SHORTS_SUB_BUTTON_DESC" = "Removes the subscribe button from the Shorts overlay.";
 "REMOVE_SHORTS_PAUSED_SUB_BUTTON" = "Abonelikler butonunu kaldır";
 "REMOVE_SHORTS_PAUSED_SUB_BUTTON_DESC" = "Shorts duraklatma başlığından abonelikler butonunu kaldırır.";
 "REMOVE_SHORTS_PAUSED_LIVE_BUTTON" = "Canlı butonunu kaldır";
@@ -404,6 +414,8 @@
 "ENABLES_SHORTS_QUALITY_DESC" = "Shorts'ta video kalitesi seçim menüsünü zorla etkinleştirir.";
 "SHOW_SHORTS_SEEKBAR" = "İlerleme çubuğunu her zaman göster";
 "SHOW_SHORTS_SEEKBAR_DESC" = "İlerleme çubuğunun Shorts oynatıcısının altında her zaman görünür olmasını sağlar.";
+"DEFAULT_SPEED_SHORTS" = "Default playback rate (Shorts)";
+"DEFAULT_SPEED_SHORTS_DESC" = "Overrides the default playback speed for Shorts, separate from regular videos.";
 "REMOVE_POSTS_SHORTS" = "Gönderileri kaldır";
 "REMOVE_POSTS_SHORTS_DESC" = "Gönderileri akıştan kaldırır.";
 "SHORTS_FULLSCREEN" = "Sıkıştırarak Tam Ekran Yap";
@@ -518,6 +530,8 @@
 "HIDE_COMMUNITY_BUTTON_PANEL_DESC" = "Hide the community button in the engagement panel.";
 "HIDE_INFO_BUTTON_PANEL" = "Hide info button";
 "HIDE_INFO_BUTTON_PANEL_DESC" = "Hide the info button in the engagement panel.";
+"HIDE_SORT_FILTER_PANEL" = "Hide sort & filter button";
+"HIDE_SORT_FILTER_PANEL_DESC" = "Hide the sort and filter button from the top of the panel.";
 "DISABLES_RTL" = "RTL biçimlendirmesini devre dışı bırak";
 "DISABLES_RTL_DESC" = "Sağdan sola (RTL) yazılan dillerdeki metinleri zorla soldan sağa (LTR) biçimde görüntüler.";
 "DEVICE_UI" = "Arayüz stili";

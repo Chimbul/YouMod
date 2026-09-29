@@ -158,6 +158,8 @@
 "HIDE_CAST_BUTTON_NAVBAR_DESC" = "ซ่อนปุ่มแคสต์ในแถบนำทาง";
 "HIDE_MESSAGES_BUTTON" = "ซ่อนปุ่มข้อความ";
 "HIDE_MESSAGES_BUTTON_DESC" = "ซ่อนปุ่มข้อความในแถบนำทาง";
+"HIDE_MORE_BUTTON_NAV" = "ซ่อนปุ่มเพิ่มเติม";
+"HIDE_MORE_BUTTON_NAV_DESC" = "ซ่อนปุ่มเพิ่มเติม (สามจุด) ในแถบนำทาง";
 
 "FEED" = "ฟีด";
 "HIDE_SUBBAR" = "ซ่อนแถบหมวดหมู่";
@@ -226,6 +228,8 @@
 "OVERLAY_BUTTONS_EMPTY" = "ไม่มีปุ่ม";
 "REMOVE_ADS" = "ลบโฆษณา";
 "REMOVE_ADS_DESC" = "ลบโฆษณาออกจากแอป ยกเว้นเกม";
+"HIDE_SPONSOR_BUTTON" = "ซ่อนปุ่มสปอนเซอร์";
+"HIDE_SPONSOR_BUTTON_DESC" = "ซ่อนปุ่มสปอนเซอร์ใต้วิดีโอและบนโอเวอร์เลย์ Shorts";
 "HOLD_TO_SPEED" = "ความเร็วเมื่อกดค้าง";
 "HOLD_TO_SPEED_DESC" = "ใช้ความเร็วในการเล่นวิดีโอแบบกำหนดเองเมื่อกดค้างที่หน้าจอ";
 "HIDE_AUTOPLAY" = "ซ่อนสวิตซ์เล่นอัตโนมัติ";
@@ -378,17 +382,23 @@
 "HIDE_SHORTS_DISCLOSURE" = "ซ่อน 'ได้รับค่าคอมมิชชัน'";
 "HIDE_SHORTS_DISCLOSURE_DESC" = "ซ่อนกล่องข้อความ 'ได้รับค่าคอมมิชชัน' ใน Shorts";
 "REMOVE_SHORTS_LIKE_BUTTON" = "ลบปุ่มถูกใจ";
-"REMOVE_SHORTS_LIKE_BUTTON_DESC" = "ลบปุ่มถูกใจออกจากวิดีโอ Shorts";
+"REMOVE_SHORTS_LIKE_BUTTON_DESC" = "ลบปุ่มถูกใจออกจากโอเวอร์เลย์ Shorts";
 "REMOVE_SHORTS_COMMENT_BUTTON" = "ลบปุ่มความคิดเห็น";
-"REMOVE_SHORTS_COMMENT_BUTTON_DESC" = "ลบปุ่มความคิดเห็นออกจากวิดีโอ Shorts";
+"REMOVE_SHORTS_COMMENT_BUTTON_DESC" = "ลบปุ่มความคิดเห็นออกจากโอเวอร์เลย์ Shorts";
+"REMOVE_SHORTS_COMMENT_BAR" = "นำกล่องคอมเมนต์ออก";
+"REMOVE_SHORTS_COMMENT_BAR_DESC" = "นำกล่องคอมเมนต์ออกจากโอเวอร์เลย์ Shorts";
+"REMOVE_SHORTS_RELATED_BUTTONS" = "นำปุ่มข้อมูลที่เกี่ยวข้องของ Shorts ออก";
+"REMOVE_SHORTS_RELATED_BUTTONS_DESC" = "ซ่อนปุ่มต่างๆ ที่อยู่ใต้ชื่อคลิปในโอเวอร์เลย์ Shorts";
 "REMOVE_SHORTS_SAVE_BUTTON" = "ลบปุ่มบันทึก";
-"REMOVE_SHORTS_SAVE_BUTTON_DESC" = "ลบปุ่มบันทึกออกจากวิดีโอ Shorts";
+"REMOVE_SHORTS_SAVE_BUTTON_DESC" = "ลบปุ่มบันทึกออกจากโอเวอร์เลย์ Shorts";
 "REMOVE_SHORTS_SHARE_BUTTON" = "ลบปุ่มแชร์";
-"REMOVE_SHORTS_SHARE_BUTTON_DESC" = "ลบปุ่มแชร์ออกจากวิดีโอ Shorts";
+"REMOVE_SHORTS_SHARE_BUTTON_DESC" = "ลบปุ่มแชร์ออกจากโอเวอร์เลย์ Shorts";
 "REMOVE_SHORTS_REMIX_BUTTON" = "ลบปุ่มรีมิกซ์";
-"REMOVE_SHORTS_REMIX_BUTTON_DESC" = "ลบปุ่มรีมิกซ์ออกจากวิดีโอ Shorts";
+"REMOVE_SHORTS_REMIX_BUTTON_DESC" = "ลบปุ่มรีมิกซ์ออกจากโอเวอร์เลย์ Shorts";
 "REMOVE_SHORTS_SOUNDMETADATA_BUTTON" = "ลบปุ่มข้อมูลเสียง";
-"REMOVE_SHORTS_SOUNDMETADATA_BUTTON_DESC" = "ลบปุ่มข้อมูลเสียง/เพลงออกจากวิดีโอ Shorts";
+"REMOVE_SHORTS_SOUNDMETADATA_BUTTON_DESC" = "ลบปุ่มข้อมูลเสียง/เพลงออกจากโอเวอร์เลย์ Shorts";
+"REMOVE_SHORTS_SUB_BUTTON" = "ลบปุ่มติดตาม";
+"REMOVE_SHORTS_SUB_BUTTON_DESC" = "ลบปุ่มติดตามออกจากโอเวอร์เลย์ Shorts";
 "REMOVE_SHORTS_PAUSED_SUB_BUTTON" = "ลบปุ่มการติดตาม";
 "REMOVE_SHORTS_PAUSED_SUB_BUTTON_DESC" = "ลบปุ่มการติดตามในแถบด้านบนเมื่อหยุดวิดีโอ Shorts ชั่วคราว";
 "REMOVE_SHORTS_PAUSED_LIVE_BUTTON" = "ลบปุ่มไลฟ์สด";
@@ -401,6 +411,8 @@
 "ENABLES_SHORTS_QUALITY_DESC" = "สามารถเลือกคุณภาพ Shorts ได้";
 "SHOW_SHORTS_SEEKBAR" = "แสดงแถบเลื่อนเสมอ";
 "SHOW_SHORTS_SEEKBAR_DESC" = "แสดงแถบความคืบหน้าเสมอ";
+"DEFAULT_SPEED_SHORTS" = "ความเร็วเล่นเริ่มต้น (Shorts)";
+"DEFAULT_SPEED_SHORTS_DESC" = "ตั้งความเร็วเล่นเริ่มต้นของ Shorts แยกจากวิดีโอปกติ";
 "REMOVE_POSTS_SHORTS" = "ลบโพสต์";
 "REMOVE_POSTS_SHORTS_DESC" = "นำโพสต์ออกจากฟีด";
 "SHORTS_FULLSCREEN" = "ซูมเพื่อดูแบบเต็มหน้าจอ";
@@ -515,6 +527,8 @@
 "HIDE_COMMUNITY_BUTTON_PANEL_DESC" = "ซ่อนปุ่มชุมชนจากด้านบนของแผง";
 "HIDE_INFO_BUTTON_PANEL" = "ซ่อนปุ่มข้อมูล";
 "HIDE_INFO_BUTTON_PANEL_DESC" = "ซ่อนปุ่มข้อมูลจากด้านบนของแผง";
+"HIDE_SORT_FILTER_PANEL" = "ซ่อนปุ่มจัดเรียงและตัวกรอง";
+"HIDE_SORT_FILTER_PANEL_DESC" = "ซ่อนปุ่มจัดเรียงและตัวกรองจากด้านบนของแผง";
 "DISABLES_RTL" = "ปิดใช้งานเลย์เอาต์ RTL";
 "DISABLES_RTL_DESC" = "บังคับให้แสดงผลจากซ้ายไปขวา (LTR) และปิดการจัดหน้าแบบขวาไปซ้าย (RTL)";
 "DEVICE_UI" = "รูปแบบอุปกรณ์";

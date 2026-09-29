@@ -1451,9 +1451,10 @@ static UISlider *YouModVolumeSlider(void) {
         [self setPlaybackRate:speed];
         return;
     }
-    if (INTFORVAL(AutoSpeedIndex) == 0) return;
+    NSInteger speedIndex = [self.parentViewController isKindOfClass:%c(YTShortsPlayerViewController)] ? INTFORVAL(ShortsAutoSpeedIndex) : INTFORVAL(AutoSpeedIndex);
+    if (speedIndex == 0) return;
     NSArray *speedLabels = @[@0.01, @0.25, @0.5, @0.75, @1.0, @1.25, @1.5, @1.75, @2.0, @3.0, @4.0, @5.0];
-    [self setPlaybackRate:[speedLabels[INTFORVAL(AutoSpeedIndex)] floatValue]];
+    [self setPlaybackRate:[speedLabels[speedIndex] floatValue]];
 }
 
 - (void)setMuted:(BOOL)muted { 
@@ -1926,7 +1927,7 @@ void YouModFilterVideoButtons(_ASDisplayView *view, NSString *iden) {
     if (IS_ENABLED(OldQualityPicker)) {
         %init(OldVideoQuality);
     }
-    if (IS_ENABLED(ExtraSpeed) || IS_ENABLED(GestureControls) || INTFORVAL(HoldToSpeedIndex) >= 9 || INTFORVAL(AutoSpeedIndex) >= 9) {
+    if (IS_ENABLED(ExtraSpeed) || IS_ENABLED(GestureControls) || INTFORVAL(HoldToSpeedIndex) >= 9 || INTFORVAL(AutoSpeedIndex) >= 9 || INTFORVAL(ShortsAutoSpeedIndex) >= 9) {
         %init(Speed);
     }
     if (IS_ENABLED(ForceMiniPlayer)) {

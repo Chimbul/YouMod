@@ -159,6 +159,8 @@
 "HIDE_CAST_BUTTON_NAVBAR_DESC" = "隐藏导航栏中的投屏按钮。";
 "HIDE_MESSAGES_BUTTON" = "Hide messages button";
 "HIDE_MESSAGES_BUTTON_DESC" = "Hide messages button in the navigation bar.";
+"HIDE_MORE_BUTTON_NAV" = "Hide more button";
+"HIDE_MORE_BUTTON_NAV_DESC" = "Hide the more (three-dot) button in the navigation bar.";
 
 "FEED" = "信息流";
 "HIDE_SUBBAR" = "隐藏子栏";
@@ -227,6 +229,8 @@
 "OVERLAY_BUTTONS_EMPTY" = "无按钮";
 "REMOVE_ADS" = "移除广告";
 "REMOVE_ADS_DESC" = "移除应用内的广告，游戏除外";
+"HIDE_SPONSOR_BUTTON" = "Hide sponsor button";
+"HIDE_SPONSOR_BUTTON_DESC" = "Hide the sponsor button under the video and in the Shorts overlay.";
 "HOLD_TO_SPEED" = "长按加速";
 "HOLD_TO_SPEED_DESC" = "使用自定义长按加速播放倍速。";
 "HIDE_AUTOPLAY" = "隐藏自动播放开关";
@@ -382,6 +386,10 @@
 "REMOVE_SHORTS_LIKE_BUTTON_DESC" = "移除 Shorts 播放界面的点赞按钮。";
 "REMOVE_SHORTS_COMMENT_BUTTON" = "移除评论按钮";
 "REMOVE_SHORTS_COMMENT_BUTTON_DESC" = "移除 Shorts 播放界面的评论按钮。";
+"REMOVE_SHORTS_COMMENT_BAR" = "Remove comment box";
+"REMOVE_SHORTS_COMMENT_BAR_DESC" = "Removes the comment box from the Shorts overlay.";
+"REMOVE_SHORTS_RELATED_BUTTONS" = "Remove related Shorts metadata buttons";
+"REMOVE_SHORTS_RELATED_BUTTONS_DESC" = "Hide the buttons under the video title in the Shorts overlay.";
 "REMOVE_SHORTS_SAVE_BUTTON" = "移除保存按钮";
 "REMOVE_SHORTS_SAVE_BUTTON_DESC" = "移除 Shorts 播放界面的保存按钮。";
 "REMOVE_SHORTS_SHARE_BUTTON" = "移除分享按钮";
@@ -390,6 +398,8 @@
 "REMOVE_SHORTS_REMIX_BUTTON_DESC" = "移除 Shorts 播放界面的混剪按钮。";
 "REMOVE_SHORTS_SOUNDMETADATA_BUTTON" = "移除原声/音频按钮";
 "REMOVE_SHORTS_SOUNDMETADATA_BUTTON_DESC" = "移除 Shorts 播放界面的原声/音频按钮。";
+"REMOVE_SHORTS_SUB_BUTTON" = "Remove subscribe button";
+"REMOVE_SHORTS_SUB_BUTTON_DESC" = "Removes the subscribe button from the Shorts overlay.";
 "REMOVE_SHORTS_PAUSED_SUB_BUTTON" = "移除订阅按钮";
 "REMOVE_SHORTS_PAUSED_SUB_BUTTON_DESC" = "移除 Shorts 暂停界面顶部的订阅按钮。";
 "REMOVE_SHORTS_PAUSED_LIVE_BUTTON" = "移除直播按钮";
@@ -402,6 +412,8 @@
 "ENABLES_SHORTS_QUALITY_DESC" = "强制在 Shorts 中启用视频画质选择菜单。";
 "SHOW_SHORTS_SEEKBAR" = "始终显示进度条";
 "SHOW_SHORTS_SEEKBAR_DESC" = "确保进度条始终显示在 Shorts 播放器底部。";
+"DEFAULT_SPEED_SHORTS" = "Default playback rate (Shorts)";
+"DEFAULT_SPEED_SHORTS_DESC" = "Overrides the default playback speed for Shorts, separate from regular videos.";
 "REMOVE_POSTS_SHORTS" = "移除帖子";
 "REMOVE_POSTS_SHORTS_DESC" = "从信息流中移除帖子。";
 "SHORTS_FULLSCREEN" = "捏合全屏";
@@ -516,6 +528,8 @@
 "HIDE_COMMUNITY_BUTTON_PANEL_DESC" = "Hide the community button in the engagement panel.";
 "HIDE_INFO_BUTTON_PANEL" = "Hide info button";
 "HIDE_INFO_BUTTON_PANEL_DESC" = "Hide the info button in the engagement panel.";
+"HIDE_SORT_FILTER_PANEL" = "Hide sort & filter button";
+"HIDE_SORT_FILTER_PANEL_DESC" = "Hide the sort and filter button from the top of the panel.";
 "DISABLES_RTL" = "禁用 RTL 格式";
 "DISABLES_RTL_DESC" = "强制以从左到右 (LTR) 格式显示最初为从右到左 (RTL) 显示的语言文本。";
 "DEVICE_UI" = "界面风格";

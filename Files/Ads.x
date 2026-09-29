@@ -358,9 +358,7 @@ static BOOL isAdsReelContentModel(YTReelContentModel *model) {
     [self setValue:filteredArray(sectionRenderers) forKey:@"_sectionRenderers"];
     %orig;
 }
-- (void)addSectionsFromArray:(NSArray <YTIItemSectionRenderer *> *)array {
-    %orig(filteredArray(array));
-}
+- (void)addSectionsFromArray:(NSArray <YTIItemSectionRenderer *> *)array { %orig(filteredArray(array)); }
 %end
 
 void YouModFilterAdsDisplayView(_ASDisplayView *view, NSString *iden) {
