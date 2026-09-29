@@ -1,5 +1,4 @@
 #import "Headers.h"
-#import <objc/message.h>
 
 extern BOOL useBackwardIconForButton;
 
@@ -714,7 +713,7 @@ static BOOL SBGetDecorationViewTimeRange(UIView *view, CGFloat *outStart, CGFloa
 static BOOL SBDecorationCanApplyRoundedCorners(UIView *view) {
     YTIPlayerBarDecorationModel *model = [view valueForKey:@"_model"];
     if (!model.style.hasRoundedCorners) return NO;
-    return [((YTMainAppVideoPlayerOverlayViewController *)view._viewControllerForAncestor) isFullscreen];
+    return ((YTMainAppVideoPlayerOverlayViewController *)view._viewControllerForAncestor).isFullscreen;
 }
 
 static void SBRemoveMarkerContainerFromLayer(CALayer *hostLayer) {
@@ -725,10 +724,6 @@ static void SBRemoveMarkerContainerFromLayer(CALayer *hostLayer) {
     }
 }
 
-// Builds one marker sublayer for a segment, clipped to the visible time range [rangeStart, rangeEnd].
-// videoStart/videoEnd are the video's first/last second (from the bar's model
-// and playingState): a segment matching either, compared as whole seconds,
-// gets that side's corners rounded.
 static CALayer *SBMakeMarkerLayer(SBSegment *segment, CGFloat rangeStart, CGFloat rangeEnd, CGFloat videoStart, CGFloat videoEnd, CGFloat barWidth, CGFloat barHeight) {
     CGFloat viewDuration = rangeEnd - rangeStart;
     BOOL isPoi = [segment.category isEqualToString:@"poi_highlight"];
@@ -780,8 +775,31 @@ static void SBLayoutMarkerLayers(CALayer *container, CGFloat barWidth, CGFloat b
             x = fracStart * barWidth;
             w = MAX(SBMarkerMinWidth, (fracEnd - fracStart) * barWidth);
         }
-        layer.frame = CGRectMake(x, 0, w, barHeight);
-        SBApplyMarkerEndRounding(layer, rounding, w, barHeight);
+        CGRect target = CGRectMake(x, 0, w, barHeight);
+        if (!CGRectEqualToRect(layer.frame, target)) {
+            layer.frame = target;
+            SBApplyMarkerEndRounding(layer, rounding, w, barHeight);
+        }
+    }
+    [CATransaction commit];
+}
+
+static void SBRebuildMarkersInLayer(CALayer *hostLayer, NSArray<SBSegment *> *segments, CGFloat rangeStart, CGFloat rangeEnd, CGFloat videoStart, CGFloat videoEnd) {
+    if (!hostLayer) return;
+    SBRemoveMarkerContainerFromLayer(hostLayer);
+    CGFloat barWidth = hostLayer.bounds.size.width;
+    CGFloat barHeight = hostLayer.bounds.size.height;
+    if (barWidth <= 0 || barHeight <= 0) return;
+    [CATransaction begin];
+    [CATransaction setDisableActions:YES];
+    for (SBSegment *segment in segments) {
+        SBSegmentAction action = [segment configuredAction];
+        if (action == SBSegmentActionDisable) continue;
+        CALayer *markerLayer = SBMakeMarkerLayer(segment, rangeStart, rangeEnd, videoStart, videoEnd, barWidth, barHeight);
+        if (markerLayer) {
+            markerLayer.name = SBSegmentMarkerLayerName;
+            [hostLayer addSublayer:markerLayer];
+        }
     }
     [CATransaction commit];
 }
@@ -795,30 +813,19 @@ static void SBRebuildMarkersInDecorationView(UIView *view) {
     if (!SBGetDecorationViewTimeRange(view, &start, &end)) return;
 
     CGFloat videoEnd = [[[view valueForKey:@"_model"] playingState] totalTimeSec];
-    CGFloat barWidth = view.bounds.size.width;
     CGFloat barHeight = view.bounds.size.height;
-    if (barWidth <= 0 || barHeight <= 0) return;
+    if (view.bounds.size.width <= 0 || barHeight <= 0) return;
 
     NSArray<SBSegment *> *segments = sbActivePlayerSegments;
     if (!segments || segments.count == 0) return;
 
-    BOOL rounded = SBDecorationCanApplyRoundedCorners(view);
-    [CATransaction begin];
-    [CATransaction setDisableActions:YES];
-
     CALayer *container = [CALayer layer];
     container.name = SBSegmentMarkerLayerName;
     container.frame = view.bounds;
-    if (rounded) SBApplyMarkerContainerRounding(container, barHeight);
-    for (SBSegment *segment in segments) {
-        SBSegmentAction action = [segment configuredAction];
-        if (action == SBSegmentActionDisable) continue;
-        CALayer *markerLayer = SBMakeMarkerLayer(segment, start, end, start, videoEnd, barWidth, barHeight);
-        if (markerLayer) [container addSublayer:markerLayer];
-    }
+    if (SBDecorationCanApplyRoundedCorners(view)) SBApplyMarkerContainerRounding(container, barHeight);
     [view.layer addSublayer:container];
 
-    [CATransaction commit];
+    SBRebuildMarkersInLayer(container, segments, start, end, start, videoEnd);
 }
 
 static void SBRenderMarkersInDecorationView(UIView *view) {
@@ -833,17 +840,8 @@ static void SBRenderMarkersInDecorationView(UIView *view) {
             break;
         }
     }
-    if (container && container.frame.size.width == barWidth && container.frame.size.height == barHeight) return;
-
-    if (!IS_ENABLED(SBEnabled) || !IS_ENABLED(SBButtonKey) || (!IS_ENABLED(SBSegmentsInPlayer) && !IS_ENABLED(SBSegmentsInFeed))) {
-        if (container) SBRemoveMarkerContainerFromLayer(view.layer);
-        return;
-    }
-
-    if (!container) {
-        if (sbActivePlayerSegments.count > 0) SBRebuildMarkersInDecorationView(view);
-        return;
-    }
+    if (!container) return;
+    else if (container.frame.size.width == barWidth && container.frame.size.height == barHeight) return;
 
     container.frame = view.bounds;
     SBLayoutMarkerLayers(container, barWidth, barHeight, SBDecorationCanApplyRoundedCorners(view));
@@ -854,10 +852,6 @@ static void SBRenderMarkersInDecorationView(UIView *view) {
     %orig;
     SBRenderMarkersInDecorationView(self);
 }
-%new
-- (void)sb_updateSegmentMarkers {
-    SBRebuildMarkersInDecorationView(self);
-}
 %end
 
 %hook YTPlayerBarRectangleDecorationView
@@ -865,33 +859,19 @@ static void SBRenderMarkersInDecorationView(UIView *view) {
     %orig;
     SBRenderMarkersInDecorationView(self);
 }
-%new
-- (void)sb_updateSegmentMarkers {
-    SBRebuildMarkersInDecorationView(self);
-}
 %end
 
-// YTWatchFloatingMiniplayerProgressBarView - miniplayer
-// All markers sit in one tagged container view next to the bar; layout only
-// moves that container and re-lays out the fraction-based layers inside it.
-// The bar lays out on every progress tick, so an unchanged frame skips all
-// layer writes.
 %hook YTWatchFloatingMiniplayerProgressBarView
 - (void)layoutSubviews {
     %orig;
-    if (!self.superview) return;
-    for (UIView *sub in self.superview.subviews) {
-        if (sub.tag != SBSegmentMarkerTag) continue;
-        if (CGRectEqualToRect(sub.frame, self.frame)) continue;
-        sub.frame = self.frame;
-        SBLayoutMarkerLayers(sub.layer, self.bounds.size.width, self.bounds.size.height, NO);
-    }
+    CGFloat barWidth = self.bounds.size.width, barHeight = self.bounds.size.height;
+    if (barWidth <= 0 || barHeight <= 0) return;
+    SBLayoutMarkerLayers(self.layer, barWidth, barHeight, NO);
 }
 %end
 
 #pragma mark - YTPlayerViewController Hook (Notification Observer)
 
-%group SBObserver
 %hook YTPlayerViewController
 - (void)viewDidLoad {
     %orig;
@@ -912,137 +892,44 @@ static void SBRenderMarkersInDecorationView(UIView *view) {
 %new
 - (void)sbRefreshMarkers:(NSArray<SBSegment *> *)segments {
     if (!IS_ENABLED(SBSegmentsInPlayer) && !IS_ENABLED(SBSegmentsInMiniPlayer) && !IS_ENABLED(SBSegmentsInFeed)) return;
+    else if (!IS_ENABLED(SBButtonKey)) return;
     if (!segments) segments = self.sbSegments;
+    if (!segments || segments.count == 0) return;
 
     sbActivePlayerSegments = segments;
 
     CGFloat totalTime = [self currentVideoTotalMediaTime];
     if (totalTime <= 0) return;
-    CGRect containerFrame = CGRectZero;
-    UIView *mainView = nil;
-    UIView *scrubberDot = nil;
-    UIView *referenceView = nil;
+    CALayer *progressBarLayer = nil;
 
     if ([self.parentViewController isKindOfClass:%c(YTWatchFloatingMiniplayerViewController)] && IS_ENABLED(SBSegmentsInMiniPlayer)) {
-        YTWatchFloatingMiniplayerViewController *miniplayercontroller = (YTWatchFloatingMiniplayerViewController *)self.parentViewController;
-        YTWatchFloatingMiniplayerWithPersistentControlsView *controlsview = (YTWatchFloatingMiniplayerWithPersistentControlsView *)miniplayercontroller.view;
-
-        for (UIView *sub in controlsview.subviews) {
-            for (UIView *sub2 in sub.subviews) {
-                if ([sub2 isKindOfClass:%c(YTWatchFloatingMiniplayerProgressBarView)]) {
-                    referenceView = sub2;
-                    break;
-                }
-            }
-            if (referenceView) break;
-        }
-
-        mainView = referenceView.superview;
-
-        // Remove old markers
-        for (UIView *sub in [mainView.subviews copy]) {
-            if (sub.tag == SBSegmentMarkerTag) [sub removeFromSuperview];
-        }
-        if (!segments || segments.count == 0) return;
-
-        containerFrame = referenceView.frame;
-    } else if ([[self activeVideoPlayerOverlay] isKindOfClass:%c(YTMainAppVideoPlayerOverlayViewController)] && IS_ENABLED(SBSegmentsInPlayer)) {
-        YTMainAppVideoPlayerOverlayViewController *overlay = [self activeVideoPlayerOverlay];
-        YTPlayerBarController *barController = [overlay playerBarController];
-        YTInlinePlayerBarContainerView *containerView = barController.playerBar;
-        UIView *playerBar = nil;
-
-        for (UIView *subview in containerView.subviews) {
-            if ([subview isKindOfClass:%c(YTModularPlayerBarView)]) {
-                playerBar = subview;
-                break;
-            }
-        }
-        if (!playerBar) return;
-
-        for (UIView *sub in playerBar.subviews) {
+        progressBarLayer = ((YTWatchFloatingMiniplayerViewController *)self.parentViewController).watchFloatingMiniplayerView.progressBarView.layer;
+    } else if ([self.activeVideoPlayerOverlay isKindOfClass:%c(YTMainAppVideoPlayerOverlayViewController)] && IS_ENABLED(SBSegmentsInPlayer)) {
+        YTModularPlayerBarView *playerBarView = ((YTMainAppVideoPlayerOverlayViewController *)self.activeVideoPlayerOverlay).playerBarController.playerBar.modularPlayerBar.view;
+        for (UIView *sub in playerBarView.subviews) {
             if ([sub isKindOfClass:%c(YTPlayerBarProgressDecorationView)] ||
                 [sub isKindOfClass:%c(YTPlayerBarRectangleDecorationView)]) {
-                [(YTPlayerBarProgressDecorationView *)sub sb_updateSegmentMarkers];
+                SBRebuildMarkersInDecorationView(sub);
             }
         }
-        return;
-    } else if ([[self activeVideoPlayerOverlay] isKindOfClass:%c(YTInlineMutedPlaybackPlayerOverlayViewController)] && IS_ENABLED(SBSegmentsInFeed)) {
-        YTInlineMutedPlaybackPlayerOverlayViewController *viewcon = [self activeVideoPlayerOverlay];
-        YTInlineMutedPlaybackPlayerOverlayView *view = (YTInlineMutedPlaybackPlayerOverlayView *)viewcon.view;
-        UIView *scrub;
-        UIView *playerBar;
-        for (UIView *sub in view.subviews) {
-            if ([sub isKindOfClass:%c(YTInlineMutedPlaybackScrubberView)]) {
-                scrub = sub;
-                mainView = sub;
-                break;
-            }
-        }
-
-        if (!segments || segments.count == 0) return;
-
-        for (UIView *sub in scrub.subviews) {
-            if ([sub isKindOfClass:%c(YTPlayerBarMarkerView)] && sub.frame.origin.y != 0) {
-                playerBar = sub;
-            } else if ([sub isKindOfClass:%c(YTModularPlayerBarView)] && sub.frame.origin.y != 0) {
-                playerBar = sub;
-                mainView = sub;
-            } else if ([sub isKindOfClass:%c(YTInlineMutedPlaybackScrubbingSlider)]) {
-                if ([sub.accessibilityIdentifier isEqualToString:@"id.player.scrubber.slider"]) {
-                    scrubberDot = sub;
-                }
-            }
-            if (playerBar && scrubberDot) break;
-        }
-
-        if (!playerBar) return;
-
-        if ([playerBar isKindOfClass:%c(YTModularPlayerBarView)]) {
-            for (UIView *sub in playerBar.subviews) {
+    } else if ([self.activeVideoPlayerOverlay isKindOfClass:%c(YTInlineMutedPlaybackPlayerOverlayViewController)] && IS_ENABLED(SBSegmentsInFeed)) {
+        YTInlineMutedPlaybackPlayerOverlayView *view = (YTInlineMutedPlaybackPlayerOverlayView *)((YTInlineMutedPlaybackPlayerOverlayViewController *)self.activeVideoPlayerOverlay).view;
+        YTInlineMutedPlaybackScrubberView *scrubView = view.scrubberView;
+        if (scrubView.modularPlayerBarEnabled) {
+            YTModularPlayerBarView *modularView = scrubView.modularPlayerBar.view;
+            for (UIView *sub in modularView.subviews) {
                 if ([sub isKindOfClass:%c(YTPlayerBarProgressDecorationView)] ||
                     [sub isKindOfClass:%c(YTPlayerBarRectangleDecorationView)]) {
-                    [(YTPlayerBarProgressDecorationView *)sub sb_updateSegmentMarkers];
+                    SBRebuildMarkersInDecorationView(sub);
                 }
             }
-            return;
+        } else {
+            progressBarLayer = scrubView.scrubber.layer;
         }
-
-        // Remove old markers
-        for (UIView *sub in [mainView.subviews copy]) {
-            if (sub.tag == SBSegmentMarkerTag) [sub removeFromSuperview];
-        }
-
-        containerFrame = playerBar.frame;
     } else {
         return;
     }
-
-    if (!IS_ENABLED(SBButtonKey)) return;
-
-    // One container view tagged SBSegmentMarkerTag holds every marker as a
-    // sublayer, so the bar's parent gains a single element instead of one view
-    // per segment. Removing and re-adding markers still goes through the tag.
-    UIView *container = [[UIView alloc] initWithFrame:containerFrame];
-    container.tag = SBSegmentMarkerTag;
-    container.userInteractionEnabled = NO;
-    container.clipsToBounds = NO;
-    for (SBSegment *segment in segments) {
-        SBSegmentAction action = [segment configuredAction];
-        if (action == SBSegmentActionDisable) continue;
-        CALayer *markerLayer = SBMakeMarkerLayer(segment, 0.0, totalTime, 0.0, totalTime, containerFrame.size.width, containerFrame.size.height);
-        if (markerLayer) [container.layer addSublayer:markerLayer];
-    }
-
-    if (referenceView && referenceView.superview == mainView) {
-        [mainView insertSubview:container aboveSubview:referenceView];
-    } else if (scrubberDot && scrubberDot.superview == mainView) {
-        [mainView insertSubview:container belowSubview:scrubberDot];
-    } else {
-        [mainView addSubview:container];
-        [mainView bringSubviewToFront:container];
-    }
-    if (scrubberDot) [mainView bringSubviewToFront:scrubberDot];
+    SBRebuildMarkersInLayer(progressBarLayer, segments, 0.0, totalTime, 0.0, totalTime);
 }
 - (void)setPlayerViewLayout:(NSInteger)layout {
     %orig;
@@ -1061,11 +948,3 @@ static void SBRenderMarkersInDecorationView(UIView *view) {
     });
 }
 %end
-%end
-
-#pragma mark - Constructor
-
-%ctor {
-    %init;
-    %init(SBObserver);
-}

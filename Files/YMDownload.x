@@ -2,7 +2,6 @@
 #import <AVFoundation/AVFoundation.h>
 #import <Photos/Photos.h>
 #import <os/log.h>
-#import <dlfcn.h>
 
 static os_log_t YMDownloadLogHandle(void) {
     static os_log_t handle; static dispatch_once_t once;

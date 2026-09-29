@@ -285,6 +285,39 @@ static UIColor *ymYouTubeBackgroundColor(void) {
     }];
 }
 
+#pragma mark - Pausing other players
+
+// Every AVPlayer alive in the process, held weakly so entries vanish on
+// dealloc without needing a dealloc hook.
+static NSHashTable<AVPlayer *> *ymLiveAVPlayers(void) {
+    static NSHashTable<AVPlayer *> *table;
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{ table = [NSHashTable weakObjectsHashTable]; });
+    return table;
+}
+
+// Pauses everything the app could be playing: YouTube's own player (watch
+// page, miniplayer, shorts) plus any AVPlayer anywhere in the process.
+static void ymPauseOtherPlayers(void) {
+    [YouModCurrentPlayerViewController pause];
+    for (AVPlayer *player in [ymLiveAVPlayers() allObjects]) {
+        if (player.rate > 0) [player pause];
+    }
+}
+
+%hook AVPlayer
+- (instancetype)initWithURL:(NSURL *)URL {
+    AVPlayer *player = %orig;
+    if (player) @synchronized(ymLiveAVPlayers()) { [ymLiveAVPlayers() addObject:player]; }
+    return player;
+}
+- (instancetype)initWithPlayerItem:(AVPlayerItem *)item {
+    AVPlayer *player = %orig;
+    if (player) @synchronized(ymLiveAVPlayers()) { [ymLiveAVPlayers() addObject:player]; }
+    return player;
+}
+%end
+
 #pragma mark - Library view controller
 
 @interface YMLibraryViewController : UIViewController <UICollectionViewDataSource, UICollectionViewDelegate, UISearchBarDelegate>
@@ -523,7 +556,15 @@ static UIColor *ymYouTubeBackgroundColor(void) {
     NSURL *fileURL = [NSURL fileURLWithPath:row.path];
 
     AVURLAsset *asset = [AVURLAsset URLAssetWithURL:fileURL options:nil];
-    if (asset.isPlayable) {
+    // The deprecated isPlayable flag reports NO for playable m4a audio, so
+    // decide from the tracks the asset actually exposes: m4a/AAC exposes an
+    // audio track, while mka/mkv containers expose none.
+    BOOL playable = [asset tracksWithMediaType:AVMediaTypeVideo].count > 0
+                 || [asset tracksWithMediaType:AVMediaTypeAudio].count > 0;
+    if (playable) {
+        // Stop everything else that is playing (YouTube's player and any
+        // AVPlayer in the process) so it doesn't mix with the opened file.
+        ymPauseOtherPlayers();
         AVPlayerViewController *playerVC = [AVPlayerViewController new];
         playerVC.player = [AVPlayer playerWithURL:fileURL];
         [self presentViewController:playerVC animated:YES completion:^{

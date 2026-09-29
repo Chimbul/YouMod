@@ -204,7 +204,7 @@ NSArray<YMOverlayButtonSpec *> *YMOrderedOverlayButtons(void) {
 // overlay's events delegate. Button handlers use it to act on the current video.
 static YTPlayerViewController *YMPlayerVCFromOverlay(YTMainAppControlsOverlayView *overlay) {
     YTMainAppVideoPlayerOverlayViewController *mainOverlayController = (YTMainAppVideoPlayerOverlayViewController *)overlay.eventsDelegate;
-    return mainOverlayController.parentViewController;
+    return (YTPlayerViewController *)mainOverlayController.parentViewController;
 }
 
 // Recursively find the right-most YTQTMButton in the overlay's top region. YouTube
@@ -572,7 +572,7 @@ static void YMFrostedBackgroundUpdate(YTInlinePlayerBarContainerView *self_, NSA
         }
     }
 
-    YTPlayerViewController *player = ((YTMainAppVideoPlayerOverlayViewController *)self._viewControllerForAncestor).parentViewController;
+    YTPlayerViewController *player = (YTPlayerViewController *)(((YTMainAppVideoPlayerOverlayViewController *)self._viewControllerForAncestor).parentViewController);
     YTSingleVideoController *sgvid = player.activeVideo;
     YTSingleVideo *sgvid2 = sgvid.singleVideo;
     BOOL isLive = [sgvid2 isLivePlayback];
@@ -631,7 +631,7 @@ static void YMFrostedBackgroundUpdate(YTInlinePlayerBarContainerView *self_, NSA
     if (!matched || !matched.onTap) return;
 
     YTMainAppVideoPlayerOverlayViewController *ovcon = (YTMainAppVideoPlayerOverlayViewController *)self._viewControllerForAncestor;
-    YTPlayerViewController *player = ovcon.parentViewController;
+    YTPlayerViewController *player = (YTPlayerViewController *)ovcon.parentViewController;
     if (player) matched.onTap(player, sender);
 }
 %new

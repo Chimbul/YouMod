@@ -6,13 +6,13 @@ static const void *kASViewKey = &kASViewKey;
 %property (nonatomic, assign) _ASDisplayView *currentDownloadButton;
 - (void)didMoveToWindow {
     %orig;
-    if (objc_getAssociatedObject(self, kASViewKey)) return;
     NSString *iden = self.accessibilityIdentifier;
+    // YouModFilterVideoButtons(self, iden); not rn, im having a headache with this shi. no matter what i do, it just doesnt work well.
+    if (objc_getAssociatedObject(self, kASViewKey) || !iden || iden.length == 0) return;
     YouModApplyOLEDToDisplayView(self, iden);
     YouModConfigureDownloadButton(self, iden);
     YouModSetupDownloadGestures(self, iden);
     if (IS_ENABLED(RemoveAds)) YouModFilterAdsDisplayView(self, iden);
-    YouModFilterVideoButtons(self, iden);
     YouModFilterShortsDisplayView(self, iden);
     YouModRemoveShortsPausedButtons(self, iden);
     objc_setAssociatedObject(self, kASViewKey, @YES, OBJC_ASSOCIATION_ASSIGN);
@@ -43,27 +43,6 @@ static const void *kASViewKey = &kASViewKey;
 }
 %end
 
-static BOOL isLikeDislikeButtonOrSeperator(ASDisplayNode *node) {
-    if (IS_ENABLED(RemoveVideoLikeButton) && IS_ENABLED(RemoveVideoDislikeButton)) return NO;
-    else if ([node.description containsString:@"id.video.like.button"]) return IS_ENABLED(RemoveVideoLikeButton);
-    else if ([node.description containsString:@"id.video.dislike.button"]) return IS_ENABLED(RemoveVideoDislikeButton);
-    NSString *desc = nil;
-    @try {
-        desc = [[[[[[node nodeController] performSelector:@selector(parent)] performSelector:@selector(parent)] performSelector:@selector(owningComponent)] performSelector:@selector(owningComponent)] description];
-    } @catch (id ex) {
-        return NO;
-    }
-    if (desc != nil && [desc containsString:@"segmented_like_dislike_button_inner.eml"]) return YES;
-    return NO;
-}
-
-%hook ELMContainerNode
-- (void)insertYogaChild:(ASDisplayNode *)child atIndex:(NSUInteger)index {
-    if (isLikeDislikeButtonOrSeperator(child)) return;
-    %orig;
-}
-%end
-
 %hook ASCollectionView
 - (void)didMoveToWindow {
     %orig;
@@ -78,8 +57,6 @@ static BOOL isLikeDislikeButtonOrSeperator(ASDisplayNode *node) {
     %orig;
     if (objc_getAssociatedObject(self, kASViewKey)) return;
     NSString *desc = [[self valueForKey:@"_renderer"] description];
-    // The watermark is an ELM element rendered into one layer, so it has no
-    // subview and no identifier to filter on. The renderer name is the only handle.
     if (IS_ENABLED(HideWaterMark) && [desc containsString:@"featured_channel_watermark_overlay.eml"]) {
         self.view.hidden = YES;
     } else if ([desc containsString:@"more_drawer.eml"]) {

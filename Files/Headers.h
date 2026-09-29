@@ -74,8 +74,6 @@
 #import <YouTubeHeader/ELMNodeController.h>
 #import <objc/runtime.h>
 #import <YouTubeHeader/GPBMessage.h>
-#import <objc/NSObjCRuntime.h>
-#import <YouTubeHeader/ELMTouchCommandPropertiesHandler.h>
 #import <YouTubeHeader/YTReelNonVideoContentModel.h>
 
 // For Settings.x and SponsorBlockSettings.x
@@ -85,7 +83,6 @@
 #import <YouTubeHeader/YTSettingsSectionItemManager.h>
 #import <YouTubeHeader/YTSettingsViewController.h>
 #import <YouTubeHeader/YTSettingsSectionController.h>
-#import <YouTubeHeader/YTSearchableSettingsViewController.h>
 #import <YouTubeHeader/YTUIUtils.h>
 #import <YouTubeHeader/YTResponderEvent.h>
 
@@ -102,9 +99,7 @@
 + (instancetype)eventWithViewController:(UIViewController *)viewController animated:(BOOL)animated firstResponder:(id)firstResponder;
 @end
 
-#import <YouTubeHeader/YTCommonColorPalette.h>
 
-#define DownloadFix @"YouModDownloadFix"
 #define SABRDownload @"YouModSABRDownload"
 
 #define IS_ENABLED(k) [[NSUserDefaults standardUserDefaults] boolForKey:k]
@@ -131,7 +126,6 @@
 #define DownloadButtonPosition @"YouModDownloadButtonPosition"
 #define DownloadButtonPositionUnderPlayer 0
 #define DownloadButtonPositionOverlay 1
-#define DownloadButtonPositionBoth 2
 #define AddDownloadToShorts @"YouModAddDownloadToShorts"
 #define HideAutoDubbedDownloads @"YouModHideAutoDubbedDownloads"
 #define DownloadLibraryTab @"YouModDownloadLibraryTab"
@@ -377,9 +371,6 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 @interface YTContextualWrapView : UIView
 @end
 
-@interface YTShortsAdsPlayerViewController : YTReelPlayerViewController
-@end
-
 @interface YTIBrowseRequest (YouMod)
 + (NSString *)browseIDForGamingDestination;
 + (NSString *)browseIDForSportsDestination;
@@ -467,13 +458,6 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 + (instancetype)languageList;
 @end
 
-@interface YTICaptionTrackEntry : GPBMessage
-- (NSString *)baseURL;
-- (NSString *)vssId;
-- (NSString *)languageCode;
-- (YTIFormattedString *)name;
-@end
-
 @interface YTSettingsSectionItem (YouMod)
 - (NSNumber *)categoryId;
 @end
@@ -536,34 +520,40 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 @interface YTInlineMutedPlaybackPlayerOverlayViewController : UIViewController
 @end
 
+@interface YTInlineMutedPlaybackScrubbingSlider : UISlider
+@end
+
+@interface YTInlineMutedPlaybackScrubberView : UIView
+- (YTInlineMutedPlaybackScrubbingSlider *)scrubber;
+- (BOOL)modularPlayerBarEnabled;
+- (YTModularPlayerBarController *)modularPlayerBar;
+@end
+
 @interface YTInlineMutedPlaybackPlayerOverlayView : UIView
-@end
-
-@interface YTWatchFloatingMiniplayerViewController : UIViewController
-@end
-
-@interface YTWatchFloatingMiniplayerWithPersistentControlsView : UIView
+- (YTInlineMutedPlaybackScrubberView *)scrubberView;
 @end
 
 @interface YTWatchFloatingMiniplayerProgressBarView : UIView
+@end
+
+@interface YTWatchFloatingMiniplayerWithPersistentControlsView : UIView
+- (YTWatchFloatingMiniplayerProgressBarView *)progressBarView;
+@end
+
+@interface YTWatchFloatingMiniplayerViewController : UIViewController
+- (YTWatchFloatingMiniplayerWithPersistentControlsView *)watchFloatingMiniplayerView;
 @end
 
 @interface SSOConfiguration : NSObject
 @end
 
 @interface ASDisplayNode (YouMod)
-- (void)removeYogaChild:(id)arg;
+- (void)removeYogaChild:(ASDisplayNode *)child;
 - (ELMNodeController *)nodeController;
 @end
 
 @interface _ASDisplayView (YouMod)
 @property (nonatomic, assign) _ASDisplayView *currentDownloadButton;
-@end
-
-@interface YTIMySubsFilterHeaderRenderer : GPBMessage
-@end
-
-@interface YTMySubsFilterHeaderViewController : UIViewController
 @end
 
 @interface YTEngagementPanelHeaderView : UIView
@@ -643,12 +633,11 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 @end
 
 @interface ASScrollView : UIScrollView
-- (id)scrollNode;
+- (ASDisplayNode *)scrollNode;
 @end
 
 // Player Gestures - @bhackel (YTLitePlus)
 @interface YTMainAppVideoPlayerOverlayViewController (YouMod)
-@property (nonatomic, assign) YTPlayerViewController *parentViewController;
 - (YTCaptionTrackSwitchController *)captionTrackController;
 - (NSString *)videoID;
 - (CGFloat)mediaTime;
@@ -660,7 +649,7 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 
 @interface YTSingleVideoController (YouMod)
 - (CGFloat)totalMediaTime;
-- (void)setVideoFormatConstraint:(id)arg;
+- (void)setVideoFormatConstraint:(MLQuickMenuVideoQualitySettingFormatConstraint *)arg;
 - (void)YouModAutoQuality;
 - (NSArray *)availableCaptionTracks;
 - (MLInnerTubeCaptionTrack *)activeCaptionTrack;
@@ -740,12 +729,6 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 @interface YTReelTopBarView : UIView
 @end
 
-@interface YTDialogContainerScrollView : UIScrollView
-@end
-
-@interface YTRiveStartupAnimationViewController : UIViewController
-@end
-
 // SponsorBlock action modes
 typedef NS_ENUM(NSInteger, SBSegmentAction) {
     SBSegmentActionDisable = 0,
@@ -768,14 +751,6 @@ typedef NS_ENUM(NSInteger, SBSegmentAction) {
 
 @interface YTIPlayerBarDecorationStyle (YouMod)
 @property (nonatomic, assign, readwrite) BOOL hasRoundedCorners;
-@end
-
-@interface YTPlayerBarProgressDecorationView (YouMod)
-- (void)sb_updateSegmentMarkers;
-@end
-
-@interface YTPlayerBarRectangleDecorationView (YouMod)
-- (void)sb_updateSegmentMarkers;
 @end
 
 @interface SBSegment : NSObject
@@ -881,11 +856,6 @@ extern YTPlayerViewController *YouModCurrentPlayerViewController;
 // without being fetched.
 extern NSArray<NSString *> *sbAllCategories(void);
 extern UIColor *SBColorFromHex(NSString *hexString);
-
-// Tag stamped on the single seek-bar marker container view (all segment
-// markers live on it as sublayers), used to find and remove it across the
-// player-bar layout hooks that don't hold a direct reference.
-static const NSInteger SBSegmentMarkerTag = 9900;
 
 // Supported range and default for the skip/unskip banner duration (seconds).
 // The settings sliders expose this range and the core clamps stored values to

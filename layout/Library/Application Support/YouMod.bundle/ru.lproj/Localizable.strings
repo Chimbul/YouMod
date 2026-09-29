@@ -690,8 +690,9 @@
 "FILES_HINT_VIDEO" = "Видео %@ эффективнее и качественнее, но встроенный плеер iOS не может его воспроизвести. Используйте плеер вроде VLC.";
 "FILES_HINT_AUDIO" = "Аудио %@ эффективнее, но встроенный плеер iOS не может его воспроизвести. Используйте плеер вроде VLC.";
 "FILES_HINT_COMPATIBLE" = "Видео H.264 с аудио AAC — воспроизводится во встроенном плеере iOS.";
+"FILES_HINT_AUDIO_COMPATIBLE" = "Аудио AAC — воспроизводится во встроенном плеере iOS.";
 "AUDIO_ORIGINAL" = "Оригинал";
-"AUDIO_ORIGINAL_LANG" = "%@ [Оригинал]";
+"AUDIO_ORIGINAL_LANG" = "%@";
 "AUDIO_AUTO_DUBBED" = "%@ [ИИ]";
 "AUDIO_DUBBED" = "%@";
 "SLEEP_TIMER" = "Таймер сна";
@@ -700,6 +701,7 @@
 "SLEEP_TIMER_MINUTES_FMT" = "%ld мин.";
 "SLEEP_TIMER_END_OF_VIDEO" = "Конец видео";
 "SLEEP_TIMER_TIME_UP" = "Таймер сна сработал. Воспроизведение приостановлено";
+"SLEEP_TIMER_VIDEO_CHANGED" = "Видео изменено. Таймер сна выключен";
 "SLEEP_TIMER_CUSTOM_TIME" = "Выбрать время...";
 "SLEEP_TIMER_ENTRY" = "Таймер сна";
 "SLEEP_TIMER_ENTRY_DESC" = "Где показывается кнопка таймера сна.";

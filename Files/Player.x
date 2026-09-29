@@ -593,7 +593,7 @@ static void YouModAddEndTime(YTInlinePlayerBarContainerView *playerbar, YTPlayer
             }
 
             YTMainAppVideoPlayerOverlayViewController *ovcon = (YTMainAppVideoPlayerOverlayViewController *)self._viewControllerForAncestor;
-            YTPlayerViewController *pvcon = ovcon.parentViewController;
+            YTPlayerViewController *pvcon = (YTPlayerViewController *)ovcon.parentViewController;
             CGFloat totalDuration = [pvcon currentVideoTotalMediaTime];
             CGFloat targetTime = totalDuration * percentage;    
             [pvcon seekToTime:targetTime];
@@ -651,7 +651,7 @@ static void YouModAddEndTime(YTInlinePlayerBarContainerView *playerbar, YTPlayer
     YouModApplyPrevNextReplacement(self);
     if (!IS_ENABLED(PauseOnOverlay)) return;
     YTMainAppVideoPlayerOverlayViewController *mainOverlayController = (YTMainAppVideoPlayerOverlayViewController *)self.eventsDelegate;
-    YTPlayerViewController *playerViewController = mainOverlayController.parentViewController;
+    YTPlayerViewController *playerViewController = (YTPlayerViewController *)mainOverlayController.parentViewController;
     visible ? [playerViewController pause] : [playerViewController play];
 }
 %end
@@ -1807,9 +1807,13 @@ void YouModRemoveFullscreenActionsButtons(YTELMViewController *controller) {
     }
 }
 
+/*
 // Video buttons filtering
 void YouModFilterVideoButtons(_ASDisplayView *view, NSString *iden) {
     if (!iden || iden.length == 0) return;
+    int boolCount = 0;
+    if (IS_ENABLED(RemoveVideoLikeButton)) boolCount++;
+    if (IS_ENABLED(RemoveVideoDislikeButton)) boolCount++;
     NSDictionary *buttonsList = @{
         @"id.video.like.button": @(IS_ENABLED(RemoveVideoLikeButton)),
         @"id.video.dislike.button": @(IS_ENABLED(RemoveVideoDislikeButton)),
@@ -1828,12 +1832,6 @@ void YouModFilterVideoButtons(_ASDisplayView *view, NSString *iden) {
             for (ASDisplayNode *child in node.yogaChildren) {
                 if ([child.description containsString:button]) {
                     [node removeYogaChild:child];
-                    int boolCount = 0;
-                    if (isSpecialButton) {
-                        if (IS_ENABLED(RemoveVideoLikeButton)) boolCount++;
-                        if (IS_ENABLED(RemoveVideoDislikeButton)) boolCount++;
-                        if (boolCount == 1) break;
-                    }
                     BOOL isNonScrollable = NO;
                     while (dpView != nil && dpView.superview != nil) {
                         if ([dpView.superview.accessibilityIdentifier isEqualToString:@"id.video.non_scrollable_action_bar"]) {
@@ -1847,7 +1845,8 @@ void YouModFilterVideoButtons(_ASDisplayView *view, NSString *iden) {
                     ASDisplayNode *superNode;
                     if (isNonScrollable) {
                         superNode = dpView.keepalive_node;
-                    } else if (isSpecialButton && boolCount == 2) {
+                    } else if (isSpecialButton) {
+                        if (boolCount == 1) continue;
                         for (int i=0; i<3; i++) dpView = dpView.subviews.firstObject;
                         superNode = dpView.keepalive_node;
                     } else {
@@ -1856,11 +1855,24 @@ void YouModFilterVideoButtons(_ASDisplayView *view, NSString *iden) {
                     for (ASDisplayNode *child in superNode.yogaChildren) [superNode removeYogaChild:child];
                     [dpView removeFromSuperview];
                     break;
+                } else if (boolCount == 1) {
+                    if ([child containsString:@"id.video."]) continue;
+                    NSString *desc = nil;
+                    @try {
+                        desc = [[[[[[node nodeController] performSelector:@selector(parent)] performSelector:@selector(parent)] performSelector:@selector(owningComponent)] performSelector:@selector(owningComponent)] description];
+                    } @catch (id ex) {
+                        continue;
+                    }
+                    if (desc != nil && [desc containsString:@"segmented_like_dislike_button_inner.eml"]) {
+                        [node removeYogaChild:child];
+                        break;
+                    }
                 }
             }
         }
     }
 }
+*/
 
 %hook YTMenuController
 - (NSMutableArray <YTActionSheetAction *> *)actionsForRenderers:(NSMutableArray <YTIMenuItemSupportedRenderers *> *)renderers fromView:(UIView *)fromView entry:(id)entry shouldLogItems:(BOOL)shouldLogItems firstResponder:(id)firstResponder {

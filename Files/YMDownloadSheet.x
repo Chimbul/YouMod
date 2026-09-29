@@ -171,6 +171,12 @@ static NSString *YMByteCountString(unsigned long long bytes) {
     titleLabel.numberOfLines = 2;
     titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
 
+    UIButton *closeButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    [closeButton setImage:YouModSymbolImageInCanvas(@"xmark", 24, 17, UIImageSymbolWeightSemibold) forState:UIControlStateNormal];
+    closeButton.tintColor = UIColor.labelColor;
+    closeButton.translatesAutoresizingMaskIntoConstraints = NO;
+    [closeButton addTarget:self action:@selector(closeTapped) forControlEvents:UIControlEventTouchUpInside];
+
     UILabel *hint = [UILabel new];
     self.codecHint = hint;
     hint.font = [UIFont systemFontOfSize:12];
@@ -195,15 +201,20 @@ static NSString *YMByteCountString(unsigned long long bytes) {
     [download addTarget:self action:@selector(startDownload) forControlEvents:UIControlEventTouchUpInside];
 
     [self.view addSubview:titleLabel];
+    [self.view addSubview:closeButton];
     [self.view addSubview:hint];
     [self.view addSubview:table];
     [self.view addSubview:download];
 
     UILayoutGuide *safe = self.view.safeAreaLayoutGuide;
     [NSLayoutConstraint activateConstraints:@[
+        [closeButton.trailingAnchor constraintEqualToAnchor:safe.trailingAnchor constant:-10],
+        [closeButton.centerYAnchor constraintEqualToAnchor:titleLabel.centerYAnchor],
+        [closeButton.widthAnchor constraintEqualToConstant:34],
+        [closeButton.heightAnchor constraintEqualToConstant:34],
         [titleLabel.topAnchor constraintEqualToAnchor:safe.topAnchor constant:18],
         [titleLabel.leadingAnchor constraintEqualToAnchor:safe.leadingAnchor constant:20],
-        [titleLabel.trailingAnchor constraintEqualToAnchor:safe.trailingAnchor constant:-20],
+        [titleLabel.trailingAnchor constraintEqualToAnchor:closeButton.leadingAnchor constant:-6],
         [hint.topAnchor constraintEqualToAnchor:titleLabel.bottomAnchor constant:14],
         [hint.leadingAnchor constraintEqualToAnchor:safe.leadingAnchor constant:20],
         [hint.trailingAnchor constraintEqualToAnchor:safe.trailingAnchor constant:-20],
@@ -302,7 +313,7 @@ static NSString *YMByteCountString(unsigned long long bytes) {
         if (audioCodec.length > 0 && !YMCodecIsApplePlayable(audioCodec, NO)) {
             return [NSString stringWithFormat:LOC(@"FILES_HINT_AUDIO"), YMCodecDisplayName(audioCodec)];
         }
-        return LOC(@"FILES_HINT_COMPATIBLE");
+        return LOC(@"FILES_HINT_AUDIO_COMPATIBLE");
     }
     if (audioCodec.length == 0) {
         if (!videoOK) {
@@ -483,6 +494,10 @@ static NSString *YMByteCountString(unsigned long long bytes) {
     }
     [tableView reloadData];
     [self refreshChrome];
+}
+
+- (void)closeTapped {
+    [self dismissViewControllerAnimated:YES completion:nil];
 }
 
 - (void)startDownload {
