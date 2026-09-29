@@ -850,14 +850,14 @@ static void SBRenderMarkersInDecorationView(UIView *view) {
 %hook YTPlayerBarProgressDecorationView
 - (void)layoutSubviews {
     %orig;
-    SBRenderMarkersInDecorationView(self);
+    SBRebuildMarkersInDecorationView(self);
 }
 %end
 
 %hook YTPlayerBarRectangleDecorationView
 - (void)layoutSubviews {
     %orig;
-    SBRenderMarkersInDecorationView(self);
+    SBRebuildMarkersInDecorationView(self);
 }
 %end
 

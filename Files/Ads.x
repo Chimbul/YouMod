@@ -404,9 +404,7 @@ void YouModRemoveDrawerAds(YTELMViewController *self) {
     }
     if (premiumCell == nil) return;
     ASDisplayNode *node = premiumCell.node;
-    for (id child in [node.yogaChildren copy]) {
-        [node removeYogaChild:child];
-    }
+    for (ASDisplayNode *child in node.yogaChildren) [node removeYogaChild:child];
     [premiumCell removeFromSuperview];
 }
 

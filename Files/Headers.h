@@ -9,6 +9,7 @@
 #import <YouTubeHeader/YTWatchController.h>
 #import <YouTubeHeader/YTIMenuConditionalServiceItemRenderer.h>
 #import <YouTubeHeader/YTIPivotBarRenderer.h>
+#import <YouTubeHeader/YTIPivotBarItemRenderer.h>
 #import <YouTubeHeader/YTPivotBarItemView.h>
 #import <YouTubeHeader/YTActionSheetAction.h>
 #import <YouTubeHeader/YTIMenuItemSupportedRenderers.h>
@@ -546,6 +547,10 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 @end
 
 @interface SSOConfiguration : NSObject
+@end
+
+@interface YTIPivotBarItemRenderer (YouMod)
+@property (nonatomic, strong, readwrite) YTIFormattedString *title;
 @end
 
 @interface ASDisplayNode (YouMod)

@@ -239,12 +239,12 @@ static void YMOpenLinkFromClipboard(UIViewController *presentingVC, BOOL isRunti
 static BOOL isGestureRegistered = NO;
 // Hide Tab Labels + long-press on the first tab to open Manage Tabs
 %hook YTPivotBarItemView
-- (void)setRenderer:(YTIPivotBarRenderer *)renderer {
-    %orig;
+- (void)setRenderer:(YTIPivotBarItemRenderer *)renderer {
     if (IS_ENABLED(HideTabLabels)) {
-        [self.navigationButton setTitle:@"" forState:UIControlStateNormal];
+        renderer.title = nil;
         [self.navigationButton setSizeWithPaddingAndInsets:NO];
     }
+    %orig;
     if (!isGestureRegistered) {
         UIContextMenuInteraction *interaction = [[UIContextMenuInteraction alloc] initWithDelegate:(id<UIContextMenuInteractionDelegate>)self];
         [self addInteraction:interaction];
