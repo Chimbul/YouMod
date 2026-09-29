@@ -713,7 +713,9 @@ static BOOL SBGetDecorationViewTimeRange(UIView *view, CGFloat *outStart, CGFloa
 static BOOL SBDecorationCanApplyRoundedCorners(UIView *view) {
     YTIPlayerBarDecorationModel *model = [view valueForKey:@"_model"];
     if (!model.style.hasRoundedCorners) return NO;
-    return ((YTMainAppVideoPlayerOverlayViewController *)view._viewControllerForAncestor).isFullscreen;
+    YTMainAppVideoPlayerOverlayViewController *ovc = (YTMainAppVideoPlayerOverlayViewController *)view._viewControllerForAncestor;
+    if (![ovc isKindOfClass:%c(YTMainAppVideoPlayerOverlayViewController)]) return NO;
+    return ovc.isFullscreen;
 }
 
 static void SBRemoveMarkerContainerFromLayer(CALayer *hostLayer) {
@@ -804,10 +806,14 @@ static void SBRebuildMarkersInLayer(CALayer *hostLayer, NSArray<SBSegment *> *se
     [CATransaction commit];
 }
 
+static int playerBarMode = 0;
+
 static void SBRebuildMarkersInDecorationView(UIView *view) {
     SBRemoveMarkerContainerFromLayer(view.layer);
 
-    if (!IS_ENABLED(SBEnabled) || !IS_ENABLED(SBButtonKey) || (!IS_ENABLED(SBSegmentsInPlayer) && !IS_ENABLED(SBSegmentsInFeed))) return;
+    if (!IS_ENABLED(SBEnabled) || !IS_ENABLED(SBButtonKey) || playerBarMode == 0) return;
+    else if (!IS_ENABLED(SBSegmentsInPlayer) && playerBarMode == 1) return;
+    else if (!IS_ENABLED(SBSegmentsInFeed) && playerBarMode == 2) return;
 
     CGFloat start = 0.0, end = 0.0;
     if (!SBGetDecorationViewTimeRange(view, &start, &end)) return;
@@ -876,6 +882,7 @@ static void SBRebuildMarkersInDecorationView(UIView *view) {
     else if (!IS_ENABLED(SBButtonKey)) return;
     if (!segments) segments = self.sbSegments;
     if (!segments || segments.count == 0) return;
+    playerBarMode = 0;
 
     sbActivePlayerSegments = segments;
 
@@ -886,6 +893,7 @@ static void SBRebuildMarkersInDecorationView(UIView *view) {
     if ([self.parentViewController isKindOfClass:%c(YTWatchFloatingMiniplayerViewController)] && IS_ENABLED(SBSegmentsInMiniPlayer)) {
         progressBarLayer = ((YTWatchFloatingMiniplayerViewController *)self.parentViewController).watchFloatingMiniplayerView.progressBarView.layer;
     } else if ([self.activeVideoPlayerOverlay isKindOfClass:%c(YTMainAppVideoPlayerOverlayViewController)] && IS_ENABLED(SBSegmentsInPlayer)) {
+        playerBarMode = 1;
         YTModularPlayerBarView *playerBarView = ((YTMainAppVideoPlayerOverlayViewController *)self.activeVideoPlayerOverlay).playerBarController.playerBar.modularPlayerBar.view;
         for (UIView *sub in playerBarView.subviews) {
             if ([sub isKindOfClass:%c(YTPlayerBarProgressDecorationView)] ||
@@ -893,10 +901,12 @@ static void SBRebuildMarkersInDecorationView(UIView *view) {
                 SBRebuildMarkersInDecorationView(sub);
             }
         }
+        return;
     } else if ([self.activeVideoPlayerOverlay isKindOfClass:%c(YTInlineMutedPlaybackPlayerOverlayViewController)] && IS_ENABLED(SBSegmentsInFeed)) {
         YTInlineMutedPlaybackPlayerOverlayView *view = (YTInlineMutedPlaybackPlayerOverlayView *)((YTInlineMutedPlaybackPlayerOverlayViewController *)self.activeVideoPlayerOverlay).view;
         YTInlineMutedPlaybackScrubberView *scrubView = view.scrubberView;
         if (scrubView.modularPlayerBarEnabled) {
+            playerBarMode = 2;
             YTModularPlayerBarView *modularView = scrubView.modularPlayerBar.view;
             for (UIView *sub in modularView.subviews) {
                 if ([sub isKindOfClass:%c(YTPlayerBarProgressDecorationView)] ||
@@ -904,6 +914,7 @@ static void SBRebuildMarkersInDecorationView(UIView *view) {
                     SBRebuildMarkersInDecorationView(sub);
                 }
             }
+            return;
         } else {
             progressBarLayer = scrubView.scrubber.layer;
         }
