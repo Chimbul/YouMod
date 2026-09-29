@@ -824,8 +824,14 @@ static void SBRebuildMarkersInLayer(CALayer *hostLayer, NSArray<SBSegment *> *se
 }
 
 static void SBRebuildMarkersInDecorationView(UIView *view) {
-    NSArray<SBSegment *> *segments = objc_getAssociatedObject(view, @selector(sbSegmentsForView));
-    NSInteger context = [objc_getAssociatedObject(view, @selector(sbMarkerContextForView)) integerValue];
+    // Stamps live on the bar view, not on the decoration view: YouTube swaps
+    // decoration subviews as the bar changes state, and a fresh view reads the
+    // same stamps instead of starting blank until the next refresh.
+    UIView *barView = view.superview;
+    if (![barView isKindOfClass:%c(YTModularPlayerBarView)]) return;
+
+    NSArray<SBSegment *> *segments = objc_getAssociatedObject(barView, @selector(sbSegmentsForView));
+    NSInteger context = [objc_getAssociatedObject(barView, @selector(sbMarkerContextForView)) integerValue];
 
     // Disabled or segment-less: clearing is the outcome the user asked for.
     if (!SBMarkersEnabledForContext(context) || segments.count == 0) {
@@ -931,11 +937,11 @@ static void SBRebuildMarkersInDecorationView(UIView *view) {
     } else if ([self.activeVideoPlayerOverlay isKindOfClass:%c(YTMainAppVideoPlayerOverlayViewController)]) {
         if (!IS_ENABLED(SBSegmentsInPlayer)) return;
         YTModularPlayerBarView *playerBarView = ((YTMainAppVideoPlayerOverlayViewController *)self.activeVideoPlayerOverlay).playerBarController.playerBar.modularPlayerBar.view;
+        objc_setAssociatedObject(playerBarView, @selector(sbSegmentsForView), segments, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        objc_setAssociatedObject(playerBarView, @selector(sbMarkerContextForView), @(SBMarkerContextPlayer), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
         for (UIView *sub in playerBarView.subviews) {
             if ([sub isKindOfClass:%c(YTPlayerBarProgressDecorationView)] ||
                 [sub isKindOfClass:%c(YTPlayerBarRectangleDecorationView)]) {
-                objc_setAssociatedObject(sub, @selector(sbSegmentsForView), segments, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-                objc_setAssociatedObject(sub, @selector(sbMarkerContextForView), @(SBMarkerContextPlayer), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
                 SBRebuildMarkersInDecorationView(sub);
             }
         }
@@ -945,11 +951,11 @@ static void SBRebuildMarkersInDecorationView(UIView *view) {
         YTInlineMutedPlaybackScrubberView *scrubView = view.scrubberView;
         if (scrubView.modularPlayerBarEnabled) {
             YTModularPlayerBarView *modularView = scrubView.modularPlayerBar.view;
+            objc_setAssociatedObject(modularView, @selector(sbSegmentsForView), segments, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+            objc_setAssociatedObject(modularView, @selector(sbMarkerContextForView), @(SBMarkerContextFeed), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
             for (UIView *sub in modularView.subviews) {
                 if ([sub isKindOfClass:%c(YTPlayerBarProgressDecorationView)] ||
                     [sub isKindOfClass:%c(YTPlayerBarRectangleDecorationView)]) {
-                    objc_setAssociatedObject(sub, @selector(sbSegmentsForView), segments, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-                    objc_setAssociatedObject(sub, @selector(sbMarkerContextForView), @(SBMarkerContextFeed), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
                     SBRebuildMarkersInDecorationView(sub);
                 }
             }
