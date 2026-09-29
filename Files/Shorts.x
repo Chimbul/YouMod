@@ -210,8 +210,7 @@ void YouModFilterShortsDisplayView(_ASDisplayView *view, NSString *iden) {
         view.superview.hidden = YES;
     } else if ([iden isEqualToString:@"eml.animated_subscribe_button"] && IS_ENABLED(RemoveShortsSubButton) && [view isKindOfClass:%c(YTShortsPlayerViewController)]) {
         view.hidden = YES;
-    } else {
-        if (![view isKindOfClass:%c(YTShortsPlayerViewController)]) return;
+    } else if ([view isKindOfClass:%c(YTShortsPlayerViewController)]) {
         ASDisplayNode *no = view.keepalive_node;
         NSString *desc = nil;
         @try {
