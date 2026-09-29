@@ -672,9 +672,26 @@ static void YMDismissExistingPillsInView(UIView *parentView, void (^completion)(
 
 #pragma mark - Marker Repositioning Hooks
 
-static NSArray<SBSegment *> *sbActivePlayerSegments = nil;
-
 static NSString *const SBSegmentMarkerLayerName = @"SBSegmentMarkerLayer";
+
+// Each bar view carries its own segment data as associated objects, stamped by
+// its player's sbRefreshMarkers. There is deliberately no process-wide segment
+// list: several players exist at once (main player + one per feed cell), and a
+// shared list made one player's segments bleed onto another's bar.
+static const NSInteger SBMarkerContextPlayer = 1;
+static const NSInteger SBMarkerContextFeed = 2;
+static const NSInteger SBMarkerContextMiniplayer = 3;
+
+// Master switches for a bar context; the decoration rebuild and the bar hooks
+// gate every pass through these so toggling a setting is reflected on the very
+// next layout tick.
+static BOOL SBMarkersEnabledForContext(NSInteger context) {
+    if (!IS_ENABLED(SBEnabled) || !IS_ENABLED(SBButtonKey)) return NO;
+    if (context == SBMarkerContextPlayer) return IS_ENABLED(SBSegmentsInPlayer);
+    if (context == SBMarkerContextFeed) return IS_ENABLED(SBSegmentsInFeed);
+    if (context == SBMarkerContextMiniplayer) return IS_ENABLED(SBSegmentsInMiniPlayer);
+    return NO;
+}
 
 static void SBApplyMarkerContainerRounding(CALayer *container, CGFloat barHeight) {
     if (!container || barHeight <= 0) return;
@@ -806,25 +823,24 @@ static void SBRebuildMarkersInLayer(CALayer *hostLayer, NSArray<SBSegment *> *se
     [CATransaction commit];
 }
 
-static int playerBarMode = 0;
-
 static void SBRebuildMarkersInDecorationView(UIView *view) {
-    SBRemoveMarkerContainerFromLayer(view.layer);
+    NSArray<SBSegment *> *segments = objc_getAssociatedObject(view, @selector(sbSegmentsForView));
+    NSInteger context = [objc_getAssociatedObject(view, @selector(sbMarkerContextForView)) integerValue];
 
-    if (!IS_ENABLED(SBEnabled) || !IS_ENABLED(SBButtonKey) || playerBarMode == 0) return;
-    else if (!IS_ENABLED(SBSegmentsInPlayer) && playerBarMode == 1) return;
-    else if (!IS_ENABLED(SBSegmentsInFeed) && playerBarMode == 2) return;
+    // Disabled or segment-less: clearing is the outcome the user asked for.
+    if (!SBMarkersEnabledForContext(context) || segments.count == 0) {
+        SBRemoveMarkerContainerFromLayer(view.layer);
+        return;
+    }
 
+    // Transient states (model not ready, mid-layout zero size): keep the old
+    // container so nothing blinks; the next tick rebuilds.
     CGFloat start = 0.0, end = 0.0;
     if (!SBGetDecorationViewTimeRange(view, &start, &end)) return;
-
-    CGFloat videoEnd = [[[view valueForKey:@"_model"] playingState] totalTimeSec];
     CGFloat barHeight = view.bounds.size.height;
     if (view.bounds.size.width <= 0 || barHeight <= 0) return;
 
-    NSArray<SBSegment *> *segments = sbActivePlayerSegments;
-    if (!segments || segments.count == 0) return;
-
+    CGFloat videoEnd = [[[view valueForKey:@"_model"] playingState] totalTimeSec];
     CALayer *container = [CALayer layer];
     container.name = SBSegmentMarkerLayerName;
     container.frame = view.bounds;
@@ -848,9 +864,29 @@ static void SBRebuildMarkersInDecorationView(UIView *view) {
 }
 %end
 
+// Bars without a decoration view (miniplayer, legacy feed slider) carry their
+// markers directly on their own layer: layout repositions them, and a disabled
+// toggle strips them on the spot.
 %hook YTWatchFloatingMiniplayerProgressBarView
 - (void)layoutSubviews {
     %orig;
+    if (!SBMarkersEnabledForContext(SBMarkerContextMiniplayer)) {
+        SBRemoveMarkerContainerFromLayer(self.layer);
+        return;
+    }
+    CGFloat barWidth = self.bounds.size.width, barHeight = self.bounds.size.height;
+    if (barWidth <= 0 || barHeight <= 0) return;
+    SBLayoutMarkerLayers(self.layer, barWidth, barHeight, NO);
+}
+%end
+
+%hook YTInlineMutedPlaybackScrubbingSlider
+- (void)layoutSubviews {
+    %orig;
+    if (!SBMarkersEnabledForContext(SBMarkerContextFeed)) {
+        SBRemoveMarkerContainerFromLayer(self.layer);
+        return;
+    }
     CGFloat barWidth = self.bounds.size.width, barHeight = self.bounds.size.height;
     if (barWidth <= 0 || barHeight <= 0) return;
     SBLayoutMarkerLayers(self.layer, barWidth, barHeight, NO);
@@ -877,51 +913,50 @@ static void SBRebuildMarkersInDecorationView(UIView *view) {
     [self sbRefreshMarkers:notification.userInfo[@"segments"]];
 }
 %new
+// Stamps each bar with its own segments (associated objects) and rebuilds it
+// once; the layout hooks keep the bars correct from there. An empty list is a
+// clearing pass — every path still runs, so stale markers never survive a
+// video change.
 - (void)sbRefreshMarkers:(NSArray<SBSegment *> *)segments {
-    if (!IS_ENABLED(SBSegmentsInPlayer) && !IS_ENABLED(SBSegmentsInMiniPlayer) && !IS_ENABLED(SBSegmentsInFeed)) return;
-    else if (!IS_ENABLED(SBButtonKey)) return;
+    if (!IS_ENABLED(SBEnabled) || !IS_ENABLED(SBButtonKey)) return;
     if (!segments) segments = self.sbSegments;
-    if (!segments || segments.count == 0) return;
-    playerBarMode = 0;
-
-    sbActivePlayerSegments = segments;
 
     CGFloat totalTime = [self currentVideoTotalMediaTime];
-    if (totalTime <= 0) return;
-    CALayer *progressBarLayer = nil;
+    if (segments.count > 0 && totalTime <= 0) return;
 
-    if ([self.parentViewController isKindOfClass:%c(YTWatchFloatingMiniplayerViewController)] && IS_ENABLED(SBSegmentsInMiniPlayer)) {
-        progressBarLayer = ((YTWatchFloatingMiniplayerViewController *)self.parentViewController).watchFloatingMiniplayerView.progressBarView.layer;
-    } else if ([self.activeVideoPlayerOverlay isKindOfClass:%c(YTMainAppVideoPlayerOverlayViewController)] && IS_ENABLED(SBSegmentsInPlayer)) {
-        playerBarMode = 1;
+    if ([self.parentViewController isKindOfClass:%c(YTWatchFloatingMiniplayerViewController)]) {
+        if (!IS_ENABLED(SBSegmentsInMiniPlayer)) return;
+        UIView *progressView = ((YTWatchFloatingMiniplayerViewController *)self.parentViewController).watchFloatingMiniplayerView.progressBarView;
+        SBRebuildMarkersInLayer(progressView.layer, segments, 0.0, totalTime, 0.0, totalTime);
+    } else if ([self.activeVideoPlayerOverlay isKindOfClass:%c(YTMainAppVideoPlayerOverlayViewController)]) {
+        if (!IS_ENABLED(SBSegmentsInPlayer)) return;
         YTModularPlayerBarView *playerBarView = ((YTMainAppVideoPlayerOverlayViewController *)self.activeVideoPlayerOverlay).playerBarController.playerBar.modularPlayerBar.view;
         for (UIView *sub in playerBarView.subviews) {
             if ([sub isKindOfClass:%c(YTPlayerBarProgressDecorationView)] ||
                 [sub isKindOfClass:%c(YTPlayerBarRectangleDecorationView)]) {
+                objc_setAssociatedObject(sub, @selector(sbSegmentsForView), segments, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+                objc_setAssociatedObject(sub, @selector(sbMarkerContextForView), @(SBMarkerContextPlayer), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
                 SBRebuildMarkersInDecorationView(sub);
             }
         }
-        return;
-    } else if ([self.activeVideoPlayerOverlay isKindOfClass:%c(YTInlineMutedPlaybackPlayerOverlayViewController)] && IS_ENABLED(SBSegmentsInFeed)) {
+    } else if ([self.activeVideoPlayerOverlay isKindOfClass:%c(YTInlineMutedPlaybackPlayerOverlayViewController)]) {
+        if (!IS_ENABLED(SBSegmentsInFeed)) return;
         YTInlineMutedPlaybackPlayerOverlayView *view = (YTInlineMutedPlaybackPlayerOverlayView *)((YTInlineMutedPlaybackPlayerOverlayViewController *)self.activeVideoPlayerOverlay).view;
         YTInlineMutedPlaybackScrubberView *scrubView = view.scrubberView;
         if (scrubView.modularPlayerBarEnabled) {
-            playerBarMode = 2;
             YTModularPlayerBarView *modularView = scrubView.modularPlayerBar.view;
             for (UIView *sub in modularView.subviews) {
                 if ([sub isKindOfClass:%c(YTPlayerBarProgressDecorationView)] ||
                     [sub isKindOfClass:%c(YTPlayerBarRectangleDecorationView)]) {
+                    objc_setAssociatedObject(sub, @selector(sbSegmentsForView), segments, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+                    objc_setAssociatedObject(sub, @selector(sbMarkerContextForView), @(SBMarkerContextFeed), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
                     SBRebuildMarkersInDecorationView(sub);
                 }
             }
-            return;
         } else {
-            progressBarLayer = scrubView.scrubber.layer;
+            SBRebuildMarkersInLayer(scrubView.scrubber.layer, segments, 0.0, totalTime, 0.0, totalTime);
         }
-    } else {
-        return;
     }
-    SBRebuildMarkersInLayer(progressBarLayer, segments, 0.0, totalTime, 0.0, totalTime);
 }
 - (void)setPlayerViewLayout:(NSInteger)layout {
     %orig;
