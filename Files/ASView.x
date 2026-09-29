@@ -74,7 +74,7 @@ static const void *kASViewKey = &kASViewKey;
         self.view.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor * _Nonnull(UITraitCollection * _Nonnull traitCollection) {
             return isDarkMode(self.view) ? [UIColor blackColor] : [UIColor whiteColor];
         }];
-    } else if (IS_ENABLED(OLEDTheme) && ([desc containsString:@"subs_channel_bar.eml"] || [desc containsString:@"subscriptions_channel_bar.eml"])) {
+    } else if (IS_ENABLED(OLEDTheme) && [desc containsString:@"subscriptions_channel_bar.eml"]) {
         UIView *sub = self.view.subviews[0];
         sub.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor * _Nonnull(UITraitCollection * _Nonnull traitCollection) {
             return isDarkMode(sub) ? [UIColor blackColor] : [UIColor clearColor];

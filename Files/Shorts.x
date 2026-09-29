@@ -193,7 +193,6 @@ void YouModRemoveShortsPausedButtons(_ASDisplayView *self, NSString *iden) {
 }
 
 void YouModFilterShortsDisplayView(_ASDisplayView *view, NSString *iden) {
-    if (!iden || iden.length == 0) return;
     if (([iden isEqualToString:@"product_sticker.main_target"] || [iden isEqualToString:@"product_sticker.secondary_target"]) && IS_ENABLED(HideShortsProducts)) {
         view.hidden = YES;
     } else if ([iden isEqualToString:@"id.elements.components.suggested_action"] && IS_ENABLED(HideShortsRecbar)) {
@@ -206,11 +205,11 @@ void YouModFilterShortsDisplayView(_ASDisplayView *view, NSString *iden) {
         [mainNode removeYogaChild:node];
         [maindpView removeFromSuperview];
     } else if ([iden isEqualToString:@"id.sponsor_button"] && IS_ENABLED(HideSponsorButton)) {
-        if (![view isKindOfClass:%c(YTWatchNextResultsViewController)] && ![view isKindOfClass:%c(YTShortsPlayerViewController)]) return;
+        if (![view._viewControllerForAncestor isKindOfClass:%c(YTWatchNextResultsViewController)] && ![view._viewControllerForAncestor isKindOfClass:%c(YTShortsPlayerViewController)]) return;
         view.superview.hidden = YES;
-    } else if ([iden isEqualToString:@"eml.animated_subscribe_button"] && IS_ENABLED(RemoveShortsSubButton) && [view isKindOfClass:%c(YTShortsPlayerViewController)]) {
+    } else if ([iden isEqualToString:@"eml.animated_subscribe_button"] && IS_ENABLED(RemoveShortsSubButton) && [view._viewControllerForAncestor isKindOfClass:%c(YTShortsPlayerViewController)]) {
         view.hidden = YES;
-    } else if ([view isKindOfClass:%c(YTShortsPlayerViewController)]) {
+    } else if ([view._viewControllerForAncestor isKindOfClass:%c(YTShortsPlayerViewController)]) {
         ASDisplayNode *no = view.keepalive_node;
         NSString *desc = nil;
         @try {
@@ -228,8 +227,8 @@ void YouModFilterShortsDisplayView(_ASDisplayView *view, NSString *iden) {
             }
             if (desc != nil && [desc containsString:@"reel_carousel.eml"] && IS_ENABLED(RemoveShortsRelatedButtons)) {
                 ASDisplayNode *node;
-                if ([view.superview isKindOfClass:%(ASScrollView)]) node = [view.superview performSelector:@selector(scrollNode)];
-                else node = ((_ASDisplayView *)view.superview).keepalive_node;
+                if ([view.superview isKindOfClass:%c(ASScrollView)]) node = [view.superview performSelector:@selector(scrollNode)];
+                else node = ((_ASDisplayView *)((_ASDisplayView *)view).superview).keepalive_node;
                 for (ASDisplayNode *child in node.yogaChildren) [node removeYogaChild:child];
             }
         }
