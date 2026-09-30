@@ -22,8 +22,8 @@
 "SOURCE_CODES_DESC" = "Mời bạn xem qua mã nguồn!";
 
 "EXTRA" = "Thêm";
-"FIX_PLAYBACK_ISSUES" = "Khắc phục lỗi phát video (tạm thời)";
-"FIX_PLAYBACK_ISSUES_DESC" = "Thử khắc phục lỗi phát video đối với một số người dùng. Khi bật, trình phát sẽ tự động tải lại mỗi khi gặp lỗi hoặc không phát được video.";
+"FIX_PLAYBACK_ISSUES" = "Fix playback issues (Experimental)";
+"FIX_PLAYBACK_ISSUES_DESC" = "This option is still experimental and may not work for some users.";
 
 "PERFER_HEADER" = "Tùy chọn YouMod";
 "PERFER" = "Tùy chọn";
@@ -412,7 +412,7 @@
 "ENABLES_SHORTS_QUALITY_DESC" = "Bật bắt buộc menu chọn chất lượng video trong Shorts.";
 "SHOW_SHORTS_SEEKBAR" = "Luôn hiển thị thanh tua";
 "SHOW_SHORTS_SEEKBAR_DESC" = "Giữ thanh tiến trình/thanh tua luôn hiển thị ở dưới cùng trình phát Shorts.";
-"DEFAULT_SPEED_SHORTS" = "Default playback rate (Shorts)";
+"DEFAULT_SPEED_SHORTS" = "Shorts default playback rate";
 "DEFAULT_SPEED_SHORTS_DESC" = "Overrides the default playback speed for Shorts, separate from regular videos.";
 "REMOVE_POSTS_SHORTS" = "Xóa bài đăng";
 "REMOVE_POSTS_SHORTS_DESC" = "Xóa bài đăng khỏi bảng tin.";
@@ -650,6 +650,7 @@
 "DOWNLOAD_LIBRARY_TAB" = "Download library";
 "DOWNLOAD_LIBRARY_TAB_DESC" = "Adds a tab that lists every downloaded video with thumbnails and sizes.";
 "DOWNLOAD_LIBRARY_EMPTY" = "No downloads yet";
+
 "LIBRARY_OPEN_VIDEO" = "Open Video on YouTube";
 "LIBRARY_NO_VIDEO_ID" = "Couldn't find this video's ID";
 "LIBRARY_SHARE" = "Share";

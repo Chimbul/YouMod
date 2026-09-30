@@ -22,8 +22,8 @@
 "SOURCE_CODES_DESC" = "Взгляните на код!";
 
 "EXTRA" = "Дополнительно";
-"FIX_PLAYBACK_ISSUES" = "Исправить проблемы воспроизведения (временно)";
-"FIX_PLAYBACK_ISSUES_DESC" = "Пытается исправить проблемы воспроизведения видео у некоторых пользователей. При включении плеер будет автоматически перезагружаться при каждой ошибке или неудачном воспроизведении видео.";
+"FIX_PLAYBACK_ISSUES" = "Fix playback issues (Experimental)";
+"FIX_PLAYBACK_ISSUES_DESC" = "This option is still experimental and may not work for some users.";
 
 "PERFER_HEADER" = "Настройки YouMod";
 "PERFER" = "Настройки";
@@ -412,7 +412,7 @@
 "ENABLES_SHORTS_QUALITY_DESC" = "Принудительно включает меню выбора качества видео в Shorts.";
 "SHOW_SHORTS_SEEKBAR" = "Всегда показывать полосу прогресса";
 "SHOW_SHORTS_SEEKBAR_DESC" = "Полоса прогресса всегда видна в нижней части плеера Shorts.";
-"DEFAULT_SPEED_SHORTS" = "Default playback rate (Shorts)";
+"DEFAULT_SPEED_SHORTS" = "Shorts default playback rate";
 "DEFAULT_SPEED_SHORTS_DESC" = "Overrides the default playback speed for Shorts, separate from regular videos.";
 "REMOVE_POSTS_SHORTS" = "Убрать публикации";
 "REMOVE_POSTS_SHORTS_DESC" = "Убирает публикации из ленты.";
@@ -649,6 +649,7 @@
 "DOWNLOAD_LIBRARY_TAB" = "Загрузки";
 "DOWNLOAD_LIBRARY_TAB_DESC" = "Добавляет вкладку со списком всех скачанных видео с превью и размерами.";
 "DOWNLOAD_LIBRARY_EMPTY" = "Пока нет загрузок";
+
 "LIBRARY_OPEN_VIDEO" = "Открыть видео в YouTube";
 "LIBRARY_NO_VIDEO_ID" = "Не удалось найти ID этого видео";
 "LIBRARY_SHARE" = "Поделиться";

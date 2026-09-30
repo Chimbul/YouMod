@@ -414,8 +414,9 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 
 @interface YTMainAppVideoPlayerOverlayView (YouMod) <UIGestureRecognizerDelegate>
 @property (nonatomic, weak, readwrite) YTMainAppVideoPlayerOverlayViewController *delegate;
-@property (nonatomic, strong) YTQTMButton *playbackRouteButton;
+@property (nonatomic, strong, readwrite) YTFullscreenActionsView *fullscreenActionsView;
 - (YTVideoFreeZoomOverlayView *)videoFreeZoomOverlayView;
+- (YTQTMButton *)playbackRouteButton;
 - (BOOL)isFullscreen;
 @end
 
@@ -484,6 +485,7 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 @property (nonatomic, assign, readonly) BOOL isPlayingAd;
 @property (nonatomic, strong) UIView *YouModSpeedToastView;
 @property (nonatomic, strong) UILabel *YouModSpeedToastLabel;
+@property (nonatomic, retain) UILongPressGestureRecognizer *YouModHoldGesture;
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer;
 - (void)YouModAutoFullscreen;
 - (void)YouModSetAutoSpeed;
@@ -793,7 +795,6 @@ typedef NS_ENUM(NSInteger, SBSegmentAction) {
 @property (nonatomic, strong) UIButton *actionButton;
 @property (nonatomic, strong) UIView *progressOverlay;
 @property (nonatomic, strong) UIImageView *infoIconView;
-@property (nonatomic, strong) NSLayoutConstraint *messageLabelLeadingConstraint;
 @property (nonatomic, assign) BOOL showsInfoIcon;
 @property (nonatomic, copy) void (^onAction)(void);
 @property (nonatomic, assign) NSTimeInterval totalDuration;

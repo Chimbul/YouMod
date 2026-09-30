@@ -22,8 +22,8 @@
 "SOURCE_CODES_DESC" = "Dai un'occhiata ai codici!";
 
 "EXTRA" = "Extra";
-"FIX_PLAYBACK_ISSUES" = "Correggi problemi di riproduzione (temporaneo)";
-"FIX_PLAYBACK_ISSUES_DESC" = "Prova a correggere i problemi di riproduzione video per alcuni utenti. Attivandola, il player si ricarica automaticamente ogni volta che si verifica un errore o la riproduzione del video non riesce.";
+"FIX_PLAYBACK_ISSUES" = "Fix playback issues (Experimental)";
+"FIX_PLAYBACK_ISSUES_DESC" = "This option is still experimental and may not work for some users.";
 
 "PERFER_HEADER" = "Preferenze di YouMod";
 "PERFER" = "Preferenze";
@@ -412,7 +412,7 @@
 "ENABLES_SHORTS_QUALITY_DESC" = "Forza l'attivazione del menu di selezione della qualità video negli Shorts.";
 "SHOW_SHORTS_SEEKBAR" = "Mostra sempre la barra di avanzamento";
 "SHOW_SHORTS_SEEKBAR_DESC" = "Garantisce che la barra di avanzamento (seekbar) sia sempre visibile nella parte inferiore del player degli Shorts.";
-"DEFAULT_SPEED_SHORTS" = "Default playback rate (Shorts)";
+"DEFAULT_SPEED_SHORTS" = "Shorts default playback rate";
 "DEFAULT_SPEED_SHORTS_DESC" = "Overrides the default playback speed for Shorts, separate from regular videos.";
 "REMOVE_POSTS_SHORTS" = "Rimuovi post";
 "REMOVE_POSTS_SHORTS_DESC" = "Rimuove i post dal feed.";
@@ -650,6 +650,7 @@
 "DOWNLOAD_LIBRARY_TAB" = "Download library";
 "DOWNLOAD_LIBRARY_TAB_DESC" = "Adds a tab that lists every downloaded video with thumbnails and sizes.";
 "DOWNLOAD_LIBRARY_EMPTY" = "No downloads yet";
+
 "LIBRARY_OPEN_VIDEO" = "Open Video on YouTube";
 "LIBRARY_NO_VIDEO_ID" = "Couldn't find this video's ID";
 "LIBRARY_SHARE" = "Share";

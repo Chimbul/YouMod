@@ -22,8 +22,8 @@
 "SOURCE_CODES_DESC" = "Kodlara göz atın!";
 
 "EXTRA" = "Ekstra";
-"FIX_PLAYBACK_ISSUES" = "Oynatma sorunlarını düzelt (Geçici)";
-"FIX_PLAYBACK_ISSUES_DESC" = "Bazı kullanıcılar için video oynatma sorunlarını düzeltmeyi dener. Bunu açmak, oynatıcının video oynatılamadığında veya hata verdiğinde kendini otomatik olarak yeniden yüklemesini sağlar.";
+"FIX_PLAYBACK_ISSUES" = "Fix playback issues (Experimental)";
+"FIX_PLAYBACK_ISSUES_DESC" = "This option is still experimental and may not work for some users.";
 
 "PERFER_HEADER" = "YouMod tercihleri";
 "PERFER" = "Tercihler";
@@ -414,7 +414,7 @@
 "ENABLES_SHORTS_QUALITY_DESC" = "Shorts'ta video kalitesi seçim menüsünü zorla etkinleştirir.";
 "SHOW_SHORTS_SEEKBAR" = "İlerleme çubuğunu her zaman göster";
 "SHOW_SHORTS_SEEKBAR_DESC" = "İlerleme çubuğunun Shorts oynatıcısının altında her zaman görünür olmasını sağlar.";
-"DEFAULT_SPEED_SHORTS" = "Default playback rate (Shorts)";
+"DEFAULT_SPEED_SHORTS" = "Shorts default playback rate";
 "DEFAULT_SPEED_SHORTS_DESC" = "Overrides the default playback speed for Shorts, separate from regular videos.";
 "REMOVE_POSTS_SHORTS" = "Gönderileri kaldır";
 "REMOVE_POSTS_SHORTS_DESC" = "Gönderileri akıştan kaldırır.";
@@ -653,6 +653,7 @@
 "DOWNLOAD_LIBRARY_TAB" = "Download library";
 "DOWNLOAD_LIBRARY_TAB_DESC" = "Adds a tab that lists every downloaded video with thumbnails and sizes.";
 "DOWNLOAD_LIBRARY_EMPTY" = "No downloads yet";
+
 "LIBRARY_OPEN_VIDEO" = "Open Video on YouTube";
 "LIBRARY_NO_VIDEO_ID" = "Couldn't find this video's ID";
 "LIBRARY_SHARE" = "Share";

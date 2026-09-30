@@ -122,9 +122,10 @@ static void YMDismissExistingPillsInView(UIView *parentView, void (^completion)(
     view.messageLabel = label;
     [view addSubview:label];
 
-    // Info icon on the leading edge, revealed by showsInfoIcon in
-    // layoutSubviews once callers have had their say
-    UIImageSymbolConfiguration *infoConfig = [UIImageSymbolConfiguration configurationWithPointSize:15 weight:UIImageSymbolWeightMedium];
+    // Info icon (trailing side): fills the reserved gap pills leave when
+    // there is no action or status icon; hidden in layoutSubviews for the
+    // success/error variants that bring their own icon
+    UIImageSymbolConfiguration *infoConfig = [UIImageSymbolConfiguration configurationWithPointSize:16 weight:UIImageSymbolWeightMedium];
     UIImageView *infoIcon = [[UIImageView alloc] initWithImage:[UIImage systemImageNamed:@"info.circle" withConfiguration:infoConfig]];
     infoIcon.tintColor = [UIColor colorWithWhite:1.0 alpha:0.65];
     infoIcon.hidden = YES;
@@ -154,29 +155,24 @@ static void YMDismissExistingPillsInView(UIView *parentView, void (^completion)(
     }
 
     // Internal layout
-    NSLayoutConstraint *labelLeading = [label.leadingAnchor constraintEqualToAnchor:view.leadingAnchor constant:16.0];
-    view.messageLabelLeadingConstraint = labelLeading;
     if (showButton) {
         [NSLayoutConstraint activateConstraints:@[
-            labelLeading,
+            [label.leadingAnchor constraintEqualToAnchor:view.leadingAnchor constant:16.0],
             [label.centerYAnchor constraintEqualToAnchor:view.centerYAnchor],
             [label.trailingAnchor constraintEqualToAnchor:button.leadingAnchor constant:-10.0],
 
             [button.trailingAnchor constraintEqualToAnchor:view.trailingAnchor constant:-8.0],
             [button.centerYAnchor constraintEqualToAnchor:view.centerYAnchor],
             [button.widthAnchor constraintEqualToConstant:32.0],
-            [button.heightAnchor constraintEqualToConstant:32.0],
-
-            [infoIcon.leadingAnchor constraintEqualToAnchor:view.leadingAnchor constant:14.0],
-            [infoIcon.centerYAnchor constraintEqualToAnchor:view.centerYAnchor]
+            [button.heightAnchor constraintEqualToConstant:32.0]
         ]];
     } else {
         [NSLayoutConstraint activateConstraints:@[
-            labelLeading,
+            [label.leadingAnchor constraintEqualToAnchor:view.leadingAnchor constant:16.0],
             [label.centerYAnchor constraintEqualToAnchor:view.centerYAnchor],
             [label.trailingAnchor constraintEqualToAnchor:view.trailingAnchor constant:-40.0],
 
-            [infoIcon.leadingAnchor constraintEqualToAnchor:view.leadingAnchor constant:14.0],
+            [infoIcon.trailingAnchor constraintEqualToAnchor:view.trailingAnchor constant:-12.0],
             [infoIcon.centerYAnchor constraintEqualToAnchor:view.centerYAnchor]
         ]];
     }
@@ -220,7 +216,6 @@ static void YMDismissExistingPillsInView(UIView *parentView, void (^completion)(
 - (void)layoutSubviews {
     [super layoutSubviews];
     self.infoIconView.hidden = !self.showsInfoIcon;
-    self.messageLabelLeadingConstraint.constant = self.showsInfoIcon ? 38.0 : 16.0;
     if (self.progressOverlay.layer.animationKeys.count == 0 || self.isPaused) {
         self.progressOverlay.frame = CGRectMake(0, 0, self.bounds.size.width, self.bounds.size.height);
     }

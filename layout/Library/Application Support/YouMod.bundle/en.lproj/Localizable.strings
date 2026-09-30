@@ -22,8 +22,8 @@
 "SOURCE_CODES_DESC" = "Take a look at the codes!";
 
 "EXTRA" = "Extra";
-"FIX_PLAYBACK_ISSUES" = "Fix playback issues (Temporary)";
-"FIX_PLAYBACK_ISSUES_DESC" = "Try to fix video playback issues for some users. Turning this on will make the player automatically reloads itself everytime it errors or fails to play the video.";
+"FIX_PLAYBACK_ISSUES" = "Fix playback issues (Experimental)";
+"FIX_PLAYBACK_ISSUES_DESC" = "This option is still experimental and may not work for some users.";
 
 "PERFER_HEADER" = "YouMod perferences";
 "PERFER" = "Perferences";
@@ -68,6 +68,7 @@
 "DOWNLOAD_LIBRARY_TAB" = "Download library";
 "DOWNLOAD_LIBRARY_TAB_DESC" = "Adds a tab that lists every downloaded video with thumbnails and sizes.";
 "DOWNLOAD_LIBRARY_EMPTY" = "No downloads yet";
+
 "LIBRARY_OPEN_VIDEO" = "Open Video on YouTube";
 "LIBRARY_NO_VIDEO_ID" = "Couldn't find this video's ID";
 "LIBRARY_SHARE" = "Share";
@@ -438,7 +439,7 @@
 "ENABLES_SHORTS_QUALITY_DESC" = "Force enable the video quality selection menu in Shorts.";
 "SHOW_SHORTS_SEEKBAR" = "Always show seekbar";
 "SHOW_SHORTS_SEEKBAR_DESC" = "Ensure the progress/seek bar is always visible at the bottom of the Shorts player.";
-"DEFAULT_SPEED_SHORTS" = "Default playback rate (Shorts)";
+"DEFAULT_SPEED_SHORTS" = "Shorts default playback rate";
 "DEFAULT_SPEED_SHORTS_DESC" = "Overrides the default playback speed for Shorts, separate from regular videos.";
 "REMOVE_POSTS_SHORTS" = "Remove posts";
 "REMOVE_POSTS_SHORTS_DESC" = "Remove posts from the feed.";

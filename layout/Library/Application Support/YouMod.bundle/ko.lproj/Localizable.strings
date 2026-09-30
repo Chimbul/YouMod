@@ -22,8 +22,8 @@
 "SOURCE_CODES_DESC" = "코드를 확인해보세요!";
 
 "EXTRA" = "기타";
-"FIX_PLAYBACK_ISSUES" = "재생 문제 해결 (임시)";
-"FIX_PLAYBACK_ISSUES_DESC" = "일부 사용자들이 겪는 동영상 재생 문제를 해결하려고 시도합니다. 이 옵션을 켜면 오류가 발생하거나 재생에 실패할 때마다 플레이어가 자동으로 다시 로드됩니다.";
+"FIX_PLAYBACK_ISSUES" = "Fix playback issues (Experimental)";
+"FIX_PLAYBACK_ISSUES_DESC" = "This option is still experimental and may not work for some users.";
 
 "PERFER_HEADER" = "YouMod 환경설정";
 "PERFER" = "환경설정";
@@ -412,7 +412,7 @@
 "ENABLES_SHORTS_QUALITY_DESC" = "Shorts에서 동영상 화질 선택 메뉴를 강제로 사용하도록 합니다.";
 "SHOW_SHORTS_SEEKBAR" = "탐색바 항상 표시";
 "SHOW_SHORTS_SEEKBAR_DESC" = "Shorts 플레이어 하단에 진행/탐색 바가 항상 표시되도록 합니다.";
-"DEFAULT_SPEED_SHORTS" = "Default playback rate (Shorts)";
+"DEFAULT_SPEED_SHORTS" = "Shorts default playback rate";
 "DEFAULT_SPEED_SHORTS_DESC" = "Overrides the default playback speed for Shorts, separate from regular videos.";
 "REMOVE_POSTS_SHORTS" = "게시물 제거";
 "REMOVE_POSTS_SHORTS_DESC" = "피드에서 게시물을 제거합니다.";
@@ -649,6 +649,7 @@
 "DOWNLOAD_LIBRARY_TAB" = "다운로드";
 "DOWNLOAD_LIBRARY_TAB_DESC" = "다운로드한 모든 동영상을 썸네일과 용량과 함께 보여주는 탭을 추가합니다.";
 "DOWNLOAD_LIBRARY_EMPTY" = "아직 다운로드한 항목이 없습니다";
+
 "LIBRARY_OPEN_VIDEO" = "YouTube에서 동영상 열기";
 "LIBRARY_NO_VIDEO_ID" = "이 동영상의 ID를 찾을 수 없습니다";
 "LIBRARY_SHARE" = "공유";

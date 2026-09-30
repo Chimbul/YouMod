@@ -22,8 +22,8 @@
 "SOURCE_CODES_DESC" = "来看看代码吧！";
 
 "EXTRA" = "额外";
-"FIX_PLAYBACK_ISSUES" = "修复播放问题（临时）";
-"FIX_PLAYBACK_ISSUES_DESC" = "尝试修复部分用户的视频播放问题。开启后，播放器出错或播放失败时会自动重新加载。";
+"FIX_PLAYBACK_ISSUES" = "Fix playback issues (Experimental)";
+"FIX_PLAYBACK_ISSUES_DESC" = "This option is still experimental and may not work for some users.";
 
 "PERFER_HEADER" = "YouMod 偏好设置";
 "PERFER" = "偏好设置";
@@ -412,7 +412,7 @@
 "ENABLES_SHORTS_QUALITY_DESC" = "强制在 Shorts 中启用视频画质选择菜单。";
 "SHOW_SHORTS_SEEKBAR" = "始终显示进度条";
 "SHOW_SHORTS_SEEKBAR_DESC" = "确保进度条始终显示在 Shorts 播放器底部。";
-"DEFAULT_SPEED_SHORTS" = "Default playback rate (Shorts)";
+"DEFAULT_SPEED_SHORTS" = "Shorts default playback rate";
 "DEFAULT_SPEED_SHORTS_DESC" = "Overrides the default playback speed for Shorts, separate from regular videos.";
 "REMOVE_POSTS_SHORTS" = "移除帖子";
 "REMOVE_POSTS_SHORTS_DESC" = "从信息流中移除帖子。";
@@ -650,6 +650,7 @@
 "DOWNLOAD_LIBRARY_TAB" = "Download library";
 "DOWNLOAD_LIBRARY_TAB_DESC" = "Adds a tab that lists every downloaded video with thumbnails and sizes.";
 "DOWNLOAD_LIBRARY_EMPTY" = "No downloads yet";
+
 "LIBRARY_OPEN_VIDEO" = "Open Video on YouTube";
 "LIBRARY_NO_VIDEO_ID" = "Couldn't find this video's ID";
 "LIBRARY_SHARE" = "Share";

@@ -911,13 +911,8 @@ static CGFloat YouModSpeedForHoldIndex(NSInteger index) {
 // setPlayerResponse: sets this directly, so the YTAnnotationsViewController hooks miss it.
 - (void)setFeaturedChannelWatermarkImageView:(id)arg { if (!IS_ENABLED(HideWaterMark)) %orig; }
 - (void)setLongPressGestureRecognizer:(UILongPressGestureRecognizer *)arg {
-    if (INTFORVAL(HoldToSpeedIndex) != 0 && arg != nil) {
-        UILongPressGestureRecognizer *ges = [[UILongPressGestureRecognizer alloc] initWithTarget:self._viewControllerForAncestor.parentViewController action:@selector(YouModHoldToSpeed:)];
-        ges.delegate = self;
-        ges.minimumPressDuration = 0.4;
-        arg = ges;
-    }
-    %orig(arg);
+    if (INTFORVAL(HoldToSpeedIndex) != 0) return;
+    %orig;
 }
 // Remove Dark Background in Overlay
 - (void)setBackgroundVisible:(BOOL)arg1 isGradientBackground:(BOOL)arg2 {
@@ -935,7 +930,10 @@ static CGFloat YouModSpeedForHoldIndex(NSInteger index) {
     if (IS_ENABLED(HideCastButtonPlayer) && self.playbackRouteButton != nil) self.playbackRouteButton.hidden = YES;
 }
 - (void)setFullscreenActionsView:(YTFullscreenActionsView *)actionsView {
-    if (IS_ENABLED(HideFullAction) && actionsView == nil) actionsView = [%c(YTFullscreenActionsView) new];
+    if (IS_ENABLED(HideFullAction) && actionsView == nil) {
+        if (self.fullscreenActionsView) return;
+        else actionsView = [%c(YTFullscreenActionsView) new];
+    }
     %orig(actionsView);
 }
 %end
@@ -1063,6 +1061,12 @@ static CGFloat YouModSpeedForHoldIndex(NSInteger index) {
             playerViewController.YouModTapGesture.delegate = playerViewController;
             [pv addGestureRecognizer:playerViewController.YouModTapGesture];
         }
+        if (!playerViewController.YouModHoldGesture && INTFORVAL(HoldToSpeedIndex) != 0) {
+            playerViewController.YouModHoldGesture = [[UILongPressGestureRecognizer alloc] initWithTarget:playerViewController action:@selector(YouModHoldToSpeed:)];
+            playerViewController.YouModHoldGesture.minimumPressDuration = 0.4;
+            playerViewController.YouModHoldGesture.delegate = playerViewController;
+            [pv addGestureRecognizer:playerViewController.YouModHoldGesture];   
+        }
     }
     %orig;
 }
@@ -1127,9 +1131,14 @@ static UISlider *YouModVolumeSlider(void) {
 %property (nonatomic, retain) UILabel *YouModGestureHUD;
 %property (nonatomic, strong) UIView *YouModSpeedToastView;
 %property (nonatomic, strong) UILabel *YouModSpeedToastLabel;
+%property (nonatomic, retain) UILongPressGestureRecognizer *YouModHoldGesture;
 %new
 - (BOOL)gestureRecognizerShouldBegin:(UIGestureRecognizer *)gestureRecognizer {
     if (gestureRecognizer == self.YouModPanGesture) {
+        if (self.YouModHoldGesture && (self.YouModHoldGesture.state == UIGestureRecognizerStateBegan || self.YouModHoldGesture.state == UIGestureRecognizerStateChanged)) {
+            return NO;
+        }
+
         if (isRelatedVideosPanelEnabled(self)) return NO;          
 
         UIPanGestureRecognizer *panGesture = (UIPanGestureRecognizer *)gestureRecognizer;
@@ -1169,6 +1178,15 @@ static UISlider *YouModVolumeSlider(void) {
 
             return YES;
         }
+    }
+    if (gestureRecognizer == self.YouModHoldGesture) {
+        if (self.YouModPanGesture && (self.YouModPanGesture.state == UIGestureRecognizerStateBegan || self.YouModPanGesture.state == UIGestureRecognizerStateChanged)) {
+            return NO;
+        }
+        if (isRelatedVideosPanelEnabled(self)) return NO;
+        CGPoint touchLocation = [gestureRecognizer locationInView:self.view];
+        CGFloat activeWidth = remainingOverlayWidth(self, self.view.bounds.size.width);
+        if (touchLocation.x > activeWidth) return NO;
     }
     return YES;
 }
@@ -1381,12 +1399,21 @@ static UISlider *YouModVolumeSlider(void) {
     if (gestureRecognizer == self.YouModPanGesture && [otherGestureRecognizer isKindOfClass:[UIPanGestureRecognizer class]]) {
         return YES;
     }
+    if (gestureRecognizer == self.YouModHoldGesture && ![otherGestureRecognizer isKindOfClass:[UIPanGestureRecognizer class]]) {
+        return YES;
+    }
     return NO;
 }
 
 %new
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer {
-    if (gestureRecognizer == self.YouModPanGesture) return NO;
+    if (gestureRecognizer == self.YouModPanGesture) return NO; 
+    if (gestureRecognizer == self.YouModHoldGesture || otherGestureRecognizer == self.YouModHoldGesture) {
+        if ([gestureRecognizer isKindOfClass:[UIPanGestureRecognizer class]] || [otherGestureRecognizer isKindOfClass:[UIPanGestureRecognizer class]]) {
+            return NO;
+        }
+        return YES;
+    }
     return YES;
 }
 
@@ -1419,6 +1446,9 @@ static UISlider *YouModVolumeSlider(void) {
 
 %new
 - (void)YouModSetAutoSpeed {
+    if (self.YouModHoldGesture && (self.YouModHoldGesture.state == UIGestureRecognizerStateBegan || self.YouModHoldGesture.state == UIGestureRecognizerStateChanged)) {
+        return;
+    }
     if (IS_ENABLED(GlobalSpeedLocked)) {
         NSInteger speedIndex = INTFORVAL(HoldToSpeedIndex);
         CGFloat speed = YouModSpeedForHoldIndex(speedIndex);

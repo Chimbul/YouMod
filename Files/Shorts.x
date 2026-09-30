@@ -198,12 +198,12 @@ void YouModFilterShortsDisplayView(_ASDisplayView *view, NSString *iden) {
     } else if ([iden isEqualToString:@"id.elements.components.suggested_action"] && IS_ENABLED(HideShortsRecbar)) {
         view.hidden = YES;
     } else if ([iden isEqualToString:@"eml.shorts-disclosures"] && IS_ENABLED(RemoveShortsDisclosure)) {
-        _ASDisplayView *dpView = (_ASDisplayView *)view.superview;
+        _ASDisplayView *dpView = (_ASDisplayView *)((_ASDisplayView *)view.superview).superview;
         ASDisplayNode *node = dpView.keepalive_node;
         _ASDisplayView *maindpView = (_ASDisplayView *)dpView.superview;
         ASDisplayNode *mainNode = maindpView.keepalive_node;
         [mainNode removeYogaChild:node];
-        [maindpView removeFromSuperview];
+        [dpView removeFromSuperview];
     } else if (([iden isEqualToString:@"id.sponsor_button"] || [iden isEqualToString:@"eml.reel_sponsor_button"]) && IS_ENABLED(HideSponsorButton)) {
         if (![view._viewControllerForAncestor isKindOfClass:%c(YTWatchNextResultsViewController)] && ![view._viewControllerForAncestor isKindOfClass:%c(YTShortsPlayerViewController)]) return;
         ASDisplayNode *supNode = ((_ASDisplayView *)view.superview).keepalive_node;
@@ -213,7 +213,8 @@ void YouModFilterShortsDisplayView(_ASDisplayView *view, NSString *iden) {
                 break;
             }
         }
-    } else if ([iden isEqualToString:@"eml.animated_subscribe_button"] && IS_ENABLED(RemoveShortsSubButton) && [view._viewControllerForAncestor isKindOfClass:%c(YTShortsPlayerViewController)]) {
+        [view removeFromSuperview];
+    } else if (([iden isEqualToString:@"eml.animated_subscribe_button"] || [iden isEqualToString:@"eml.compact_subscribe_button"]) && IS_ENABLED(RemoveShortsSubButton) && [view._viewControllerForAncestor isKindOfClass:%c(YTShortsPlayerViewController)]) {
         view.hidden = YES;
     } else if ([view._viewControllerForAncestor isKindOfClass:%c(YTShortsPlayerViewController)]) {
         ASDisplayNode *no = view.keepalive_node;

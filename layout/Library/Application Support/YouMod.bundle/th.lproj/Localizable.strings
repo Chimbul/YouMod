@@ -22,8 +22,8 @@
 "SOURCE_CODES_DESC" = "ลองอ่านโค้ดดูสิ!";
 
 "EXTRA" = "เพิ่มเติม";
-"FIX_PLAYBACK_ISSUES" = "แก้ไขปัญหาการเล่นวิดีโอ (ชั่วคราว)";
-"FIX_PLAYBACK_ISSUES_DESC" = "แก้ไขปัญหาการเล่นวิดีโอสำหรับผู้ใช้บางราย เมื่อเปิดใช้งานตัวเลือกนี้เครื่องเล่นจะรีโหลดอัตโนมัติเมื่อเกิดข้อผิดพลาดในการเล่นวิดีโอ";
+"FIX_PLAYBACK_ISSUES" = "แก้ไขปัญหาการเล่นวิดีโอ (ทดลอง)";
+"FIX_PLAYBACK_ISSUES_DESC" = "ตัวเลือกนี้ยังอยู่ในช่วงทดลอง อาจไม่สามารถใช้งานได้กับผู้ใช้บางราย";
 
 "PERFER_HEADER" = "การตั้งค่า YouMod";
 "PERFER" = "การตั้งค่า";
@@ -411,7 +411,7 @@
 "ENABLES_SHORTS_QUALITY_DESC" = "สามารถเลือกคุณภาพ Shorts ได้";
 "SHOW_SHORTS_SEEKBAR" = "แสดงแถบเลื่อนเสมอ";
 "SHOW_SHORTS_SEEKBAR_DESC" = "แสดงแถบความคืบหน้าเสมอ";
-"DEFAULT_SPEED_SHORTS" = "ความเร็วเล่นเริ่มต้น (Shorts)";
+"DEFAULT_SPEED_SHORTS" = "ความเร็วเล่นเริ่มต้น Shorts";
 "DEFAULT_SPEED_SHORTS_DESC" = "ตั้งความเร็วเล่นเริ่มต้นของ Shorts แยกจากวิดีโอปกติ";
 "REMOVE_POSTS_SHORTS" = "ลบโพสต์";
 "REMOVE_POSTS_SHORTS_DESC" = "นำโพสต์ออกจากฟีด";
@@ -665,6 +665,7 @@
 "DOWNLOAD_LIBRARY_TAB" = "คลังดาวน์โหลด";
 "DOWNLOAD_LIBRARY_TAB_DESC" = "เพิ่มแท็บที่แสดงรายการวิดีโอที่ดาวน์โหลดไว้ทั้งหมด";
 "DOWNLOAD_LIBRARY_EMPTY" = "ยังไม่มีรายการดาวน์โหลด";
+
 "LIBRARY_OPEN_VIDEO" = "เปิดวิดีโอบน YouTube";
 "LIBRARY_NO_VIDEO_ID" = "หา ID ของวิดีโอนี้ไม่ได้";
 "LIBRARY_SHARE" = "แชร์";

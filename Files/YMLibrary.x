@@ -318,12 +318,156 @@ static void ymPauseOtherPlayers(void) {
 }
 %end
 
+#pragma mark - Pull-to-refresh control
+
+static const CGFloat ymRefreshTriggerDistance = 64.0;
+static void *ymRefreshOffsetContext = &ymRefreshOffsetContext;
+
+// Custom pull-to-refresh header for the library grid: the arrow rotates with
+// the pull, then spins continuously while refreshing. Lives inside the
+// collection view's content, above the first row.
+@interface YMLibraryRefreshControl : UIView
+@property (nonatomic, copy) void (^onRefresh)(void);
+@property (nonatomic, readonly, getter=isRefreshing) BOOL refreshing;
+- (void)beginRefreshing;
+- (void)endRefreshing;
+@end
+
+@implementation YMLibraryRefreshControl {
+    UIImageView *_iconView;
+    BOOL _isRefreshing;
+    BOOL _observing;
+}
+
+- (instancetype)initWithFrame:(CGRect)frame {
+    self = [super initWithFrame:frame];
+    if (self) {
+        self.backgroundColor = [UIColor clearColor];
+
+        _iconView = [UIImageView new];
+        _iconView.image = YouModSymbolImageInCanvas(@"arrow.down", 24, 18, UIImageSymbolWeightMedium);
+        _iconView.tintColor = [UIColor secondaryLabelColor];
+        _iconView.contentMode = UIViewContentModeCenter;
+        _iconView.translatesAutoresizingMaskIntoConstraints = NO;
+        [self addSubview:_iconView];
+
+        [NSLayoutConstraint activateConstraints:@[
+            [_iconView.centerXAnchor constraintEqualToAnchor:self.centerXAnchor],
+            [_iconView.centerYAnchor constraintEqualToAnchor:self.centerYAnchor],
+            [_iconView.widthAnchor constraintEqualToConstant:24],
+            [_iconView.heightAnchor constraintEqualToConstant:24],
+        ]];
+    }
+    return self;
+}
+
+- (BOOL)isRefreshing {
+    return _isRefreshing;
+}
+
+// KVO on the owning scroll view's contentOffset drives the whole control.
+- (void)didMoveToSuperview {
+    [super didMoveToSuperview];
+    if (_observing) {
+        [self.observedScrollView removeObserver:self forKeyPath:@"contentOffset" context:ymRefreshOffsetContext];
+        _observing = NO;
+    }
+    if ([self.superview isKindOfClass:[UIScrollView class]]) {
+        [self.observedScrollView addObserver:self forKeyPath:@"contentOffset" options:NSKeyValueObservingOptionNew context:ymRefreshOffsetContext];
+        _observing = YES;
+    }
+}
+
+- (UIScrollView *)observedScrollView {
+    return (UIScrollView *)self.superview;
+}
+
+- (void)dealloc {
+    if (_observing) {
+        [self.observedScrollView removeObserver:self forKeyPath:@"contentOffset" context:ymRefreshOffsetContext];
+    }
+}
+
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSKeyValueChangeKey, id> *)change context:(void *)context {
+    if (context != ymRefreshOffsetContext) {
+        [super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
+        return;
+    }
+    UIScrollView *scrollView = (UIScrollView *)object;
+    CGFloat pull = -(scrollView.contentOffset.y + scrollView.adjustedContentInset.top);
+    if (pull <= 0) {
+        [self updateWithPullDistance:0];
+        return;
+    }
+    [self updateWithPullDistance:pull];
+
+    UIGestureRecognizerState panState = scrollView.panGestureRecognizer.state;
+    BOOL dragging = panState == UIGestureRecognizerStateBegan || panState == UIGestureRecognizerStateChanged;
+    if (_isRefreshing) return;
+    if (!dragging && pull >= ymRefreshTriggerDistance) {
+        [self beginRefreshing];
+    } else if (!dragging && !CGAffineTransformEqualToTransform(_iconView.transform, CGAffineTransformIdentity)) {
+        // Released before the threshold: settle the arrow back upright.
+        [UIView animateWithDuration:0.25 animations:^{
+            self->_iconView.transform = CGAffineTransformIdentity;
+        }];
+    }
+}
+
+- (void)updateWithPullDistance:(CGFloat)pull {
+    CGFloat progress = MIN(MAX(pull / ymRefreshTriggerDistance, 0), 1);
+    if (_isRefreshing) return;
+    // The arrow flips from pointing down to pointing up across the pull.
+    _iconView.transform = CGAffineTransformMakeRotation(progress * (CGFloat)M_PI);
+    CGFloat alpha = 0.25 + 0.75 * progress;
+    _iconView.alpha = alpha;
+}
+
+- (void)beginRefreshing {
+    if (_isRefreshing) return;
+    _isRefreshing = YES;
+
+    // Continuous spin; the base transform stays where the pull left it and is
+    // reset when refreshing ends.
+    CABasicAnimation *spin = [CABasicAnimation animationWithKeyPath:@"transform.rotation"];
+    spin.toValue = @((CGFloat)M_PI * 2.0);
+    spin.duration = 0.8;
+    spin.repeatCount = HUGE_VALF;
+    [_iconView.layer addAnimation:spin forKey:@"ymLibraryRefreshSpin"];
+    _iconView.alpha = 1.0;
+
+    UIScrollView *scrollView = self.observedScrollView;
+    if ([scrollView isKindOfClass:[UIScrollView class]]) {
+        CGPoint target = CGPointMake(scrollView.contentOffset.x, -scrollView.adjustedContentInset.top - self.bounds.size.height);
+        [scrollView setContentOffset:target animated:YES];
+    }
+    if (self.onRefresh) self.onRefresh();
+}
+
+- (void)endRefreshing {
+    if (!_isRefreshing) return;
+    _isRefreshing = NO;
+    [_iconView.layer removeAnimationForKey:@"ymLibraryRefreshSpin"];
+    [UIView animateWithDuration:0.3 animations:^{
+        self->_iconView.transform = CGAffineTransformIdentity;
+    }];
+
+    UIScrollView *scrollView = self.observedScrollView;
+    if ([scrollView isKindOfClass:[UIScrollView class]]) {
+        CGPoint target = CGPointMake(scrollView.contentOffset.x, -scrollView.adjustedContentInset.top);
+        [scrollView setContentOffset:target animated:YES];
+    }
+}
+
+@end
+
 #pragma mark - Library view controller
 
 @interface YMLibraryViewController : UIViewController <UICollectionViewDataSource, UICollectionViewDelegate, UISearchBarDelegate>
 @property (nonatomic, strong) UICollectionView *collectionView;
 @property (nonatomic, strong) UISearchBar *searchBar;
 @property (nonatomic, strong) UILabel *emptyLabel;
+@property (nonatomic, strong) YMLibraryRefreshControl *refreshControl;
 @property (nonatomic, strong) NSMutableArray<YMLibraryRow *> *allRows; // unfiltered backing store
 @property (nonatomic, strong) NSMutableArray<YMLibraryRow *> *rows;    // currently displayed (search-filtered)
 @property (nonatomic, weak) id hostParentResponder;
@@ -377,6 +521,24 @@ static void ymPauseOtherPlayers(void) {
     _collectionView.translatesAutoresizingMaskIntoConstraints = NO;
     [_collectionView registerClass:[YMLibraryVideoCell class] forCellWithReuseIdentifier:@"video"];
     [self.view addSubview:_collectionView];
+
+    _refreshControl = [YMLibraryRefreshControl new];
+    _refreshControl.translatesAutoresizingMaskIntoConstraints = NO;
+    [_collectionView addSubview:_refreshControl];
+    [NSLayoutConstraint activateConstraints:@[
+        // Parked just above the content origin so it slides in from the top
+        // without ever overlapping the grid rows.
+        [_refreshControl.topAnchor constraintEqualToAnchor:_collectionView.contentLayoutGuide.topAnchor constant:-ymRefreshTriggerDistance],
+        [_refreshControl.leadingAnchor constraintEqualToAnchor:_collectionView.contentLayoutGuide.leadingAnchor],
+        [_refreshControl.trailingAnchor constraintEqualToAnchor:_collectionView.contentLayoutGuide.trailingAnchor],
+        [_refreshControl.heightAnchor constraintEqualToConstant:ymRefreshTriggerDistance],
+    ]];
+    __weak typeof(self) weakSelf = self;
+    _refreshControl.onRefresh = ^{
+        [weakSelf reloadWithCompletion:^{
+            [weakSelf.refreshControl endRefreshing];
+        }];
+    };
 
     [NSLayoutConstraint activateConstraints:@[
         [topBar.topAnchor constraintEqualToAnchor:self.view.topAnchor],
@@ -466,7 +628,7 @@ static void ymPauseOtherPlayers(void) {
     [event send];
 }
 
-- (void)reload {
+- (void)reloadWithCompletion:(void (^)(void))completion {
     dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
         NSArray<NSURL *> *files = ymLibraryFileURLsNewestFirst();
         NSMutableArray<YMLibraryRow *> *rows = [NSMutableArray arrayWithCapacity:files.count];
@@ -492,8 +654,13 @@ static void ymPauseOtherPlayers(void) {
             self.allRows = rows;
             [self applyFilter:self.searchBar.text];
             self.emptyLabel.hidden = rows.count > 0;
+            if (completion) completion();
         });
     });
+}
+
+- (void)reload {
+    [self reloadWithCompletion:nil];
 }
 
 - (void)applyFilter:(NSString *)query {
