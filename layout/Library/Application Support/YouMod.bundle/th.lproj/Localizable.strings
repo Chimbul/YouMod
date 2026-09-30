@@ -528,7 +528,7 @@
 "HIDE_INFO_BUTTON_PANEL" = "ซ่อนปุ่มข้อมูล";
 "HIDE_INFO_BUTTON_PANEL_DESC" = "ซ่อนปุ่มข้อมูลจากด้านบนของแผง";
 "HIDE_SORT_FILTER_PANEL" = "ซ่อนปุ่มจัดเรียงและตัวกรอง";
-"HIDE_SORT_FILTER_PANEL_DESC" = "ซ่อนปุ่มจัดเรียงและตัวกรองจากด้านบนของแผง";
+"HIDE_SORT_FILTER_PANEL_DESC" = "ซ่อนปุ่มจัดเรียงและตัวกรองจากด้านบนของแผง (ยกเว้นในไลฟ์)";
 "DISABLES_RTL" = "ปิดใช้งานเลย์เอาต์ RTL";
 "DISABLES_RTL_DESC" = "บังคับให้แสดงผลจากซ้ายไปขวา (LTR) และปิดการจัดหน้าแบบขวาไปซ้าย (RTL)";
 "DEVICE_UI" = "รูปแบบอุปกรณ์";

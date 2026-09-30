@@ -529,7 +529,7 @@
 "HIDE_INFO_BUTTON_PANEL" = "Hide info button";
 "HIDE_INFO_BUTTON_PANEL_DESC" = "Hide the info button in the engagement panel.";
 "HIDE_SORT_FILTER_PANEL" = "Hide sort & filter button";
-"HIDE_SORT_FILTER_PANEL_DESC" = "Hide the sort and filter button from the top of the panel.";
+"HIDE_SORT_FILTER_PANEL_DESC" = "Hide the sort and filter button from the top of the panel (except in live).";
 "DISABLES_RTL" = "禁用 RTL 格式";
 "DISABLES_RTL_DESC" = "强制以从左到右 (LTR) 格式显示最初为从右到左 (RTL) 显示的语言文本。";
 "DEVICE_UI" = "界面风格";

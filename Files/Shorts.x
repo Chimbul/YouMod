@@ -204,9 +204,15 @@ void YouModFilterShortsDisplayView(_ASDisplayView *view, NSString *iden) {
         ASDisplayNode *mainNode = maindpView.keepalive_node;
         [mainNode removeYogaChild:node];
         [maindpView removeFromSuperview];
-    } else if ([iden isEqualToString:@"id.sponsor_button"] && IS_ENABLED(HideSponsorButton)) {
+    } else if (([iden isEqualToString:@"id.sponsor_button"] || [iden isEqualToString:@"eml.reel_sponsor_button"]) && IS_ENABLED(HideSponsorButton)) {
         if (![view._viewControllerForAncestor isKindOfClass:%c(YTWatchNextResultsViewController)] && ![view._viewControllerForAncestor isKindOfClass:%c(YTShortsPlayerViewController)]) return;
-        view.superview.hidden = YES;
+        ASDisplayNode *supNode = ((_ASDisplayView *)view.superview).keepalive_node;
+        for (ASDisplayNode *child in supNode.yogaChildren) {
+            if ([child.description containsString:@"sponsor_button"]) {
+                [supNode removeYogaChild:child];
+                break;
+            }
+        }
     } else if ([iden isEqualToString:@"eml.animated_subscribe_button"] && IS_ENABLED(RemoveShortsSubButton) && [view._viewControllerForAncestor isKindOfClass:%c(YTShortsPlayerViewController)]) {
         view.hidden = YES;
     } else if ([view._viewControllerForAncestor isKindOfClass:%c(YTShortsPlayerViewController)]) {
@@ -216,17 +222,19 @@ void YouModFilterShortsDisplayView(_ASDisplayView *view, NSString *iden) {
             desc = [[[no nodeController] performSelector:@selector(owningComponent)] description];
         } @catch (...) {}
         if (desc != nil && [desc containsString:@"participation_bar.eml"] && IS_ENABLED(RemoveShortsCommentBar)) {
-            for (ASDisplayNode *child in no.yogaChildren) [no removeYogaChild:child];
+            ASDisplayNode *supNode = ((_ASDisplayView *)view.superview).keepalive_node;
+            [supNode removeYogaChild:no];
             [view removeFromSuperview];
         } else {
             desc = nil;
             @try {
-                desc = [[[[[no nodeController] performSelector:@selector(parent)] performSelector:@selector(children)] performSelector:@selector(firstObject)] description];
+                desc = [[[[no nodeController] performSelector:@selector(children)] performSelector:@selector(firstObject)] description];
             } @catch (...) {
                 return;
             }
             if (desc != nil && [desc containsString:@"reel_carousel.eml"] && IS_ENABLED(RemoveShortsRelatedButtons)) {
-                for (ASDisplayNode *child in no.yogaChildren) [no removeYogaChild:child];
+                ASDisplayNode *supNode = ((_ASDisplayView *)view.superview).keepalive_node;
+                [supNode removeYogaChild:no];
                 [view removeFromSuperview];
             }
         }

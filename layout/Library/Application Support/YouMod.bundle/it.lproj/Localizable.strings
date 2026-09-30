@@ -529,7 +529,7 @@
 "HIDE_INFO_BUTTON_PANEL" = "Hide info button";
 "HIDE_INFO_BUTTON_PANEL_DESC" = "Hide the info button in the engagement panel.";
 "HIDE_SORT_FILTER_PANEL" = "Hide sort & filter button";
-"HIDE_SORT_FILTER_PANEL_DESC" = "Hide the sort and filter button from the top of the panel.";
+"HIDE_SORT_FILTER_PANEL_DESC" = "Hide the sort and filter button from the top of the panel (except in live).";
 "DISABLES_RTL" = "Disattiva formato RTL";
 "DISABLES_RTL_DESC" = "Visualizza forzatamente il testo nel formato da sinistra a destra (LTR) per le lingue che vengono normalmente mostrate da destra a sinistra (RTL).";
 "DEVICE_UI" = "Stile interfaccia";

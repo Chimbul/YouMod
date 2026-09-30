@@ -529,7 +529,7 @@
 "HIDE_INFO_BUTTON_PANEL" = "Hide info button";
 "HIDE_INFO_BUTTON_PANEL_DESC" = "Hide the info button in the engagement panel.";
 "HIDE_SORT_FILTER_PANEL" = "Hide sort & filter button";
-"HIDE_SORT_FILTER_PANEL_DESC" = "Hide the sort and filter button from the top of the panel.";
+"HIDE_SORT_FILTER_PANEL_DESC" = "Hide the sort and filter button from the top of the panel (except in live).";
 "DISABLES_RTL" = "Tắt định dạng RTL";
 "DISABLES_RTL_DESC" = "Buộc hiển thị văn bản theo định dạng từ trái sang phải (LTR) với các ngôn ngữ vốn được viết từ phải sang trái (RTL).";
 "DEVICE_UI" = "Kiểu giao diện";

@@ -412,7 +412,7 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 @interface YTFullscreenActionsView : UIView
 @end
 
-@interface YTMainAppVideoPlayerOverlayView (YouMod)
+@interface YTMainAppVideoPlayerOverlayView (YouMod) <UIGestureRecognizerDelegate>
 @property (nonatomic, weak, readwrite) YTMainAppVideoPlayerOverlayViewController *delegate;
 @property (nonatomic, strong) YTQTMButton *playbackRouteButton;
 - (YTVideoFreeZoomOverlayView *)videoFreeZoomOverlayView;
@@ -484,7 +484,6 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 @property (nonatomic, assign, readonly) BOOL isPlayingAd;
 @property (nonatomic, strong) UIView *YouModSpeedToastView;
 @property (nonatomic, strong) UILabel *YouModSpeedToastLabel;
-@property (nonatomic, retain) UILongPressGestureRecognizer *YouModHoldGesture;
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer;
 - (void)YouModAutoFullscreen;
 - (void)YouModSetAutoSpeed;

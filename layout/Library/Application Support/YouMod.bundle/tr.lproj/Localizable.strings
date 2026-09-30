@@ -531,7 +531,7 @@
 "HIDE_INFO_BUTTON_PANEL" = "Hide info button";
 "HIDE_INFO_BUTTON_PANEL_DESC" = "Hide the info button in the engagement panel.";
 "HIDE_SORT_FILTER_PANEL" = "Hide sort & filter button";
-"HIDE_SORT_FILTER_PANEL_DESC" = "Hide the sort and filter button from the top of the panel.";
+"HIDE_SORT_FILTER_PANEL_DESC" = "Hide the sort and filter button from the top of the panel (except in live).";
 "DISABLES_RTL" = "RTL biçimlendirmesini devre dışı bırak";
 "DISABLES_RTL_DESC" = "Sağdan sola (RTL) yazılan dillerdeki metinleri zorla soldan sağa (LTR) biçimde görüntüler.";
 "DEVICE_UI" = "Arayüz stili";

@@ -529,7 +529,7 @@
 "HIDE_INFO_BUTTON_PANEL" = "Скрыть кнопку информации";
 "HIDE_INFO_BUTTON_PANEL_DESC" = "Скрывает кнопку информации на всплывающей панели под видео.";
 "HIDE_SORT_FILTER_PANEL" = "Hide sort & filter button";
-"HIDE_SORT_FILTER_PANEL_DESC" = "Hide the sort and filter button from the top of the panel.";
+"HIDE_SORT_FILTER_PANEL_DESC" = "Hide the sort and filter button from the top of the panel (except in live).";
 "DISABLES_RTL" = "Отключить формат RTL";
 "DISABLES_RTL_DESC" = "Принудительно отображает текст слева направо (LTR) для языков, которые изначально пишутся справа налево (RTL).";
 "DEVICE_UI" = "Стиль интерфейса";

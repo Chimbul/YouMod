@@ -529,7 +529,7 @@
 "HIDE_INFO_BUTTON_PANEL" = "정보 버튼 숨기기";
 "HIDE_INFO_BUTTON_PANEL_DESC" = "참여 패널의 정보 버튼을 숨깁니다.";
 "HIDE_SORT_FILTER_PANEL" = "Hide sort & filter button";
-"HIDE_SORT_FILTER_PANEL_DESC" = "Hide the sort and filter button from the top of the panel.";
+"HIDE_SORT_FILTER_PANEL_DESC" = "Hide the sort and filter button from the top of the panel (except in live).";
 "DISABLES_RTL" = "RTL 서식 비활성화";
 "DISABLES_RTL_DESC" = "오른쪽에서 왼쪽(RTL)으로 표시되는 언어의 텍스트를 강제로 왼쪽에서 오른쪽(LTR) 형식으로 표시합니다.";
 "DEVICE_UI" = "인터페이스 스타일";
