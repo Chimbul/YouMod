@@ -215,7 +215,9 @@ static void YMDismissExistingPillsInView(UIView *parentView, void (^completion)(
 
 - (void)layoutSubviews {
     [super layoutSubviews];
-    self.infoIconView.hidden = !self.showsInfoIcon;
+    // The icon only has constraints (and reserved space) on button-less
+    // pills — never let it surface when an action button is present.
+    self.infoIconView.hidden = self.actionButton != nil || !self.showsInfoIcon;
     if (self.progressOverlay.layer.animationKeys.count == 0 || self.isPaused) {
         self.progressOverlay.frame = CGRectMake(0, 0, self.bounds.size.width, self.bounds.size.height);
     }

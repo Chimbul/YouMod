@@ -306,10 +306,9 @@ void YouModConfigureDownloadButton(_ASDisplayView *view, NSString *iden) {
         [view addGestureRecognizer:tap];
         objc_setAssociatedObject(view, @selector(YouModDownloadButtonTapped:), @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     } else if ([iden isEqualToString:@"id.elements.list_item"]) {
-        ASDisplayNode *node = view.keepalive_node;
         NSString *desc = nil;
         @try {
-            desc = [[[[node nodeController] performSelector:@selector(owningComponent)] performSelector:@selector(owningComponent)] description];
+            desc = [[[view.keepalive_node.nodeController performSelector:@selector(owningComponent)] performSelector:@selector(owningComponent)] description];
         } @catch (id ex) {
             return;
         }

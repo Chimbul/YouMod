@@ -59,10 +59,10 @@ void YouModApplyOLEDToDisplayView(_ASDisplayView *view, NSString *iden) {
             return isDarkMode(view) ? [UIColor blackColor] : [UIColor whiteColor];
         }];
     } else {
-        ASDisplayNode *node = view.keepalive_node;
+        ELMNodeController *nodeCon = view.keepalive_node.nodeController;
         NSString *desc = nil;
         @try {
-            desc = [[[[node nodeController] performSelector:@selector(parent)] performSelector:@selector(owningComponent)] description];
+            desc = [[[nodeCon performSelector:@selector(parent)] performSelector:@selector(owningComponent)] description];
         } @catch (id ex) {}
         if (desc != nil && ([desc containsString:@"live_chat_buy_flow_panel_header.eml"] 
             || [desc containsString:@"missing_content_view.eml"])) {
@@ -72,11 +72,11 @@ void YouModApplyOLEDToDisplayView(_ASDisplayView *view, NSString *iden) {
         } else {
             desc = nil;
             @try {
-                desc = [[[[[node nodeController] performSelector:@selector(parent)] performSelector:@selector(parent)] performSelector:@selector(owningComponent)] description];
+                desc = [[[[nodeCon performSelector:@selector(parent)] performSelector:@selector(parent)] performSelector:@selector(owningComponent)] description];
             } @catch (id ex) {
                 return;
             }
-            if (desc != nil && [desc containsString:@"macro_markers_info_item.eml"]) {
+            if (desc != nil && [desc containsString:@"macro_markers_list_item.eml"]) {
                 view.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor * _Nonnull(UITraitCollection * _Nonnull traitCollection) {
                     return isDarkMode(view) ? [UIColor blackColor] : [UIColor clearColor];
                 }];

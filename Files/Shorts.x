@@ -55,10 +55,9 @@ static void YouModRemoveShortsOverlayButton(_ASDisplayView *dpView) {
                 if ([sub.accessibilityIdentifier isEqualToString:button]) {
                     [sub removeFromSuperview];
                 } else if (sub.accessibilityIdentifier == nil && sub.accessibilityLabel != nil && IS_ENABLED(RemoveShortsSaveButton)) {
-                    ASDisplayNode *subNode = sub.keepalive_node;
                     NSString *desc = nil;
                     @try {
-                        desc = [[[[subNode nodeController] performSelector:@selector(owningComponent)] performSelector:@selector(owningComponent)] description];
+                        desc = [[[sub.keepalive_node.nodeController performSelector:@selector(owningComponent)] performSelector:@selector(owningComponent)] description];
                     } @catch (id ex) {
                         continue;
                     }

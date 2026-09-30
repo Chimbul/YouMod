@@ -1062,10 +1062,12 @@ static CGFloat YouModSpeedForHoldIndex(NSInteger index) {
             [pv addGestureRecognizer:playerViewController.YouModTapGesture];
         }
         if (!playerViewController.YouModHoldGesture && INTFORVAL(HoldToSpeedIndex) != 0) {
-            playerViewController.YouModHoldGesture = [[UILongPressGestureRecognizer alloc] initWithTarget:playerViewController action:@selector(YouModHoldToSpeed:)];
-            playerViewController.YouModHoldGesture.minimumPressDuration = 0.4;
-            playerViewController.YouModHoldGesture.delegate = playerViewController;
-            [pv addGestureRecognizer:playerViewController.YouModHoldGesture];   
+            UILongPressGestureRecognizer *holdGesture = [[UILongPressGestureRecognizer alloc] initWithTarget:playerViewController action:@selector(YouModHoldToSpeed:)];
+            holdGesture.minimumPressDuration = 0.4;
+            holdGesture.numberOfTouchesRequired = 1;
+            holdGesture.allowableMovement = 50.0;
+            playerViewController.YouModHoldGesture = holdGesture;
+            [pv addGestureRecognizer:holdGesture];
         }
     }
     %orig;
@@ -1178,15 +1180,6 @@ static UISlider *YouModVolumeSlider(void) {
 
             return YES;
         }
-    }
-    if (gestureRecognizer == self.YouModHoldGesture) {
-        if (self.YouModPanGesture && (self.YouModPanGesture.state == UIGestureRecognizerStateBegan || self.YouModPanGesture.state == UIGestureRecognizerStateChanged)) {
-            return NO;
-        }
-        if (isRelatedVideosPanelEnabled(self)) return NO;
-        CGPoint touchLocation = [gestureRecognizer locationInView:self.view];
-        CGFloat activeWidth = remainingOverlayWidth(self, self.view.bounds.size.width);
-        if (touchLocation.x > activeWidth) return NO;
     }
     return YES;
 }
@@ -1399,21 +1392,12 @@ static UISlider *YouModVolumeSlider(void) {
     if (gestureRecognizer == self.YouModPanGesture && [otherGestureRecognizer isKindOfClass:[UIPanGestureRecognizer class]]) {
         return YES;
     }
-    if (gestureRecognizer == self.YouModHoldGesture && ![otherGestureRecognizer isKindOfClass:[UIPanGestureRecognizer class]]) {
-        return YES;
-    }
     return NO;
 }
 
 %new
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer {
-    if (gestureRecognizer == self.YouModPanGesture) return NO; 
-    if (gestureRecognizer == self.YouModHoldGesture || otherGestureRecognizer == self.YouModHoldGesture) {
-        if ([gestureRecognizer isKindOfClass:[UIPanGestureRecognizer class]] || [otherGestureRecognizer isKindOfClass:[UIPanGestureRecognizer class]]) {
-            return NO;
-        }
-        return YES;
-    }
+    if (gestureRecognizer == self.YouModPanGesture) return NO;
     return YES;
 }
 
@@ -1669,6 +1653,7 @@ static UISlider *YouModVolumeSlider(void) {
     static CGPoint startLocation;
     static BOOL initialLockState;
     static BOOL isPendingToggle;
+    static BOOL holdGestureActive = NO;
 
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
 
@@ -1699,8 +1684,9 @@ static UISlider *YouModVolumeSlider(void) {
             [self setPlaybackRate:speed];
             [self YouModShowSpeedToast:speed isLocked:YES];
         }
+        holdGestureActive = YES;
     } else if (gesture.state == UIGestureRecognizerStateChanged) {
-        if (!IS_ENABLED(LockSpeed)) return;
+        if (!holdGestureActive || !IS_ENABLED(LockSpeed)) return;
         
         CGPoint currentLocation = [gesture locationInView:self.playerView];
         CGFloat dragDistanceY = currentLocation.y - startLocation.y;
@@ -1739,6 +1725,10 @@ static UISlider *YouModVolumeSlider(void) {
                gesture.state == UIGestureRecognizerStateCancelled || 
                gesture.state == UIGestureRecognizerStateFailed) {
 
+        // Began never ran (gesture failed or was suppressed): nothing was applied, so
+        // restoring/applying a rate here would flash the speed on touch-up
+        if (!holdGestureActive) return;
+
         BOOL finalLockState = initialLockState;
         if (gesture.state == UIGestureRecognizerStateEnded || (gesture.state == UIGestureRecognizerStateCancelled && isPendingToggle)) {
             if (IS_ENABLED(LockSpeed) && isPendingToggle) {
@@ -1754,6 +1744,7 @@ static UISlider *YouModVolumeSlider(void) {
             [self setPlaybackRate:targetRate];
         }
         isPendingToggle = NO;
+        holdGestureActive = NO;
         [self YouModHideSpeedToast];
     }
 }

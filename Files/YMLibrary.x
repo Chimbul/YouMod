@@ -321,11 +321,13 @@ static void ymPauseOtherPlayers(void) {
 #pragma mark - Pull-to-refresh control
 
 static const CGFloat ymRefreshTriggerDistance = 64.0;
+static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits above its resting spot
 static void *ymRefreshOffsetContext = &ymRefreshOffsetContext;
 
-// Custom pull-to-refresh header for the library grid: the arrow rotates with
-// the pull, then spins continuously while refreshing. Lives inside the
-// collection view's content, above the first row.
+// Pull-to-refresh bubble for the library grid: a floating circle with an
+// arrow that slides into view and rotates as the user drags down — from the
+// top of the list or by overscrolling past the bottom — then spins while
+// refreshing.
 @interface YMLibraryRefreshControl : UIView
 @property (nonatomic, copy) void (^onRefresh)(void);
 @property (nonatomic, readonly, getter=isRefreshing) BOOL refreshing;
@@ -336,13 +338,20 @@ static void *ymRefreshOffsetContext = &ymRefreshOffsetContext;
 @implementation YMLibraryRefreshControl {
     UIImageView *_iconView;
     BOOL _isRefreshing;
+    BOOL _armed; // the pull crossed the threshold during the current drag
     BOOL _observing;
 }
 
 - (instancetype)initWithFrame:(CGRect)frame {
     self = [super initWithFrame:frame];
     if (self) {
-        self.backgroundColor = [UIColor clearColor];
+        self.backgroundColor = [UIColor secondarySystemBackgroundColor];
+        self.layer.cornerRadius = 22;
+        self.layer.shadowColor = [UIColor blackColor].CGColor;
+        self.layer.shadowOpacity = 0.15;
+        self.layer.shadowRadius = 4;
+        self.layer.shadowOffset = CGSizeMake(0, 1);
+        self.alpha = 0;
 
         _iconView = [UIImageView new];
         _iconView.image = YouModSymbolImageInCanvas(@"arrow.down", 24, 18, UIImageSymbolWeightMedium);
@@ -388,59 +397,64 @@ static void *ymRefreshOffsetContext = &ymRefreshOffsetContext;
     }
 }
 
+// How far past an edge the user has dragged: overshoot at the top or at the
+// bottom of the list, whichever is larger. Clamping the bottom's max offset
+// at the top resting point keeps short lists (smaller than the viewport)
+// from reading as permanently overscrolled.
+- (CGFloat)pullDistanceInScrollView:(UIScrollView *)scrollView {
+    CGFloat topPull = -(scrollView.contentOffset.y + scrollView.adjustedContentInset.top);
+    CGFloat maxOffset = scrollView.contentSize.height - scrollView.bounds.size.height + scrollView.adjustedContentInset.bottom;
+    CGFloat bottomPull = scrollView.contentOffset.y - MAX(maxOffset, -scrollView.adjustedContentInset.top);
+    return MAX(topPull, bottomPull);
+}
+
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSKeyValueChangeKey, id> *)change context:(void *)context {
     if (context != ymRefreshOffsetContext) {
         [super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
         return;
     }
     UIScrollView *scrollView = (UIScrollView *)object;
-    CGFloat pull = -(scrollView.contentOffset.y + scrollView.adjustedContentInset.top);
-    if (pull <= 0) {
-        [self updateWithPullDistance:0];
-        return;
-    }
+    CGFloat pull = [self pullDistanceInScrollView:scrollView];
     [self updateWithPullDistance:pull];
+    if (_isRefreshing) return;
 
+    // Arm only while the finger is down, so the bounce at the top after a
+    // fast upward flick can't trigger a refresh on its own.
     UIGestureRecognizerState panState = scrollView.panGestureRecognizer.state;
     BOOL dragging = panState == UIGestureRecognizerStateBegan || panState == UIGestureRecognizerStateChanged;
-    if (_isRefreshing) return;
-    if (!dragging && pull >= ymRefreshTriggerDistance) {
+    if (dragging) {
+        _armed = pull >= ymRefreshTriggerDistance;
+    } else if (_armed) {
+        _armed = NO;
         [self beginRefreshing];
-    } else if (!dragging && !CGAffineTransformEqualToTransform(_iconView.transform, CGAffineTransformIdentity)) {
-        // Released before the threshold: settle the arrow back upright.
-        [UIView animateWithDuration:0.25 animations:^{
-            self->_iconView.transform = CGAffineTransformIdentity;
-        }];
     }
 }
 
 - (void)updateWithPullDistance:(CGFloat)pull {
     CGFloat progress = MIN(MAX(pull / ymRefreshTriggerDistance, 0), 1);
     if (_isRefreshing) return;
-    // The arrow flips from pointing down to pointing up across the pull.
+    // The bubble slides down into view and the arrow flips from pointing
+    // down to pointing up across the pull.
+    self.transform = CGAffineTransformMakeTranslation(0, -ymRefreshHiddenTravel * (1 - progress));
+    self.alpha = progress;
     _iconView.transform = CGAffineTransformMakeRotation(progress * (CGFloat)M_PI);
-    CGFloat alpha = 0.25 + 0.75 * progress;
-    _iconView.alpha = alpha;
 }
 
 - (void)beginRefreshing {
     if (_isRefreshing) return;
     _isRefreshing = YES;
+    _armed = NO;
 
-    // Continuous spin; the base transform stays where the pull left it and is
-    // reset when refreshing ends.
+    // Park the bubble fully in view and spin the arrow continuously; the
+    // scroll position stays wherever the user pulled from.
+    self.transform = CGAffineTransformIdentity;
+    self.alpha = 1.0;
     CABasicAnimation *spin = [CABasicAnimation animationWithKeyPath:@"transform.rotation"];
     spin.toValue = @((CGFloat)M_PI * 2.0);
     spin.duration = 0.8;
     spin.repeatCount = HUGE_VALF;
     [_iconView.layer addAnimation:spin forKey:@"ymLibraryRefreshSpin"];
-    _iconView.alpha = 1.0;
 
-    UIScrollView *scrollView = self.observedScrollView;
-    if ([scrollView isKindOfClass:[UIScrollView class]]) {
-        CGPoint target = CGPointMake(scrollView.contentOffset.x, -scrollView.adjustedContentInset.top - self.bounds.size.height);
-        [scrollView setContentOffset:target animated:YES];
-    }
     if (self.onRefresh) self.onRefresh();
 }
 
@@ -448,15 +462,11 @@ static void *ymRefreshOffsetContext = &ymRefreshOffsetContext;
     if (!_isRefreshing) return;
     _isRefreshing = NO;
     [_iconView.layer removeAnimationForKey:@"ymLibraryRefreshSpin"];
+    _iconView.transform = CGAffineTransformIdentity;
     [UIView animateWithDuration:0.3 animations:^{
-        self->_iconView.transform = CGAffineTransformIdentity;
+        self.alpha = 0.0;
+        self.transform = CGAffineTransformMakeTranslation(0, -ymRefreshHiddenTravel);
     }];
-
-    UIScrollView *scrollView = self.observedScrollView;
-    if ([scrollView isKindOfClass:[UIScrollView class]]) {
-        CGPoint target = CGPointMake(scrollView.contentOffset.x, -scrollView.adjustedContentInset.top);
-        [scrollView setContentOffset:target animated:YES];
-    }
 }
 
 @end
@@ -524,14 +534,14 @@ static void *ymRefreshOffsetContext = &ymRefreshOffsetContext;
 
     _refreshControl = [YMLibraryRefreshControl new];
     _refreshControl.translatesAutoresizingMaskIntoConstraints = NO;
+    // Floating above the cells at any scroll position, hence the high zPosition.
+    _refreshControl.layer.zPosition = 1000;
     [_collectionView addSubview:_refreshControl];
     [NSLayoutConstraint activateConstraints:@[
-        // Parked just above the content origin so it slides in from the top
-        // without ever overlapping the grid rows.
-        [_refreshControl.topAnchor constraintEqualToAnchor:_collectionView.contentLayoutGuide.topAnchor constant:-ymRefreshTriggerDistance],
-        [_refreshControl.leadingAnchor constraintEqualToAnchor:_collectionView.contentLayoutGuide.leadingAnchor],
-        [_refreshControl.trailingAnchor constraintEqualToAnchor:_collectionView.contentLayoutGuide.trailingAnchor],
-        [_refreshControl.heightAnchor constraintEqualToConstant:ymRefreshTriggerDistance],
+        [_refreshControl.topAnchor constraintEqualToAnchor:_collectionView.frameLayoutGuide.topAnchor constant:12],
+        [_refreshControl.centerXAnchor constraintEqualToAnchor:_collectionView.frameLayoutGuide.centerXAnchor],
+        [_refreshControl.widthAnchor constraintEqualToConstant:44],
+        [_refreshControl.heightAnchor constraintEqualToConstant:44],
     ]];
     __weak typeof(self) weakSelf = self;
     _refreshControl.onRefresh = ^{
