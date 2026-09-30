@@ -1062,12 +1062,11 @@ static CGFloat YouModSpeedForHoldIndex(NSInteger index) {
             [pv addGestureRecognizer:playerViewController.YouModTapGesture];
         }
         if (!playerViewController.YouModHoldGesture && INTFORVAL(HoldToSpeedIndex) != 0) {
-            UILongPressGestureRecognizer *holdGesture = [[UILongPressGestureRecognizer alloc] initWithTarget:playerViewController action:@selector(YouModHoldToSpeed:)];
-            holdGesture.minimumPressDuration = 0.4;
-            holdGesture.numberOfTouchesRequired = 1;
-            holdGesture.allowableMovement = 50.0;
-            playerViewController.YouModHoldGesture = holdGesture;
-            [pv addGestureRecognizer:holdGesture];
+            playerViewController.YouModHoldGesture = [[UILongPressGestureRecognizer alloc] initWithTarget:playerViewController action:@selector(YouModHoldToSpeed:)];
+            playerViewController.YouModHoldGesture.minimumPressDuration = 0.4;
+            playerViewController.YouModHoldGesture.numberOfTouchesRequired = 1;
+            playerViewController.YouModHoldGesture.delegate = playerViewController;
+            [pv addGestureRecognizer:playerViewController.YouModHoldGesture];
         }
     }
     %orig;
