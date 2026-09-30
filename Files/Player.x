@@ -907,137 +907,12 @@ static CGFloat YouModSpeedForHoldIndex(NSInteger index) {
     return [values[index] floatValue];
 }
 
-// All custom player gestures live on the overlay view — the view the touches are
-// actually hit-tested on and where YouTube manages its own recognizers. Attaching is
-// idempotent: when the overlay is recreated, an existing gesture is migrated over.
-static void YouModAttachPlayerGestures(YTMainAppVideoPlayerOverlayView *overlayView, YTPlayerViewController *playerViewController) {
-    if (IS_ENABLED(GestureControls) || IS_ENABLED(SeekOnOverlay)) {
-        UIPanGestureRecognizer *pan = playerViewController.YouModPanGesture;
-        if (!pan || pan.view != overlayView) {
-            if (pan && pan.view) [pan.view removeGestureRecognizer:pan];
-            pan = [[UIPanGestureRecognizer alloc] initWithTarget:playerViewController action:@selector(YouModHandlePanGesture:)];
-            pan.delegate = playerViewController;
-            pan.name = @"YouModPanGesture";
-            playerViewController.YouModPanGesture = pan;
-        }
-        if (![overlayView.gestureRecognizers containsObject:pan]) [overlayView addGestureRecognizer:pan];
-    }
-    if (IS_ENABLED(PauseTwoFingers)) {
-        UITapGestureRecognizer *tap = playerViewController.YouModTapGesture;
-        if (!tap || tap.view != overlayView) {
-            if (tap && tap.view) [tap.view removeGestureRecognizer:tap];
-            tap = [[UITapGestureRecognizer alloc] initWithTarget:playerViewController action:@selector(YouModHandleTapGesture:)];
-            tap.numberOfTouchesRequired = 2;
-            tap.delegate = playerViewController;
-            tap.name = @"YouModTapGesture";
-            playerViewController.YouModTapGesture = tap;
-        }
-        if (![overlayView.gestureRecognizers containsObject:tap]) [overlayView addGestureRecognizer:tap];
-    }
-    if (INTFORVAL(HoldToSpeedIndex) != 0) {
-        UILongPressGestureRecognizer *hold = playerViewController.YouModHoldGesture;
-        if (!hold || hold.view != overlayView) {
-            if (hold && hold.view) [hold.view removeGestureRecognizer:hold];
-            hold = [[UILongPressGestureRecognizer alloc] initWithTarget:playerViewController action:@selector(YouModHoldToSpeed:)];
-            hold.minimumPressDuration = 0.4;
-            hold.numberOfTouchesRequired = 1;
-            hold.delegate = playerViewController;
-            hold.name = @"YouModHoldToSpeed";
-            playerViewController.YouModHoldGesture = hold;
-        }
-        if (![overlayView.gestureRecognizers containsObject:hold]) [overlayView addGestureRecognizer:hold];
-
-        // Disable any other long press attached to the overlay (e.g. YouTube's 0.18s
-        // hold, which would begin first and force-fail ours)
-        for (UIGestureRecognizer *ges in [NSArray arrayWithArray:overlayView.gestureRecognizers]) {
-            if ([ges isKindOfClass:[UILongPressGestureRecognizer class]] && ![ges.name isEqualToString:@"YouModHoldToSpeed"]) ges.enabled = NO;
-        }
-    }
-}
-
-static CGFloat remainingOverlayWidth(YTPlayerViewController *pvc, CGFloat fullWidth);
-
-// Whether a touch starting at this point falls inside one of the vertical gesture side
-// zones (brightness/volume) — our pan owns those, so YouTube's vertical pan must yield
-static BOOL YouModGestureZoneCoversPoint(YTPlayerViewController *playerViewController, CGPoint locationInPlayerView) {
-    if (!IS_ENABLED(GestureControls)) return NO;
-    CGFloat activeWidth = remainingOverlayWidth(playerViewController, playerViewController.view.bounds.size.width);
-    if (locationInPlayerView.x > activeWidth) return NO;
-
-    float areaPercent = 0.15;
-    int areaSetting = INTFORVAL(GestureActivationArea);
-    if (areaSetting == 0) areaPercent = 0.10;
-    else if (areaSetting == 2) areaPercent = 0.20;
-    else if (areaSetting == 3) areaPercent = 0.25;
-    else if (areaSetting == 4) areaPercent = 0.30;
-    else if (areaSetting == 5) areaPercent = 0.35;
-    else if (areaSetting == 6) areaPercent = 0.40;
-    else if (areaSetting == 7) areaPercent = 0.45;
-    else if (areaSetting == 8) areaPercent = 0.50;
-
-    int leftAction = [[NSUserDefaults standardUserDefaults] objectForKey:LeftSideGesture] ? INTFORVAL(LeftSideGesture) : 1;
-    int rightAction = [[NSUserDefaults standardUserDefaults] objectForKey:RightSideGesture] ? INTFORVAL(RightSideGesture) : 2;
-
-    if (locationInPlayerView.x > activeWidth * areaPercent && locationInPlayerView.x < activeWidth * (1.0 - areaPercent)) return NO;
-    if (locationInPlayerView.x <= activeWidth * areaPercent && leftAction == 0) return NO;
-    if (locationInPlayerView.x >= activeWidth * (1.0 - areaPercent) && rightAction == 0) return NO;
-    return YES;
-}
-
 %hook YTMainAppVideoPlayerOverlayView
 // setPlayerResponse: sets this directly, so the YTAnnotationsViewController hooks miss it.
 - (void)setFeaturedChannelWatermarkImageView:(id)arg { if (!IS_ENABLED(HideWaterMark)) %orig; }
-// Attach our gestures when the overlay reaches a window — this fires for every overlay
-// instance that can receive touches, including recreated ones
-- (void)didMoveToWindow {
-    %orig;
-    if (self.window) {
-        YTPlayerViewController *playerViewController = (YTPlayerViewController *)self._viewControllerForAncestor.parentViewController;
-        if ([playerViewController isKindOfClass:%c(YTPlayerViewController)]) {
-            YouModAttachPlayerGestures(self, playerViewController);
-        }
-    }
-}
 - (void)setLongPressGestureRecognizer:(UILongPressGestureRecognizer *)arg {
-    if (INTFORVAL(HoldToSpeedIndex) != 0) {
-        YTPlayerViewController *playerViewController = (YTPlayerViewController *)self._viewControllerForAncestor.parentViewController;
-        if ([playerViewController isKindOfClass:%c(YTPlayerViewController)]) {
-            // YouTube clearing its recognizer must not detach our hold gesture
-            if (arg == nil) return;
-            YouModAttachPlayerGestures(self, playerViewController);
-            arg = playerViewController.YouModHoldGesture;
-        }
-    }
-    %orig(arg);
-}
-// While one of our gestures is driving, YouTube's recognizers get nothing new
-- (BOOL)gestureRecognizerShouldReceiveTouch:(UITouch *)touch {
-    YTPlayerViewController *playerViewController = (YTPlayerViewController *)self._viewControllerForAncestor.parentViewController;
-    if ([playerViewController isKindOfClass:%c(YTPlayerViewController)]) {
-        if ((playerViewController.YouModPanGesture && (playerViewController.YouModPanGesture.state == UIGestureRecognizerStateBegan || playerViewController.YouModPanGesture.state == UIGestureRecognizerStateChanged)) ||
-            (playerViewController.YouModHoldGesture && (playerViewController.YouModHoldGesture.state == UIGestureRecognizerStateBegan || playerViewController.YouModHoldGesture.state == UIGestureRecognizerStateChanged))) {
-            return NO;
-        }
-    }
-    return %orig;
-}
-- (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer {
-    if ([gestureRecognizer.name hasPrefix:@"YouMod"] || [otherGestureRecognizer.name hasPrefix:@"YouMod"]) return NO;
-    return %orig;
-}
-// Our side zones own vertical drags — YouTube's vertical pan (minimize/fullscreen)
-// yields there and keeps working everywhere else
-- (BOOL)verticalPanGestureRecognizerShouldBegin:(UIGestureRecognizer *)verticalPanGestureRecognizer {
-    YTPlayerViewController *playerViewController = (YTPlayerViewController *)self._viewControllerForAncestor.parentViewController;
-    if ([playerViewController isKindOfClass:%c(YTPlayerViewController)]) {
-        CGPoint location = [verticalPanGestureRecognizer locationInView:playerViewController.view];
-        if (YouModGestureZoneCoversPoint(playerViewController, location)) return NO;
-    }
-    return %orig;
-}
-- (BOOL)verticalPanGestureRecognizerShouldRequireFailureOfGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer {
-    if ([otherGestureRecognizer.name isEqualToString:@"YouModPanGesture"] || [otherGestureRecognizer.name isEqualToString:@"YouModHoldToSpeed"]) return YES;
-    return %orig;
+    if (INTFORVAL(HoldToSpeedIndex) != 0) return;
+    %orig;
 }
 // Remove Dark Background in Overlay
 - (void)setBackgroundVisible:(BOOL)arg1 isGradientBackground:(BOOL)arg2 {
@@ -1170,6 +1045,34 @@ static BOOL YouModGestureZoneCoversPoint(YTPlayerViewController *playerViewContr
 %end
 %end
 
+%hook YTWatchLayerViewController
+// invoked when the player view controller is either created or destroyed
+- (void)watchController:(YTWatchController *)watchController didSetPlayerViewController:(YTPlayerViewController *)playerViewController {
+    if (playerViewController) {
+        YTPlayerView *pv = playerViewController.playerView;
+        if (!playerViewController.YouModPanGesture && (IS_ENABLED(GestureControls) || IS_ENABLED(SeekOnOverlay))) {
+            playerViewController.YouModPanGesture = [[UIPanGestureRecognizer alloc] initWithTarget:playerViewController action:@selector(YouModHandlePanGesture:)];
+            playerViewController.YouModPanGesture.delegate = playerViewController;
+            [pv addGestureRecognizer:playerViewController.YouModPanGesture];
+        }
+        if (!playerViewController.YouModTapGesture && IS_ENABLED(PauseTwoFingers)) {
+            playerViewController.YouModTapGesture = [[UITapGestureRecognizer alloc] initWithTarget:playerViewController action:@selector(YouModHandleTapGesture:)];
+            playerViewController.YouModTapGesture.numberOfTouchesRequired = 2;
+            playerViewController.YouModTapGesture.delegate = playerViewController;
+            [pv addGestureRecognizer:playerViewController.YouModTapGesture];
+        }
+        if (!playerViewController.YouModHoldGesture && INTFORVAL(HoldToSpeedIndex) != 0) {
+            playerViewController.YouModHoldGesture = [[UILongPressGestureRecognizer alloc] initWithTarget:playerViewController action:@selector(YouModHoldToSpeed:)];
+            playerViewController.YouModHoldGesture.minimumPressDuration = 0.4;
+            playerViewController.YouModHoldGesture.numberOfTouchesRequired = 1;
+            playerViewController.YouModHoldGesture.delegate = playerViewController;
+            [pv addGestureRecognizer:playerViewController.YouModHoldGesture];
+        }
+    }
+    %orig;
+}
+%end
+
 static YTMainAppVideoPlayerOverlayView *getMainVideoOverlay(YTPlayerViewController *pvc) {
     YTMainAppVideoPlayerOverlayViewController *ovcon = [pvc activeVideoPlayerOverlay];
     return [ovcon videoPlayerOverlayView];
@@ -1254,7 +1157,27 @@ static UISlider *YouModVolumeSlider(void) {
             YTVideoFreeZoomOverlayController *vidfreecon = [vidfreeov valueForKey:@"_delegate"];
             return IS_ENABLED(SeekOnOverlay) && vidfreecon.state != 4;
         } else {
-            return YouModGestureZoneCoversPoint(self, startLocation);
+            if (!IS_ENABLED(GestureControls)) return NO;
+
+            float areaPercent = 0.15;
+            int areaSetting = INTFORVAL(GestureActivationArea);
+            if (areaSetting == 0) areaPercent = 0.10;
+            else if (areaSetting == 2) areaPercent = 0.20;
+            else if (areaSetting == 3) areaPercent = 0.25;
+            else if (areaSetting == 4) areaPercent = 0.30;
+            else if (areaSetting == 5) areaPercent = 0.35;
+            else if (areaSetting == 6) areaPercent = 0.40;
+            else if (areaSetting == 7) areaPercent = 0.45;
+            else if (areaSetting == 8) areaPercent = 0.50;
+
+            int leftAction = [[NSUserDefaults standardUserDefaults] objectForKey:LeftSideGesture] ? INTFORVAL(LeftSideGesture) : 1;
+            int rightAction = [[NSUserDefaults standardUserDefaults] objectForKey:RightSideGesture] ? INTFORVAL(RightSideGesture) : 2;
+
+            if (startLocation.x > activeWidth * areaPercent && startLocation.x < activeWidth * (1.0 - areaPercent)) return NO;
+            if (startLocation.x <= activeWidth * areaPercent && leftAction == 0) return NO;
+            if (startLocation.x >= activeWidth * (1.0 - areaPercent) && rightAction == 0) return NO;
+
+            return YES;
         }
     }
     return YES;
