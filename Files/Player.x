@@ -911,7 +911,7 @@ static CGFloat YouModSpeedForHoldIndex(NSInteger index) {
 // setPlayerResponse: sets this directly, so the YTAnnotationsViewController hooks miss it.
 - (void)setFeaturedChannelWatermarkImageView:(id)arg { if (!IS_ENABLED(HideWaterMark)) %orig; }
 - (void)setLongPressGestureRecognizer:(UILongPressGestureRecognizer *)arg {
-    if (INTFORVAL(HoldToSpeedIndex) != 0) {
+    if (INTFORVAL(HoldToSpeedIndex) != 0 && arg != nil) {
         UILongPressGestureRecognizer *ges = [[UILongPressGestureRecognizer alloc] initWithTarget:self._viewControllerForAncestor.parentViewController action:@selector(YouModHoldToSpeed:)];
         ges.delegate = self;
         ges.minimumPressDuration = 0.4;
