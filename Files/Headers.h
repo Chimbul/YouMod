@@ -400,6 +400,7 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 - (YTLightweightQTMButton *)connectionsInboxButton;
 - (YTLightweightQTMButton *)MDXButton;
 - (YTLightweightQTMButton *)rightButton;
+- (NSArray *)visibleButtons;
 @end
 
 @interface YTVideoFreeZoomOverlayController : NSObject

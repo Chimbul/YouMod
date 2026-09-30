@@ -254,12 +254,15 @@ static BOOL isGestureRegistered = NO;
 %new
 - (UIContextMenuConfiguration *)contextMenuInteraction:(UIContextMenuInteraction *)interaction configurationForMenuAtLocation:(CGPoint)location {
     return [UIContextMenuConfiguration configurationWithIdentifier:nil previewProvider:nil actionProvider:^UIMenu * _Nullable(NSArray<UIMenuElement *> * _Nonnull suggestedActions) {
-        UIAction *whitelistAction = [UIAction actionWithTitle:LOC(@"SB_WHITELIST_MANAGE")
+        UIAction *whitelistAction = nil;
+        if (IS_ENABLED(SBEnabled)) {
+            whitelistAction = [UIAction actionWithTitle:LOC(@"SB_WHITELIST_MANAGE")
                                                  image:[UIImage systemImageNamed:@"shield"]
                                             identifier:nil
                                                handler:^(__kindof UIAction * _Nonnull action) {
-            YMSBPresentWhitelistManager();
-        }];
+                YMSBPresentWhitelistManager();
+            }];
+        }
         UIAction *tabBarAction = [UIAction actionWithTitle:LOC(@"MANAGE_TABS")
                                                      image:[UIImage systemImageNamed:@"dock.rectangle"]
                                                 identifier:nil
@@ -283,7 +286,8 @@ static BOOL isGestureRegistered = NO;
                 YMSleepTimerPresentPicker(self);
             }];
         }
-        NSMutableArray<UIMenuElement *> *menuChildren = [NSMutableArray arrayWithArray:@[whitelistAction]];
+        NSMutableArray<UIMenuElement *> *menuChildren = [NSMutableArray array];
+        if (whitelistAction) [menuChildren addObject:whitelistAction];
         if (sleepTimerAction) [menuChildren addObject:sleepTimerAction];
         [menuChildren addObjectsFromArray:@[tabBarAction, openLinkAction]];
         return [UIMenu menuWithTitle:@"" children:menuChildren];

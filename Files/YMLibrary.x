@@ -322,25 +322,27 @@ static void ymPauseOtherPlayers(void) {
 
 static const CGFloat ymRefreshTriggerDistance = 64.0;
 static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits above its resting spot
-static void *ymRefreshOffsetContext = &ymRefreshOffsetContext;
 
 // Pull-to-refresh bubble for the library grid: a floating circle with an
 // arrow that slides into view and rotates as the user drags down — from the
 // top of the list or by overscrolling past the bottom — then spins while
-// refreshing.
+// refreshing. Driven by the collection view's scroll delegate, which the
+// view controller forwards below.
 @interface YMLibraryRefreshControl : UIView
 @property (nonatomic, copy) void (^onRefresh)(void);
 @property (nonatomic, readonly, getter=isRefreshing) BOOL refreshing;
+- (void)scrollViewDidScroll:(UIScrollView *)scrollView;
+- (void)draggingEndedInScrollView:(UIScrollView *)scrollView;
 - (void)beginRefreshing;
 - (void)endRefreshing;
 @end
 
-@implementation YMLibraryRefreshControl {
-    UIImageView *_iconView;
-    BOOL _isRefreshing;
-    BOOL _armed; // the pull crossed the threshold during the current drag
-    BOOL _observing;
-}
+@interface YMLibraryRefreshControl ()
+@property (nonatomic, strong) UIImageView *iconView;
+@property (nonatomic, assign, getter=isRefreshing) BOOL refreshing; // readwrite privately
+@end
+
+@implementation YMLibraryRefreshControl
 
 - (instancetype)initWithFrame:(CGRect)frame {
     self = [super initWithFrame:frame];
@@ -353,48 +355,21 @@ static void *ymRefreshOffsetContext = &ymRefreshOffsetContext;
         self.layer.shadowOffset = CGSizeMake(0, 1);
         self.alpha = 0;
 
-        _iconView = [UIImageView new];
-        _iconView.image = YouModSymbolImageInCanvas(@"arrow.down", 24, 18, UIImageSymbolWeightMedium);
-        _iconView.tintColor = [UIColor secondaryLabelColor];
-        _iconView.contentMode = UIViewContentModeCenter;
-        _iconView.translatesAutoresizingMaskIntoConstraints = NO;
-        [self addSubview:_iconView];
+        self.iconView = [UIImageView new];
+        self.iconView.image = YouModSymbolImageInCanvas(@"arrow.down", 24, 18, UIImageSymbolWeightMedium);
+        self.iconView.tintColor = [UIColor secondaryLabelColor];
+        self.iconView.contentMode = UIViewContentModeCenter;
+        self.iconView.translatesAutoresizingMaskIntoConstraints = NO;
+        [self addSubview:self.iconView];
 
         [NSLayoutConstraint activateConstraints:@[
-            [_iconView.centerXAnchor constraintEqualToAnchor:self.centerXAnchor],
-            [_iconView.centerYAnchor constraintEqualToAnchor:self.centerYAnchor],
-            [_iconView.widthAnchor constraintEqualToConstant:24],
-            [_iconView.heightAnchor constraintEqualToConstant:24],
+            [self.iconView.centerXAnchor constraintEqualToAnchor:self.centerXAnchor],
+            [self.iconView.centerYAnchor constraintEqualToAnchor:self.centerYAnchor],
+            [self.iconView.widthAnchor constraintEqualToConstant:24],
+            [self.iconView.heightAnchor constraintEqualToConstant:24],
         ]];
     }
     return self;
-}
-
-- (BOOL)isRefreshing {
-    return _isRefreshing;
-}
-
-// KVO on the owning scroll view's contentOffset drives the whole control.
-- (void)didMoveToSuperview {
-    [super didMoveToSuperview];
-    if (_observing) {
-        [self.observedScrollView removeObserver:self forKeyPath:@"contentOffset" context:ymRefreshOffsetContext];
-        _observing = NO;
-    }
-    if ([self.superview isKindOfClass:[UIScrollView class]]) {
-        [self.observedScrollView addObserver:self forKeyPath:@"contentOffset" options:NSKeyValueObservingOptionNew context:ymRefreshOffsetContext];
-        _observing = YES;
-    }
-}
-
-- (UIScrollView *)observedScrollView {
-    return (UIScrollView *)self.superview;
-}
-
-- (void)dealloc {
-    if (_observing) {
-        [self.observedScrollView removeObserver:self forKeyPath:@"contentOffset" context:ymRefreshOffsetContext];
-    }
 }
 
 // How far past an edge the user has dragged: overshoot at the top or at the
@@ -408,42 +383,30 @@ static void *ymRefreshOffsetContext = &ymRefreshOffsetContext;
     return MAX(topPull, bottomPull);
 }
 
-- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSKeyValueChangeKey, id> *)change context:(void *)context {
-    if (context != ymRefreshOffsetContext) {
-        [super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
-        return;
-    }
-    UIScrollView *scrollView = (UIScrollView *)object;
+- (void)scrollViewDidScroll:(UIScrollView *)scrollView {
     CGFloat pull = [self pullDistanceInScrollView:scrollView];
-    [self updateWithPullDistance:pull];
-    if (_isRefreshing) return;
-
-    // Arm only while the finger is down, so the bounce at the top after a
-    // fast upward flick can't trigger a refresh on its own.
-    UIGestureRecognizerState panState = scrollView.panGestureRecognizer.state;
-    BOOL dragging = panState == UIGestureRecognizerStateBegan || panState == UIGestureRecognizerStateChanged;
-    if (dragging) {
-        _armed = pull >= ymRefreshTriggerDistance;
-    } else if (_armed) {
-        _armed = NO;
-        [self beginRefreshing];
-    }
-}
-
-- (void)updateWithPullDistance:(CGFloat)pull {
     CGFloat progress = MIN(MAX(pull / ymRefreshTriggerDistance, 0), 1);
-    if (_isRefreshing) return;
+    if (self.isRefreshing) return;
     // The bubble slides down into view and the arrow flips from pointing
     // down to pointing up across the pull.
     self.transform = CGAffineTransformMakeTranslation(0, -ymRefreshHiddenTravel * (1 - progress));
     self.alpha = progress;
-    _iconView.transform = CGAffineTransformMakeRotation(progress * (CGFloat)M_PI);
+    self.iconView.transform = CGAffineTransformMakeRotation(progress * (CGFloat)M_PI);
+}
+
+// Called on finger-up: refresh only when the pull is still past the
+// threshold at release, so the bounce after a fast upward flick can't
+// trigger it on its own.
+- (void)draggingEndedInScrollView:(UIScrollView *)scrollView {
+    if (self.isRefreshing) return;
+    if ([self pullDistanceInScrollView:scrollView] >= ymRefreshTriggerDistance) {
+        [self beginRefreshing];
+    }
 }
 
 - (void)beginRefreshing {
-    if (_isRefreshing) return;
-    _isRefreshing = YES;
-    _armed = NO;
+    if (self.isRefreshing) return;
+    self.refreshing = YES;
 
     // Park the bubble fully in view and spin the arrow continuously; the
     // scroll position stays wherever the user pulled from.
@@ -453,16 +416,16 @@ static void *ymRefreshOffsetContext = &ymRefreshOffsetContext;
     spin.toValue = @((CGFloat)M_PI * 2.0);
     spin.duration = 0.8;
     spin.repeatCount = HUGE_VALF;
-    [_iconView.layer addAnimation:spin forKey:@"ymLibraryRefreshSpin"];
+    [self.iconView.layer addAnimation:spin forKey:@"ymLibraryRefreshSpin"];
 
     if (self.onRefresh) self.onRefresh();
 }
 
 - (void)endRefreshing {
-    if (!_isRefreshing) return;
-    _isRefreshing = NO;
-    [_iconView.layer removeAnimationForKey:@"ymLibraryRefreshSpin"];
-    _iconView.transform = CGAffineTransformIdentity;
+    if (!self.isRefreshing) return;
+    self.refreshing = NO;
+    [self.iconView.layer removeAnimationForKey:@"ymLibraryRefreshSpin"];
+    self.iconView.transform = CGAffineTransformIdentity;
     [UIView animateWithDuration:0.3 animations:^{
         self.alpha = 0.0;
         self.transform = CGAffineTransformMakeTranslation(0, -ymRefreshHiddenTravel);
@@ -528,6 +491,7 @@ static void *ymRefreshOffsetContext = &ymRefreshOffsetContext;
     _collectionView.delegate = self;
     _collectionView.backgroundColor = ymYouTubeBackgroundColor();
     _collectionView.keyboardDismissMode = UIScrollViewKeyboardDismissModeOnDrag;
+    _collectionView.alwaysBounceVertical = YES; // lets the pull-to-refresh gesture work even with few or no items
     _collectionView.translatesAutoresizingMaskIntoConstraints = NO;
     [_collectionView registerClass:[YMLibraryVideoCell class] forCellWithReuseIdentifier:@"video"];
     [self.view addSubview:_collectionView];
@@ -708,6 +672,16 @@ static void *ymRefreshOffsetContext = &ymRefreshOffsetContext;
 
 - (NSInteger)collectionView:(UICollectionView *)collectionView numberOfItemsInSection:(NSInteger)section {
     return self.rows.count;
+}
+
+// The library view controller is the collection view's scroll delegate, so
+// it feeds the refresh control from here.
+- (void)scrollViewDidScroll:(UIScrollView *)scrollView {
+    if (scrollView == self.collectionView) [self.refreshControl scrollViewDidScroll:scrollView];
+}
+
+- (void)scrollViewDidEndDragging:(UIScrollView *)scrollView willDecelerate:(BOOL)decelerate {
+    if (scrollView == self.collectionView) [self.refreshControl draggingEndedInScrollView:scrollView];
 }
 
 - (UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath {
