@@ -59,6 +59,8 @@
 #import <YouTubeHeader/YTIVideoDetails.h>
 #import <YouTubeHeader/YTIStreamingData.h>
 #import <YouTubeHeader/YTIFormattedString.h>
+#import <YouTubeHeader/YTICommand.h>
+#import <YouTubeHeader/YTCommandResponderEvent.h>
 #import <YouTubeHeader/GOOHUDManagerInternal.h>
 #import <YouTubeHeader/MLInnerTubeCaptionTrack.h>
 #import <YouTubeHeader/MLCaption.h>
@@ -817,6 +819,37 @@ typedef NS_ENUM(NSInteger, SBSegmentAction) {
 - (void)resumeProgress;
 @end
 
+// Engagement panel pieces used to host YMSBCardViewController (SponsorBlockMenu.x).
+// Protobuf fields resolve at runtime, so these are only declarations.
+@interface YTIEngagementPanelTitleHeaderRenderer : GPBMessage
+@property (nonatomic, strong) YTIFormattedString *title;
+@end
+@interface YTIEngagementPanelSectionListHeaderSupportedRenderers : GPBMessage
+@property (nonatomic, strong) YTIEngagementPanelTitleHeaderRenderer *engagementPanelTitleHeaderRenderer;
+@end
+@interface YTIEngagementPanelSectionListRenderer : GPBMessage
+@property (nonatomic, copy) NSString *panelIdentifier;
+@property (nonatomic, strong) YTIEngagementPanelSectionListHeaderSupportedRenderers *header;
+@property (nonatomic, assign) int32_t supportedOrientations;
+@property (nonatomic, assign) BOOL allowReplace;
+@end
+@interface YTIEngagementPanelSupportedRenderers : GPBMessage
+@property (nonatomic, strong) YTIEngagementPanelSectionListRenderer *engagementPanelSectionListRenderer;
+@end
+@interface YTIShowEngagementPanelEndpoint (YouMod)
+@property (nonatomic, strong) YTIEngagementPanelSupportedRenderers *engagementPanel;
+@end
+@interface GPBMessage (YouMod)
++ (instancetype)goog_parseFromData:(NSData *)data error:(NSError **)error; // parses with the app's extension registry
+@end
+@interface YTEngagementPanelIdentifier : NSObject
+- (NSString *)identifierString;
+@end
+@interface YTEngagementPanelViewControllerImpl : UIViewController
+- (void)setContentViewController:(UIViewController *)contentViewController;
+- (void)didTapCloseButton;
+@end
+
 // Overlay window/view that only take touches landing on their subviews; empty
 // areas fall through to YouTube's window underneath (SponsorBlock.x).
 @interface SBPassthroughView : UIView
@@ -864,11 +897,11 @@ extern YTPlayerViewController *YouModCurrentPlayerViewController;
 @property (nonatomic, strong) UISearchBar *searchBar; // optional search bar; filters items by title/subtitle
 @property (nonatomic, strong) NSArray<YMSBCardItem *> *items;
 @property (nonatomic, assign) BOOL swipeToDelete;
-@property (nonatomic, assign) BOOL undimmedHalfSheet; // half-height, player stays usable behind it
 @property (nonatomic, copy) void (^onDeleteItem)(YMSBCardViewController *card, YMSBCardItem *item);
 - (void)reloadItems;
 - (void)dismissCard;
 + (UINavigationController *)presentCard:(YMSBCardViewController *)card;
++ (void)presentCardInEngagementPanel:(YMSBCardViewController *)card fromResponder:(id)responder; // YouTube engagement panel
 @end
 
 // The ordered set of SponsorBlock categories YouMod supports. Both the core

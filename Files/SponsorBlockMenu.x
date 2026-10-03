@@ -322,57 +322,74 @@ static void sbPostQuery(NSString *path, NSDictionary<NSString *, NSString *> *pa
 
 @end
 
-#pragma mark - Bottom panel
+#pragma mark - Engagement panel
 
-static SBPassthroughWindow *sbPanelWindow = nil;
-static const NSTimeInterval SBPanelAnimationDuration = 0.3;
+static NSString * const SBEngagementPanelID = @"youmod-sponsorblock";
+static UINavigationController *sbEngagementPanelNav = nil;
 
-static void sbHidePanel(void) {
-    SBPassthroughWindow *window = sbPanelWindow;
-    sbPanelWindow = nil;
-    UIView *panel = window.rootViewController.childViewControllers.firstObject.view;
-    if (!panel) {
-        window.hidden = YES;
+static YTICommand *sbEngagementPanelShowCommand(NSString *title) {
+    YTIEngagementPanelTitleHeaderRenderer *titleHeader = [[%c(YTIEngagementPanelTitleHeaderRenderer) alloc] init];
+    titleHeader.title = [%c(YTIFormattedString) formattedStringWithString:title];
+    YTIEngagementPanelSectionListHeaderSupportedRenderers *header = [[%c(YTIEngagementPanelSectionListHeaderSupportedRenderers) alloc] init];
+    header.engagementPanelTitleHeaderRenderer = titleHeader;
+
+    YTIEngagementPanelSectionListRenderer *sectionList = [[%c(YTIEngagementPanelSectionListRenderer) alloc] init];
+    sectionList.panelIdentifier = SBEngagementPanelID;
+    sectionList.header = header;
+    sectionList.supportedOrientations = 1; // portrait and landscape (3 = landscape only)
+    sectionList.allowReplace = YES;        // rebuild on every open instead of reusing a cached panel
+    YTIEngagementPanelSupportedRenderers *panel = [[%c(YTIEngagementPanelSupportedRenderers) alloc] init];
+    panel.engagementPanelSectionListRenderer = sectionList;
+
+    YTIShowEngagementPanelEndpoint *endpoint = [[%c(YTIShowEngagementPanelEndpoint) alloc] init];
+    endpoint.panelIdentifier = SBEngagementPanelID;
+    endpoint.engagementPanel = panel;
+
+    // The endpoint is a YTICommand extension whose descriptor YouTube keeps in a
+    // C static (no ObjC accessor), so encode it as that extension field on the
+    // wire and let YouTube's parser, which carries the app's extension registry,
+    // attach it. Proto field numbers are fixed for wire compatibility.
+    static const uint64_t SBShowEngagementPanelEndpointField = 138681778;
+    NSData *payload = [endpoint data];
+    NSMutableData *wire = [NSMutableData data];
+    uint64_t varints[] = {(SBShowEngagementPanelEndpointField << 3) | 2, payload.length}; // tag, length
+    for (int i = 0; i < 2; i++) {
+        uint64_t v = varints[i];
+        while (v >= 0x80) {
+            uint8_t byte = (uint8_t)(v | 0x80);
+            [wire appendBytes:&byte length:1];
+            v >>= 7;
+        }
+        uint8_t byte = (uint8_t)v;
+        [wire appendBytes:&byte length:1];
+    }
+    [wire appendData:payload];
+    return [%c(YTICommand) goog_parseFromData:wire error:nil];
+}
+
+@interface YMSBCardNavigationController : UINavigationController
+@end
+@implementation YMSBCardNavigationController
+- (void)loadWithModel:(id)model {}
+@end
+
+static UIViewController *sbEngagementPanelFor(UIViewController *card) {
+    UIViewController *panel = card.navigationController.parentViewController;
+    return [panel isKindOfClass:%c(YTEngagementPanelViewControllerImpl)] ? panel : nil;
+}
+
+%hook YTEngagementPanelViewControllerImpl
+- (void)prepareContentViewControllerForModel:(id)model {
+    // The view model's panelIdentifier is a YTEngagementPanelIdentifier, not the
+    // endpoint's NSString of the same name the compiler would pick for `id`.
+    YTEngagementPanelIdentifier *panelID = ((id (*)(id, SEL))objc_msgSend)(model, @selector(panelIdentifier));
+    if (!sbEngagementPanelNav || ![panelID.identifierString isEqualToString:SBEngagementPanelID]) {
+        %orig;
         return;
     }
-    [UIView animateWithDuration:SBPanelAnimationDuration animations:^{
-        panel.transform = CGAffineTransformMakeTranslation(0, panel.bounds.size.height);
-    } completion:^(__unused BOOL finished) {
-        window.hidden = YES;
-    }];
+    [self setContentViewController:sbEngagementPanelNav];
 }
-
-static void sbShowInPanel(UINavigationController *nav, UIWindowScene *scene) {
-    if (sbPanelWindow) sbHidePanel();
-    SBPassthroughWindow *window = [[SBPassthroughWindow alloc] initWithWindowScene:scene];
-    window.frame = scene.coordinateSpace.bounds;
-    window.windowLevel = UIWindowLevelNormal + 1;
-    window.backgroundColor = [UIColor clearColor];
-
-    UIViewController *host = [[UIViewController alloc] init];
-    host.view = [[SBPassthroughView alloc] initWithFrame:window.bounds];
-    host.view.backgroundColor = [UIColor clearColor];
-    host.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-
-    [host addChildViewController:nav];
-    CGFloat height = round(window.bounds.size.height / 2.0);
-    nav.view.frame = CGRectMake(0, window.bounds.size.height - height, window.bounds.size.width, height);
-    nav.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleTopMargin;
-    nav.view.layer.cornerRadius = 12.0;
-    nav.view.layer.maskedCorners = kCALayerMinXMinYCorner | kCALayerMaxXMinYCorner;
-    nav.view.layer.masksToBounds = YES;
-    [host.view addSubview:nav.view];
-    [nav didMoveToParentViewController:host];
-
-    window.rootViewController = host;
-    window.hidden = NO;
-    sbPanelWindow = window;
-
-    nav.view.transform = CGAffineTransformMakeTranslation(0, height);
-    [UIView animateWithDuration:SBPanelAnimationDuration animations:^{
-        nav.view.transform = CGAffineTransformIdentity;
-    }];
-}
+%end
 
 #pragma mark - YMSBCardViewController (form sheet)
 
@@ -568,6 +585,15 @@ static void sbShowInPanel(UINavigationController *nav, UIWindowScene *scene) {
     [searchBar resignFirstResponder];
 }
 
+- (void)viewWillAppear:(BOOL)animated {
+    [super viewWillAppear:animated];
+    if (sbEngagementPanelFor(self)) {
+        self.navigationItem.rightBarButtonItem = nil;
+        BOOL isRoot = self.navigationController.viewControllers.firstObject == self;
+        [self.navigationController setNavigationBarHidden:isRoot animated:animated];
+    }
+}
+
 - (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
     // Autofocus the field on the Edit-ID card's first appearance.
@@ -705,15 +731,16 @@ static void sbShowInPanel(UINavigationController *nav, UIWindowScene *scene) {
 }
 
 - (void)dismissCard {
-    if (sbPanelWindow && self.navigationController.parentViewController == sbPanelWindow.rootViewController) {
-        sbHidePanel();
+    UIViewController *panel = sbEngagementPanelFor(self);
+    if (panel) {
+        [(YTEngagementPanelViewControllerImpl *)panel didTapCloseButton];
         return;
     }
     [self dismissViewControllerAnimated:YES completion:nil];
 }
 
-+ (UINavigationController *)presentCard:(YMSBCardViewController *)card {
-    UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:card];
+static UINavigationController *sbCardNavigationController(YMSBCardViewController *card) {
+    UINavigationController *nav = [[YMSBCardNavigationController alloc] initWithRootViewController:card];
     nav.modalPresentationStyle = UIModalPresentationFormSheet;
 
     // YouTube restyles navigation bars app-wide (appearance proxies), which
@@ -735,19 +762,27 @@ static void sbShowInPanel(UINavigationController *nav, UIWindowScene *scene) {
     nav.navigationBar.scrollEdgeAppearance = barAppearance;
     nav.navigationBar.titleTextAttributes = titleAttributes;
     nav.navigationBar.prefersLargeTitles = NO;
+    return nav;
+}
 
-
++ (UINavigationController *)presentCard:(YMSBCardViewController *)card {
+    UINavigationController *nav = sbCardNavigationController(card);
     UIViewController *presenter = YouModTopViewController(nil);
     while (presenter.presentedViewController) {
         presenter = presenter.presentedViewController;
     }
-    UIWindowScene *scene = presenter.view.window.windowScene;
-    if (card.undimmedHalfSheet && scene) {
-        sbShowInPanel(nav, scene);
-        return nav;
-    }
     [presenter presentViewController:nav animated:YES completion:nil];
     return nav;
+}
+
++ (void)presentCardInEngagementPanel:(YMSBCardViewController *)card fromResponder:(id)responder {
+    // Older YouTube versions lack this panel class; fall back to the form sheet.
+    if (!%c(YTEngagementPanelViewControllerImpl)) {
+        [self presentCard:card];
+        return;
+    }
+    sbEngagementPanelNav = sbCardNavigationController(card);
+    [[%c(YTCommandResponderEvent) eventWithCommand:sbEngagementPanelShowCommand(card.cardTitle) fromView:nil entry:nil sendClick:NO firstResponder:responder] send];
 }
 
 @end
@@ -1032,9 +1067,8 @@ static UIView *sbNudgeControls(void (^nudge)(float delta)) {
     YMSBCardViewController *card = [[YMSBCardViewController alloc] init];
     card.cardTitle = LOC(@"SB_SUBMIT_TITLE");
     card.message = LOC(@"SB_SUBMIT_MESSAGE");
-    card.undimmedHalfSheet = YES;
     card.items = [self sbSubmitItemsForCard:card];
-    [YMSBCardViewController presentCard:card];
+    [YMSBCardViewController presentCardInEngagementPanel:card fromResponder:self];
 }
 
 %new
