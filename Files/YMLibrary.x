@@ -722,7 +722,7 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
             [playerVC.player play];
         }];
     } else {
-        YouModShareItem(fileURL, self);
+        YouModShareItem(fileURL, self, nil);
     }
 }
 
@@ -745,7 +745,7 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
                                                     iconImage:YouModSymbolImageInCanvas(@"square.and.arrow.up", 24, 22, UIImageSymbolWeightMedium)
                                                         style:0
                                                       handler:^(__unused YTActionSheetAction *action) {
-        YouModShareItem(fileURL, self);
+        YouModShareItem(fileURL, self, sourceView);
     }]];
     if (!row.isAudio) {
         [sheet addAction:[%c(YTActionSheetAction) actionWithTitle:LOC(@"LIBRARY_SAVE_THUMBNAIL")

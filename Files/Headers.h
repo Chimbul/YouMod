@@ -1037,8 +1037,8 @@ extern NSURL *YouModTemporaryFileURL(NSString *extension);
 
 extern void YouModRequestPhotoAccess(void (^completion)(BOOL granted));
 extern void YouModSaveVideoToPhotos(NSURL *fileURL, UIViewController *presenter, void (^completion)(BOOL success, NSError *error));
-extern void YouModShareItem(id item, UIViewController *presenter);
-extern void YouModShareFile(NSURL *fileURL, UIViewController *presenter);
+extern void YouModShareItem(id item, UIViewController *presenter, UIView *sourceView);
+extern void YouModShareFile(NSURL *fileURL, UIViewController *presenter, UIView *sourceView);
 extern BOOL YouModFileIsPhotosCompatible(NSURL *fileURL);
 extern void YouModHandlePostDownloadFile(NSURL *fileURL, BOOL isVideo, YMDownloadDestination destination, UIViewController *presenter);
 extern void YouModHandlePostDownloadImage(UIImage *image, UIViewController *presenter);

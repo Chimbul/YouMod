@@ -204,17 +204,13 @@ void YouModFilterShortsDisplayView(_ASDisplayView *view, NSString *iden) {
     if (gesture.scale > 1.0) {
         if (!isTabBarHidden) {
             [appVC performSelector:@selector(hidePivotBar)];
-            [UIView animateWithDuration:0.3 animations:^{
-                self.alpha = 0;
-            }];
+            [UIView animateWithDuration:0.3 animations:^{ self.alpha = 0; }];
             isFullscreenEnabled = YES;
         }
     } else if (gesture.scale < 1.0) {
         if (isTabBarHidden) {
             [appVC performSelector:@selector(showPivotBar)];
-            [UIView animateWithDuration:0.3 animations:^{
-                self.alpha = 1;
-            }];
+            [UIView animateWithDuration:0.3 animations:^{ self.alpha = 1; }];
             isFullscreenEnabled = NO;
         }
     }
@@ -226,28 +222,19 @@ void YouModFilterShortsDisplayView(_ASDisplayView *view, NSString *iden) {
 - (void)layoutActionBar {
     %orig;
     if (!IS_ENABLED(RemoveShortsLikeButton) && !IS_ENABLED(RemoveShortsCommentButton) && !IS_ENABLED(RemoveShortsShareButton) && !IS_ENABLED(RemoveShortsRemixButton) && !IS_ENABLED(RemoveShortsSoundMetadataButton) && !IS_ENABLED(RemoveShortsSaveButton)) return;
-    YTReelElementAsyncComponentView *view = nil;
+    _ASDisplayView *view = nil;
     @try {
         view = [self valueForKey:@"_playerOverlayView"];
     } @catch (id ex) {}
     if (view != nil) {
-        UIView *check = view;
-        while (view.subviews.count == 1) {
-            view = view.subviews[0];
-        }
-        if (view.subviews.count > 1 && view != check) {
-            _ASDisplayView *dpView = (_ASDisplayView *)view.subviews[1];
-            YouModRemoveShortsOverlayButton(dpView);
-        }
+        _ASDisplayView *check = view;
+        while (view.subviews.count == 1) view = view.subviews[0];
+        if (view.subviews.count > 1 && view != check) YouModRemoveShortsOverlayButton(view.subviews[1]);
     } else {
         view = [self valueForKey:@"_actionBarComponentView"];
-        UIView *check = view;
-        while (view.subviews.count == 1) {
-            view = view.subviews[0];
-        }
-        if (view == check) return;
-        _ASDisplayView *dpView = (_ASDisplayView *)view;
-        YouModRemoveShortsOverlayButton(dpView);
+        _ASDisplayView *check = view;
+        while (view.subviews.count == 1) view = view.subviews[0];
+        if (view != check) YouModRemoveShortsOverlayButton(view);
     }
 }
 %end
@@ -272,11 +259,8 @@ void YouModFilterShortsDisplayView(_ASDisplayView *view, NSString *iden) {
     isShortsOnlyOn = NO;
     UIView *parent = sbGetNotificationParent();
     [SBSkipNotificationView showSuccessInView:parent message:LOC(@"SHORTS_ONLY_DISABLED") duration:3.0];
-
     [[[[self valueForKey:@"_parentResponder"] valueForKey:@"_delegate"] valueForKey:@"_pivotBarProvider"] performSelector:@selector(showPivotBar)];
-    [UIView animateWithDuration:0.3 animations:^{
-        self.playbackOverlay.alpha = 1;
-    }];
+    [UIView animateWithDuration:0.3 animations:^{ self.playbackOverlay.alpha = 1; }];
 }
 %new
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldBeRequiredToFailByGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer {
@@ -287,9 +271,7 @@ void YouModFilterShortsDisplayView(_ASDisplayView *view, NSString *iden) {
 }
 %new
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer {
-    if (gestureRecognizer == self.YouModExitShortsOnlyGesture) {
-        return NO;
-    }
+    if (gestureRecognizer == self.YouModExitShortsOnlyGesture) return NO;
     return YES;
 }
 %end

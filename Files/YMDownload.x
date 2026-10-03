@@ -174,15 +174,15 @@ void YouModSaveVideoToPhotos(NSURL *fileURL, UIViewController *presenter, void (
     });
 }
 
-void YouModShareItem(id item, UIViewController *presenter) {
+void YouModShareItem(id item, UIViewController *presenter, UIView *sourceView) {
     if (!item || !presenter) return;
     UIActivityViewController *vc = [[UIActivityViewController alloc] initWithActivityItems:@[item] applicationActivities:nil];
-    YouModConfigureSharePopover(vc, presenter.view);
+    YouModConfigureSharePopover(vc, sourceView ?: presenter.view);
     [presenter presentViewController:vc animated:YES completion:nil];
 }
 
-void YouModShareFile(NSURL *fileURL, UIViewController *presenter) {
-    YouModShareItem(fileURL, presenter);
+void YouModShareFile(NSURL *fileURL, UIViewController *presenter, UIView *sourceView) {
+    YouModShareItem(fileURL, presenter, sourceView);
 }
 
 BOOL YouModFileIsPhotosCompatible(NSURL *fileURL) {
@@ -224,7 +224,7 @@ void YouModHandlePostDownloadImage(UIImage *image, UIViewController *presenter) 
                     YouModSendSuccess(LOC(@"SAVED_TO_PHOTOS"));
                 } else {
                     YouModSendError(error.localizedDescription ?: LOC(@"SAVE_FAILED"));
-                    YouModShareItem(image, presenter);
+                    YouModShareItem(image, presenter, nil);
                 }
             });
         }];
