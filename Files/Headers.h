@@ -744,9 +744,6 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 @interface YTWatchFloatingMiniplayerBadgeView : UIView
 @end
 
-@interface YTInlineMutedPlaybackScrubberViewController : UIViewController
-@end
-
 @interface YTReelTopBarView : UIView
 @end
 

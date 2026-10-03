@@ -775,15 +775,17 @@ static void YouModAddEndTime(YTInlinePlayerBarContainerView *playerbar, YTPlayer
 }
 %end
 
-%hook YTInlineMutedPlaybackScrubberViewController
-- (void)setActiveSingleVideoObservable:(YTSingleVideoController *)singleVideoController {
-    %orig;
-    if (singleVideoController && IS_ENABLED(AutoFeedMute)) {
-        [singleVideoController setMuted:YES];
-        UIView *soundView = [self.view.superview valueForKey:@"_audioSoundIconView"];
-        [soundView performSelector:@selector(setAudioOn:) withObject:@NO];
-    }
-}
+// Automatically mute video if user wants to
+%hook YTInlineMutedPlaybackStateController // 19.x-20.x
+- (BOOL)inlinePlaybackUnmutedAtStart { return IS_ENABLED(AutoFeedMute) ? NO : %orig; }
+%end
+
+%hook YTInlineMutedPlaybackStateControllerImpl // 21.x+
+- (BOOL)inlinePlaybackUnmutedAtStart { return IS_ENABLED(AutoFeedMute) ? NO : %orig; }
+%end
+
+%hook YTCollectionGlobalManagerController // 19.x keeps a second copy here
+- (BOOL)inlinePlaybackUnmutedAtStart { return IS_ENABLED(AutoFeedMute) ? NO : %orig; }
 %end
 
 // Exit Fullscreen on Finish
