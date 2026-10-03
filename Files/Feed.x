@@ -2,11 +2,7 @@
 
 // Hide Subbar
 %hook YTHeaderContentComboView
-- (void)enableSubheaderBarWithView:(id)arg1 { if (!IS_ENABLED(HideSubbar)) %orig; }
-- (void)setFeedHeaderScrollMode:(int)arg { 
-    if (IS_ENABLED(HideSubbar)) arg = 0;
-    %orig(arg);
-}
+- (void)enableSubheaderBarWithView:(UIView *)view { IS_ENABLED(HideSubbar) ? [self disableSubheaderBar] : %orig; }
 %end
 
 // Hide voice search button

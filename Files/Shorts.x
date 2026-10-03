@@ -94,63 +94,6 @@ static void YouModRemoveShortsOverlayButton(_ASDisplayView *dpView) {
     YTPlayerViewController *main = self.player;
     if (INTFORVAL(CaptionTrack) != 0) [main performSelector:@selector(YouModAutoCaptions) withObject:nil afterDelay:0.5];
     if (INTFORVAL(ShortsAutoSpeedIndex) != 0) [main performSelector:@selector(YouModSetAutoSpeed) withObject:nil afterDelay:0.5];
-    if (INTFORVAL(AudioTrack) != 0 || IS_ENABLED(NoDubbedAudioTrack)) [self performSelector:@selector(YouModAutoAudioTrack:) withObject:main afterDelay:0.5];
-}
-%new
-- (void)YouModAutoAudioTrack:(YTPlayerViewController *)pv {
-    NSInteger selectedIndex = INTFORVAL(AudioTrackLangIndex);
-    NSArray *langCodes = getAllSystemLanguageValues();
-    NSString *userTargetLang = langCodes[selectedIndex];
-    id switchcon = self.audioTrackController;
-    NSArray *availableTracks = [switchcon valueForKey:@"_availableAudioTracks"];
-    if (!availableTracks || availableTracks.count == 0) return;
-    YTIAudioTrack *matchedTrack = nil;
-
-    if (INTFORVAL(AudioTrack) == 1) {
-        // Loop for all tracks
-        for (YTIAudioTrack *track in availableTracks) {
-            if ([track.id_p hasSuffix:@".4"]) {
-                matchedTrack = track;
-                break;
-            }
-        }
-    } else if (INTFORVAL(AudioTrack) == 2) {
-        // Loop for all tracks
-        for (YTIAudioTrack *track in availableTracks) {
-            if ([track.id_p hasPrefix:userTargetLang]) {
-                matchedTrack = track;
-                break;
-            }
-        }
-
-        // Check if it's dubbed
-        if (matchedTrack && [matchedTrack isAutoDubbed] && IS_ENABLED(NoDubbedAudioTrack)) matchedTrack = nil;
-
-        if (!matchedTrack && IS_ENABLED(NoDubbedAudioTrack)) {
-            for (YTIAudioTrack *track in availableTracks) {
-                if ([track.id_p hasSuffix:@".4"]) {
-                    matchedTrack = track;
-                    break;
-                }
-            }
-        }
-    } else if (IS_ENABLED(NoDubbedAudioTrack)) {
-        // Default mode doesn't otherwise run this method at all; only step in when
-        // YouTube's own pick (audioIsDefault) is itself an auto-dub.
-        YTIAudioTrack *defaultTrack = nil;
-        for (YTIAudioTrack *track in availableTracks) if (track.audioIsDefault) { defaultTrack = track; break; }
-        if (defaultTrack && [defaultTrack isAutoDubbed]) {
-            for (YTIAudioTrack *track in availableTracks) {
-                if ([track.id_p hasSuffix:@".4"]) {
-                    matchedTrack = track;
-                    break;
-                }
-            }
-        }
-    }
-
-    // If found, change to it
-    if (matchedTrack) [pv setAudioTrack:matchedTrack source:0];
 }
 %end
 
@@ -250,21 +193,13 @@ void YouModFilterShortsDisplayView(_ASDisplayView *view, NSString *iden) {
 }
 %end
 
-%hook YTReelWatchPlaybackOverlayView
-%property (nonatomic, retain) UIPinchGestureRecognizer *YouModFullscreenGesture;
-- (void)didMoveToWindow {
+%hook YTPlayerView
+- (void)didPinch:(UIPinchGestureRecognizer *)gesture {
     %orig;
-    if (!IS_ENABLED(FullScreenShorts)) return;
-    if (!self.YouModFullscreenGesture) {
-        self.YouModFullscreenGesture = [[UIPinchGestureRecognizer alloc] initWithTarget:self action:@selector(YouModFullscrrenGestureHandler:)];
-        self.YouModFullscreenGesture.delegate = (id<UIGestureRecognizerDelegate>)self;
-        [self.superview addGestureRecognizer:self.YouModFullscreenGesture];
-    }
-}
-%new
-- (void)YouModFullscrrenGestureHandler:(UIPinchGestureRecognizer *)gesture {
-    if (gesture.state != UIGestureRecognizerStateBegan || (isShortsOnlyOn && IS_ENABLED(ShortsOnly))) return;
-    UIViewController *appVC = [self valueForKey:@"_pivotBarProvider"];
+    UIViewController *shortspvc = self._viewControllerForAncestor.parentViewController;
+    if (!IS_ENABLED(FullScreenShorts) || (isShortsOnlyOn && IS_ENABLED(ShortsOnly))
+        || ![shortspvc isKindOfClass:%c(YTShortsPlayerViewController)]) return;
+    UIViewController *appVC = [shortspvc valueForKey:@"_pivotBarProvider"];
     BOOL isTabBarHidden = [appVC performSelector:@selector(isPivotBarHidden)];
     if (gesture.scale > 1.0) {
         if (!isTabBarHidden) {
@@ -284,14 +219,10 @@ void YouModFilterShortsDisplayView(_ASDisplayView *view, NSString *iden) {
         }
     }
 }
-%new
-- (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer {
-    if (gestureRecognizer == self.YouModFullscreenGesture) {
-        return YES;
-    }
-    return NO;
-}
+%end
+
 // Filtering Shorts overlay buttons
+%hook YTReelWatchPlaybackOverlayView
 - (void)layoutActionBar {
     %orig;
     if (!IS_ENABLED(RemoveShortsLikeButton) && !IS_ENABLED(RemoveShortsCommentButton) && !IS_ENABLED(RemoveShortsShareButton) && !IS_ENABLED(RemoveShortsRemixButton) && !IS_ENABLED(RemoveShortsSoundMetadataButton) && !IS_ENABLED(RemoveShortsSaveButton)) return;
@@ -323,10 +254,10 @@ void YouModFilterShortsDisplayView(_ASDisplayView *view, NSString *iden) {
 
 %hook YTReelContentView
 %property (nonatomic, retain) UILongPressGestureRecognizer *YouModExitShortsOnlyGesture;
-- (void)setPlaybackView:(UIView *)playbackView {
+- (void)setUpGestureRecognizers {
     %orig;
-    self.playbackOverlay.alpha = !isFullscreenEnabled;
     if (!IS_ENABLED(ShortsOnly)) return;
+    self.playbackOverlay.alpha = !isFullscreenEnabled;
     if (isShortsOnlyOn) {
         self.YouModExitShortsOnlyGesture = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(YouModTurnOffShortsOnly:)];
         self.YouModExitShortsOnlyGesture.numberOfTouchesRequired = 2;

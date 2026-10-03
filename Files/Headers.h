@@ -425,6 +425,10 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 - (void)enableNewTouchFeedback;
 @end
 
+@interface YTHeaderContentComboView : UIView
+- (void)disableSubheaderBar;
+@end
+
 @interface YTHeaderView : UIView
 - (void)setStickyNavHeaderEnabled:(BOOL)arg;
 @end
@@ -456,8 +460,7 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 - (void)didTapPivotBarItem:(id)renderer withViewControllers:(NSArray *)viewControllers animated:(BOOL)animated;
 @end
 
-@interface YTReelWatchPlaybackOverlayView : UIView <UIGestureRecognizerDelegate>
-@property (nonatomic, retain) UIPinchGestureRecognizer *YouModFullscreenGesture;
+@interface YTReelWatchPlaybackOverlayView : UIView
 @end
 
 @interface YTReelContentView (YouMod) <UIGestureRecognizerDelegate>
