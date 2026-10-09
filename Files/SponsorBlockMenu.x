@@ -373,21 +373,47 @@ static YTICommand *sbEngagementPanelShowCommand(NSString *title) {
 - (void)loadWithModel:(id)model {}
 @end
 
+static Class sbEngagementPanelClass(void) {
+    return %c(YTEngagementPanelViewControllerImpl) ?: %c(YTMainAppEngagementPanelViewController);
+}
+
 static UIViewController *sbEngagementPanelFor(UIViewController *card) {
     UIViewController *panel = card.navigationController.parentViewController;
-    return [panel isKindOfClass:%c(YTEngagementPanelViewControllerImpl)] ? panel : nil;
+    return [panel isKindOfClass:sbEngagementPanelClass()] ? panel : nil;
+}
+
+static BOOL sbIsOurPanelModel(id model) {
+    // The view model's panelIdentifier is a YTEngagementPanelIdentifier, not the
+    // endpoint's NSString of the same name the compiler would pick for `id`.
+    YTEngagementPanelIdentifier *panelID = ((id (*)(id, SEL))objc_msgSend)(model, @selector(panelIdentifier));
+    return sbEngagementPanelNav && [panelID.identifierString isEqualToString:SBEngagementPanelID];
 }
 
 %hook YTEngagementPanelViewControllerImpl
 - (void)prepareContentViewControllerForModel:(id)model {
-    // The view model's panelIdentifier is a YTEngagementPanelIdentifier, not the
-    // endpoint's NSString of the same name the compiler would pick for `id`.
-    YTEngagementPanelIdentifier *panelID = ((id (*)(id, SEL))objc_msgSend)(model, @selector(panelIdentifier));
-    if (!sbEngagementPanelNav || ![panelID.identifierString isEqualToString:SBEngagementPanelID]) {
+    if (!sbIsOurPanelModel(model)) {
         %orig;
         return;
     }
     [self setContentViewController:sbEngagementPanelNav];
+}
+%end
+
+%hook YTMainAppEngagementPanelViewController
+- (void)prepareContentViewControllerForModel:(id)model {
+    if (!sbIsOurPanelModel(model)) {
+        %orig;
+        return;
+    }
+    UIViewController *old = [self valueForKey:@"_contentViewController"];
+    [old willMoveToParentViewController:nil];
+    [old.view removeFromSuperview];
+    [old removeFromParentViewController];
+
+    [self setValue:sbEngagementPanelNav forKey:@"_contentViewController"];
+    [self addChildViewController:sbEngagementPanelNav];
+    [self.view performSelector:@selector(setContentView:) withObject:sbEngagementPanelNav.view];
+    [sbEngagementPanelNav didMoveToParentViewController:self];
 }
 %end
 
@@ -776,8 +802,7 @@ static UINavigationController *sbCardNavigationController(YMSBCardViewController
 }
 
 + (void)presentCardInEngagementPanel:(YMSBCardViewController *)card fromResponder:(id)responder {
-    // Older YouTube versions lack this panel class; fall back to the form sheet.
-    if (!%c(YTEngagementPanelViewControllerImpl)) {
+    if (!sbEngagementPanelClass()) {
         [self presentCard:card];
         return;
     }

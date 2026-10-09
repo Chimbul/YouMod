@@ -376,7 +376,7 @@ static BOOL isTabSelected = NO;
 %end
 
 %hook YTAppDelegate
-- (void)appDidBecomeActive {
+- (void)sceneDidBecomeActive:(UIScene *)scene {
     %orig;
     if (IS_ENABLED(AutoOpenLink)) {
         UIViewController *topVC = YouModTopViewController(nil);

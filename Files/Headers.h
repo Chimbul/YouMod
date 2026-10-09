@@ -846,6 +846,9 @@ typedef NS_ENUM(NSInteger, SBSegmentAction) {
 - (void)setContentViewController:(UIViewController *)contentViewController;
 - (void)didTapCloseButton;
 @end
+@interface YTMainAppEngagementPanelViewController : UIViewController // 19.x name of the above
+- (void)didTapCloseButton;
+@end
 
 // Overlay window/view that only take touches landing on their subviews; empty
 // areas fall through to YouTube's window underneath (SponsorBlock.x).

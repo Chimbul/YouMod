@@ -185,7 +185,7 @@ void YouModFilterShortsDisplayView(_ASDisplayView *view, NSString *iden) {
 }
 
 %hook YTAppDelegate
-- (void)appDidBecomeActive {
+- (void)sceneDidBecomeActive:(UIScene *)scene {
     %orig;
     if ((isFullscreenEnabled && IS_ENABLED(FullScreenShorts)) || (isShortsOnlyOn && IS_ENABLED(ShortsOnly))) {
         [[self valueForKey:@"_appViewController"] performSelector:@selector(hidePivotBar)];
