@@ -152,6 +152,10 @@ jobs:
         if: ${{ inputs.gonerino }}
         run: brew install go
 
+      - name: Install Go
+        if: ${{ inputs.gonerino }}
+        run: brew install go
+
       - name: Set PATH Environment Variables
         run: |
           echo "$(brew --prefix make)/libexec/gnubin" >> $GITHUB_PATH
@@ -262,7 +266,7 @@ jobs:
       - name: Clone YouSlider
         if: ${{ inputs.youslider }}
         run: |
-          git clone --quiet --depth=1 https://github.com/Tonwalter888/YouSlider.git
+          git clone --quiet --depth=1 https://github.com/PoomSmart/YouSlider.git
           wget --no-verbose --quiet https://github.com/Tonwalter888/Tonwalter888.github.io/raw/refs/heads/main/debs/alderis.deb
 
       - name: Clone YTweaks

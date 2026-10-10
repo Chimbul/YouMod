@@ -88,7 +88,7 @@
 "SAVED_TO_PHOTOS" = "Сохранено в Фото";
 "SAVE_FAILED" = "Не удалось сохранить";
 "PHOTO_ACCESS_DENINED" = "Доступ к Фото запрещён";
-"THUMBNAIL_FAILED" = "Не удалось обработать превью";
+    "THUMBNAIL_FAILED" = "Не удалось обработать превью";
 "DOWNLOADING_THUMBNAIL" = "Скачивание превью...";
 "DOWNLOADING_AUDIO" = "Скачивание аудио...";
 "DOWNLOADING_VIDEO" = "Скачивание видео...";
