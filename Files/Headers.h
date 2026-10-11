@@ -739,7 +739,6 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 @end
 
 @interface YTStartupAnimationViewController : UIViewController
-- (void)dismissStartupAnimationWindowAnimated:(BOOL)animated;
 - (void)forceDismissStartupAnimationAnimated:(BOOL)animated;
 @end
 
