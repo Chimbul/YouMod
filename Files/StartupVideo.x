@@ -48,7 +48,7 @@ static void YMStartupVideoDismissInternal(YTStartupAnimationViewController *cont
 
 @implementation YMStartupVideoTapHandler
 - (void)handleDoubleTap:(UITapGestureRecognizer *)recognizer {
-    if (recognizer.state == UIGestureRecognizerStateRecognized) YMStartupVideoDismissWithForce(self.controller);
+    if (recognizer.state == UIGestureRecognizerStateRecognized) YMStartupVideoDismissInternal(self.controller);
 }
 @end
 
