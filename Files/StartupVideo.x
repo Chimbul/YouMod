@@ -44,9 +44,11 @@ static void YMStartupVideoRefreshSettings(UIViewController *presenter) {
 - (void)handleDoubleTap:(UITapGestureRecognizer *)recognizer;
 @end
 
+static void YMStartupVideoDismissWithForce(YTStartupAnimationViewController *controller);
+
 @implementation YMStartupVideoTapHandler
 - (void)handleDoubleTap:(UITapGestureRecognizer *)recognizer {
-    if (recognizer.state == UIGestureRecognizerStateRecognized) YMStartupVideoDismiss(self.controller, NO);
+    if (recognizer.state == UIGestureRecognizerStateRecognized) YMStartupVideoDismissWithForce(self.controller);
 }
 @end
 
@@ -203,7 +205,7 @@ void YMStartupVideoLayout(YTStartupAnimationViewController *controller) {
     if (layer) layer.frame = controller.view.bounds;
 }
 
-void YMStartupVideoDismiss(YTStartupAnimationViewController *controller, BOOL animated) {
+static void YMStartupVideoDismissInternal(YTStartupAnimationViewController *controller, BOOL animated, BOOL preferForceDismiss) {
     if (!controller || [objc_getAssociatedObject(controller, kYMStartupDismissedKey) boolValue]) return;
     objc_setAssociatedObject(controller, kYMStartupDismissedKey, @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     AVPlayer *player = objc_getAssociatedObject(controller, kYMStartupPlayerKey);
@@ -214,8 +216,29 @@ void YMStartupVideoDismiss(YTStartupAnimationViewController *controller, BOOL an
     objc_setAssociatedObject(controller, kYMStartupEndObserverKey, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 
     dispatch_async(dispatch_get_main_queue(), ^{
+        if (preferForceDismiss && [controller respondsToSelector:@selector(forceDismissStartupAnimationAnimated:)]) {
+            [controller forceDismissStartupAnimationAnimated:YES];
+            return;
+        }
+        if (preferForceDismiss) {
+            UIView *fadeView = controller.view.window ?: controller.view;
+            [UIView animateWithDuration:0.2 animations:^{
+                fadeView.alpha = 0.0;
+            } completion:^(__unused BOOL finished) {
+                [controller dismissStartupAnimationWindowAnimated:NO];
+            }];
+            return;
+        }
         [controller dismissStartupAnimationWindowAnimated:animated];
     });
+}
+
+void YMStartupVideoDismiss(YTStartupAnimationViewController *controller, BOOL animated) {
+    YMStartupVideoDismissInternal(controller, animated, NO);
+}
+
+static void YMStartupVideoDismissWithForce(YTStartupAnimationViewController *controller) {
+    YMStartupVideoDismissInternal(controller, YES, YES);
 }
 
 void YMStartupVideoPlay(YTStartupAnimationViewController *controller) {

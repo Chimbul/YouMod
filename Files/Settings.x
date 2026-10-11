@@ -300,15 +300,6 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
             YMPicker(YMLOC(@"HOLD_TO_SPEED"), YMLOC(@"HOLD_TO_SPEED_DESC"), HoldToSpeedIndex, (@[YMLOC(@"DEFAULT"), @"0.25x", @"0.5x", @"0.75x", @"1x", @"1.25x", @"1.5x", @"1.75x", @"2x", @"3x", @"4x", @"5x"]), 0),
             [YMToggle(YMLOC(@"LOCK_SPEED"), YMLOC(@"LOCK_SPEED_DESC"), LockSpeed) visibleWhenKey:HoldToSpeedIndex isGreaterThan:0],
             YMHeader(YMLOC(@"INTERFACE")),
-            YMPicker(YMLOC(@"STARTUP_ANIMATION"), YMLOC(@"STARTUP_ANIMATION_DESC"), StartupAnimation, (@[YMLOC(@"DEFAULT"), YMLOC(@"STARTUP_ANIMATION_SHOW"), YMLOC(@"DISABLED"), YMLOC(@"SELECT_MANUALLY")]), 0),
-            [YMAction(YMLOC(@"STARTUP_VIDEO_PICK"), YMLOC(@"STARTUP_VIDEO_PICK_DESC"), ^(UIViewController *vc) {
-                YMStartupVideoPresentPicker(vc);
-            }) visibleWhenKey:StartupAnimation equals:3],
-            [[YMAction(YMLOC(@"STARTUP_VIDEO_DELETE"), YMLOC(@"STARTUP_VIDEO_DELETE_DESC"), ^(UIViewController *vc) {
-                YMStartupVideoDelete(vc);
-            }) visibleWhenKey:StartupAnimation equals:3] visibleWhen:^BOOL(__unused NSUserDefaults *defaults) {
-                return YMStartupVideoFileExists();
-            }],
             YMNavAction(YMLOC(@"MANAGE_OVERLAY_BUTTONS"), YMLOC(@"MANAGE_OVERLAY_BUTTONS_DESC"), ^(UIViewController *vc) {
                 (void)vc;
                 YMPushOverlayButtonOrder(settingsViewController, [self parentResponder]);
@@ -514,7 +505,6 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
             YMToggle(YMLOC(@"FIXES_SLOW_MINIPLAYER"), YMLOC(@"FIXES_SLOW_MINIPLAYER_DESC"), FixesSlowMiniPlayer),
             YMToggle(YMLOC(@"DISABLES_NEW_MINIPLAYER"), YMLOC(@"DISABLES_NEW_MINIPLAYER_DESC"), DisablesNewMiniPlayer),
             YMToggle(YMLOC(@"DISABLES_SNACK_BAR"), YMLOC(@"DISABLES_SNACK_BAR_DESC"), DisablesSnackBar),
-            [YMToggle(YMLOC(@"HIDE_STARTUP_ANIMATIONS"), YMLOC(@"HIDE_STARTUP_ANIMATIONS_DESC"), HideStartupAni) visibleWhenKey:StartupAnimation equals:0],
             YMToggle(YMLOC(@"HIDE_LIKE_DISLIKE_VOTES"), YMLOC(@"HIDE_LIKE_DISLIKE_VOTES_DESC"), HideLikeDislikeVotes),
             YMToggle(YMLOC(@"HIDE_COMMU_GUIDE"), YMLOC(@"HIDE_COMMU_GUIDE_DESC"), HideCommuGuide),
             YMToggle(YMLOC(@"HIDE_ENGAGEMENT_SUBBAR"), YMLOC(@"HIDE_ENGAGEMENT_SUBBAR_DESC"), HideEngagementSubbar),
@@ -523,6 +513,17 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
             YMToggle(YMLOC(@"HIDE_SORT_FILTER_PANEL"), YMLOC(@"HIDE_SORT_FILTER_PANEL_DESC"), HideSortFilerPanel),
             YMToggle(YMLOC(@"FLOATING_KEYBOARD"), YMLOC(@"FLOATING_KEYBOARD_DESC"), FloatingKeyboard),
             YMToggle(YMLOC(@"DISABLES_RTL"), YMLOC(@"DISABLES_RTL_DESC"), DisablesRTL),
+            YMHeader(@"");
+            YMPicker(YMLOC(@"STARTUP_ANIMATION"), YMLOC(@"STARTUP_ANIMATION_DESC"), StartupAnimation, (@[YMLOC(@"DEFAULT"), YMLOC(@"STARTUP_ANIMATION_SHOW"), YMLOC(@"DISABLED"), YMLOC(@"SELECT_MANUALLY")]), 0),
+            [YMAction(YMLOC(@"STARTUP_VIDEO_PICK"), YMLOC(@"STARTUP_VIDEO_PICK_DESC"), ^(UIViewController *vc) {
+                YMStartupVideoPresentPicker(vc);
+            }) visibleWhenKey:StartupAnimation equals:3],
+            [[YMAction(YMLOC(@"STARTUP_VIDEO_DELETE"), YMLOC(@"STARTUP_VIDEO_DELETE_DESC"), ^(UIViewController *vc) {
+                YMStartupVideoDelete(vc);
+            }) visibleWhenKey:StartupAnimation equals:3] visibleWhen:^BOOL(__unused NSUserDefaults *defaults) {
+                return YMStartupVideoFileExists();
+            }],
+            [YMToggle(YMLOC(@"HIDE_STARTUP_ANIMATIONS"), YMLOC(@"HIDE_STARTUP_ANIMATIONS_DESC"), HideStartupAni) visibleWhenKey:StartupAnimation equals:0],
             YMHeader(@""),
             YMTextSegment(YMLOC(@"DEVICE_UI"), DeviceUIIndex, (@[YMLOC(@"DEFAULT"), @"iPad", @"iPhone"]), 0),
             YMToggle(YMLOC(@"AUTO_OPEN_LINK"), YMLOC(@"AUTO_OPEN_LINK_DESC"), AutoOpenLink),
