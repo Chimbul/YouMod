@@ -276,6 +276,7 @@
 #define DisablesNewMiniPlayer @"YouModDisablesNewMiniPlayer"
 #define DisablesSnackBar @"YouModDisablesSnackBar"
 #define HideStartupAni @"YouModHideStartupAnimations"
+#define StartupAnimation @"YouModStartupAnimation"
 #define HideLikeDislikeVotes @"YouModHideLikeDislikeVotes"
 #define HideCommuGuide @"YouModHideCommuGuide"
 #define HideEngagementSubbar @"YouModHideEngagementSubbar"
@@ -286,7 +287,6 @@
 #define DeviceUIIndex @"YouModDeviceUIIndex"
 #define FloatingKeyboard @"YouModFloatingKeyboard"
 #define AutoOpenLink @"YouModAutoOpenLink"
-// #define CustomStartup @"YouModUseCustomVideoStartup"
 // Flyout menu
 #define RemovePlayInNextQueueOption @"YouModRemovePlayInNextQueueOption"
 #define RemoveDownloadOption @"YouModRemoveDownloadOption"
@@ -739,6 +739,8 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 @end
 
 @interface YTStartupAnimationViewController : UIViewController
+- (void)dismissStartupAnimationWindowAnimated:(BOOL)animated;
+- (void)forceDismissStartupAnimationAnimated:(BOOL)animated;
 @end
 
 @interface YTWatchFloatingMiniplayerBadgeView : UIView
@@ -1030,6 +1032,15 @@ extern void YMFFmpegMux(NSURL *videoURL, NSURL *audioURL, NSArray<YMCaptionTrack
 extern void YMFFmpegMuxTracks(NSURL *videoURL, NSArray<NSURL *> *audioURLs,
                               NSArray<YMCaptionTrack *> *subtitles, NSURL *outputURL,
                               void (^completion)(BOOL success, NSString *failure));
+extern BOOL YMFFmpegConvertStartupVideo(NSURL *inputURL, NSURL *outputURL, NSString **failureOut);
+extern BOOL YMStartupVideoFileExists(void);
+extern void YMStartupVideoPresentPicker(UIViewController *presenter);
+extern void YMStartupVideoDelete(UIViewController *presenter);
+extern BOOL YMStartupVideoPrepare(YTStartupAnimationViewController *controller);
+extern BOOL YMStartupVideoIsPrepared(YTStartupAnimationViewController *controller);
+extern void YMStartupVideoPlay(YTStartupAnimationViewController *controller);
+extern void YMStartupVideoLayout(YTStartupAnimationViewController *controller);
+extern void YMStartupVideoDismiss(YTStartupAnimationViewController *controller, BOOL animated);
 
 typedef NS_ENUM(NSInteger, YMDownloadDestination) {
     YMDownloadDestinationPhotos,
@@ -1037,11 +1048,12 @@ typedef NS_ENUM(NSInteger, YMDownloadDestination) {
 };
 
 extern void YMDownloadStart(YMFormat *video, NSArray<YMFormat *> *audioTracks, NSArray<YMCaptionTrack *> *captions,
-                            NSString *fileName, YMDownloadDestination destination, NSURL *thumbnailURL, UIViewController *presenter);
+                            NSString *fileName, YMDownloadDestination destination, NSURL *thumbnailURL, BOOL isShorts, UIViewController *presenter);
 
 @interface YMDownloadSheet : UIViewController
 + (void)presentForPlayer:(YTPlayerViewController *)player
             destination:(YMDownloadDestination)destination
+                isShorts:(BOOL)isShorts
               presenter:(UIViewController *)presenter;
 @end
 

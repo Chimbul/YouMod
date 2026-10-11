@@ -21,8 +21,15 @@
 // Try to disable Shorts PiP
 - (BOOL)shortsPlayerGlobalConfigEnableReelsPictureInPicture { return IS_ENABLED(DisablesShortsPiP) ? NO : %orig; }
 - (BOOL)shortsPlayerGlobalConfigEnableReelsPictureInPictureIos { return IS_ENABLED(DisablesShortsPiP) ? NO : %orig; }
-// Hide startup animations
-- (BOOL)mainAppCoreClientIosEnableStartupAnimation { return IS_ENABLED(HideStartupAni) ? NO : %orig; }
+// Startup animation picker: default honors YouTube and the existing hide toggle;
+// Show forces YouTube's animation on, Disabled turns it off, and custom video
+// keeps the animation window available for YTStartupAnimationViewController.
+- (BOOL)mainAppCoreClientIosEnableStartupAnimation {
+    NSInteger mode = INTFORVAL(StartupAnimation);
+    if (mode == 1 || mode == 3) return YES;
+    if (mode == 2) return NO;
+    return IS_ENABLED(HideStartupAni) ? NO : %orig;
+}
 // Prevent YouTube from asking "Are you there?"
 - (BOOL)enableYouthereCommandsOnIos { return IS_ENABLED(BlockUpgradeDialogs) ? NO : %orig; }
 // Fixes slow miniplayer

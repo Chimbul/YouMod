@@ -254,9 +254,20 @@ static void YMSaveThumbnailAlongsideVideo(NSURL *thumbnailURL, NSURL *videoOutpu
     }] resume];
 }
 
+static void YMRecordLibraryDownloadType(NSURL *fileURL, BOOL isShorts) {
+    if (!fileURL || !isShorts) return;
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    NSMutableDictionary *metadata = [[defaults dictionaryForKey:@"YouModDownloadLibraryMetadata"] mutableCopy] ?: [NSMutableDictionary dictionary];
+    NSString *key = fileURL.lastPathComponent;
+    NSMutableDictionary *entry = [metadata[key] mutableCopy] ?: [NSMutableDictionary dictionary];
+    entry[@"shorts"] = @YES;
+    metadata[key] = entry;
+    [defaults setObject:metadata forKey:@"YouModDownloadLibraryMetadata"];
+}
+
 static void YMDownloadMuxAndFinish(NSURL *videoURL, NSArray<NSURL *> *audioURLs, NSArray<YMCaptionTrack *> *subtitles,
                                    NSString *fileName, YMFormat *video, NSArray<YMFormat *> *audioFormats,
-                                   YMDownloadDestination destination, NSURL *thumbnailURL, UIViewController *presenter) {
+                                   YMDownloadDestination destination, NSURL *thumbnailURL, BOOL isShorts, UIViewController *presenter) {
     NSMutableArray<NSURL *> *temporaries = [NSMutableArray array];
     if (videoURL) [temporaries addObject:videoURL];
     [temporaries addObjectsFromArray:audioURLs];
@@ -295,6 +306,7 @@ static void YMDownloadMuxAndFinish(NSURL *videoURL, NSArray<NSURL *> *audioURLs,
                 [[NSFileManager defaultManager] removeItemAtURL:url error:nil];
             }
             if (video) YMSaveThumbnailAlongsideVideo(thumbnailURL, output);
+            YMRecordLibraryDownloadType(output, isShorts && video != nil);
             dispatch_async(dispatch_get_main_queue(), ^{
                 gYMDownloadBusy = NO;
                 [gYMDownloadProgressView dismiss];
@@ -308,7 +320,7 @@ static void YMDownloadMuxAndFinish(NSURL *videoURL, NSArray<NSURL *> *audioURLs,
 }
 
 void YMDownloadStart(YMFormat *video, NSArray<YMFormat *> *audioTracks, NSArray<YMCaptionTrack *> *captions,
-                     NSString *fileName, YMDownloadDestination destination, NSURL *thumbnailURL, UIViewController *presenter) {
+                     NSString *fileName, YMDownloadDestination destination, NSURL *thumbnailURL, BOOL isShorts, UIViewController *presenter) {
     if (gYMDownloadBusy) {
         YouModSendError(LOC(@"ALREADY_DOWNLOADING"));
         return;
@@ -380,7 +392,7 @@ void YMDownloadStart(YMFormat *video, NSArray<YMFormat *> *audioTracks, NSArray<
             NSMutableArray *nextBox = [NSMutableArray arrayWithObject:[NSNull null]];
             void (^downloadNextAudio)(void) = ^{
                 if (nextAudio >= audioTracks.count) {
-                    YMDownloadMuxAndFinish(videoURL, audioURLs, localCaptions, fileName, video, audioTracks, destination, thumbnailURL, presenter);
+                    YMDownloadMuxAndFinish(videoURL, audioURLs, localCaptions, fileName, video, audioTracks, destination, thumbnailURL, isShorts, presenter);
                     return;
                 }
                 YMFormat *next = audioTracks[nextAudio++];
@@ -403,7 +415,7 @@ void YMDownloadStart(YMFormat *video, NSArray<YMFormat *> *audioTracks, NSArray<
         NSMutableArray *nextBox = [NSMutableArray arrayWithObject:[NSNull null]];
         void (^downloadNextAudio)(void) = ^{
             if (nextAudio >= audioTracks.count) {
-                YMDownloadMuxAndFinish(nil, audioURLs, @[], fileName, nil, audioTracks, destination, thumbnailURL, presenter);
+                YMDownloadMuxAndFinish(nil, audioURLs, @[], fileName, nil, audioTracks, destination, thumbnailURL, NO, presenter);
                 return;
             }
             YMFormat *currentAudio = audioTracks[nextAudio++];

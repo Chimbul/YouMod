@@ -105,6 +105,29 @@ static BOOL YMFFmpegRunSync(NSArray<NSString *> *arguments, NSString **failureOu
     return success;
 }
 
+BOOL YMFFmpegConvertStartupVideo(NSURL *inputURL, NSURL *outputURL, NSString **failureOut) {
+    if (!inputURL.isFileURL || !outputURL.isFileURL) {
+        if (failureOut) *failureOut = @"Startup video conversion requires local files";
+        return NO;
+    }
+    NSArray<NSString *> *arguments = @[
+        @"-y", @"-hide_banner", @"-nostdin",
+        @"-i", inputURL.path,
+        @"-t", @"10",
+        @"-map", @"0:v:0",
+        @"-map", @"0:a?",
+        @"-vf", @"scale='min(1920,iw)':'min(1080,ih)':force_original_aspect_ratio=decrease:force_divisible_by=2",
+        // FFmpegKitNext is built without GPL encoders; the native MPEG-4
+        // encoder keeps this conversion available in the shipped build.
+        @"-c:v", @"mpeg4", @"-q:v", @"4",
+        @"-c:a", @"aac", @"-b:a", @"128k",
+        @"-movflags", @"+faststart", @"-f", @"mp4",
+        outputURL.path
+    ];
+    [[NSFileManager defaultManager] removeItemAtURL:outputURL error:nil];
+    return YMFFmpegRunSync(arguments, failureOut);
+}
+
 void YMFFmpegMuxTracks(NSURL *videoURL, NSArray<NSURL *> *audioURLs, NSArray<YMCaptionTrack *> *subtitles,
                        NSURL *outputURL, void (^completion)(BOOL success, NSString *failure)) {
     if (!completion) return;

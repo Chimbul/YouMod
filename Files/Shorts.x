@@ -35,6 +35,34 @@ static void YouModMakeAShortsAction(YTReelPlayerViewController *self, YTSingleVi
     }
 }
 
+
+%hook YTStartupAnimationViewController
+- (void)setUpLottieAnimation {
+    NSInteger mode = INTFORVAL(StartupAnimation);
+    if (mode == 2) return;
+    if (mode == 3 && YMStartupVideoFileExists() && YMStartupVideoPrepare(self)) return;
+    %orig;
+}
+- (void)playLottieAnimation {
+    NSInteger mode = INTFORVAL(StartupAnimation);
+    if (mode == 2) {
+        YMStartupVideoDismiss(self, NO);
+        return;
+    }
+    if (mode == 3 && YMStartupVideoIsPrepared(self)) {
+        YMStartupVideoPlay(self);
+        return;
+    }
+    %orig;
+}
+- (void)viewDidLayoutSubviews {
+    %orig;
+    if (INTFORVAL(StartupAnimation) == 3 && YMStartupVideoIsPrepared(self)) YMStartupVideoLayout(self);
+}
+- (void)startSafeguardAnimationTimer { if (INTFORVAL(StartupAnimation) != 3 || !YMStartupVideoIsPrepared(self)) %orig; }
+- (void)stopAnimationTimer { if (INTFORVAL(StartupAnimation) != 3 || !YMStartupVideoIsPrepared(self)) %orig; }
+%end
+
 static BOOL isShortsOnlyOn = YES;
 static BOOL isFullscreenEnabled = NO;
 

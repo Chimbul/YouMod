@@ -424,6 +424,7 @@ static BOOL sbIsOurPanelModel(id model) {
 @property (nonatomic, strong) UILabel *emptyLabel;
 @property (nonatomic, strong) NSArray<YMSBCardItem *> *allItems;
 @property (nonatomic, copy) NSString *searchText;
+@property (nonatomic, assign) BOOL sbUsesSubmitColors;
 @end
 
 @implementation YMSBCardViewController {
@@ -461,6 +462,11 @@ static BOOL sbIsOurPanelModel(id model) {
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.title = self.cardTitle;
+    if (self.sbUsesSubmitColors) {
+        self.view.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor *(UITraitCollection *trait) {
+            return trait.userInterfaceStyle == UIUserInterfaceStyleDark ? [%c(YTColor) black3] : [UIColor whiteColor];
+        }];
+    }
 
     UIBarButtonItem *closeButton = [[UIBarButtonItem alloc] initWithImage:YouModSymbolImageInCanvas(@"xmark", 24, 16, UIImageSymbolWeightMedium)
                                                                     style:UIBarButtonItemStylePlain
@@ -478,6 +484,7 @@ static BOOL sbIsOurPanelModel(id model) {
     _tableView.estimatedRowHeight = 54;
     _tableView.keyboardDismissMode = UIScrollViewKeyboardDismissModeInteractive;
     _tableView.translatesAutoresizingMaskIntoConstraints = NO;
+    if (self.sbUsesSubmitColors) _tableView.backgroundColor = self.view.backgroundColor;
     [self.view addSubview:_tableView];
     [NSLayoutConstraint activateConstraints:@[
         [_tableView.topAnchor constraintEqualToAnchor:self.view.topAnchor],
@@ -657,6 +664,10 @@ static BOOL sbIsOurPanelModel(id model) {
     if (self.message.length > 0 && indexPath.row == 0) {
         UITableViewCell *cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:nil];
         cell.selectionStyle = UITableViewCellSelectionStyleNone;
+        if (self.sbUsesSubmitColors) {
+            cell.backgroundColor = [UIColor systemGray6Color];
+            cell.contentView.backgroundColor = [UIColor systemGray6Color];
+        }
         UILabel *label = [[UILabel alloc] init];
         label.text = self.message;
         label.font = [UIFont systemFontOfSize:13];
@@ -677,6 +688,10 @@ static BOOL sbIsOurPanelModel(id model) {
     if (self.textField && indexPath.row == (self.message.length > 0 ? 1 : 0)) {
         UITableViewCell *cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:nil];
         cell.selectionStyle = UITableViewCellSelectionStyleNone;
+        if (self.sbUsesSubmitColors) {
+            cell.backgroundColor = [UIColor systemGray6Color];
+            cell.contentView.backgroundColor = [UIColor systemGray6Color];
+        }
         UITextField *field = self.textField;
         field.translatesAutoresizingMaskIntoConstraints = NO;
         [cell.contentView addSubview:field];
@@ -694,6 +709,10 @@ static BOOL sbIsOurPanelModel(id model) {
     UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"sbCardItem"];
     if (!cell) {
         cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:@"sbCardItem"];
+    }
+    if (self.sbUsesSubmitColors) {
+        cell.backgroundColor = [UIColor systemGray6Color];
+        cell.contentView.backgroundColor = [UIColor systemGray6Color];
     }
     // Re-applied on every pass so reused cells always carry the current
     // dynamic text colors (white in dark mode, black in light mode).
@@ -773,7 +792,11 @@ static UINavigationController *sbCardNavigationController(YMSBCardViewController
     // can leave a sheet's title invisible. Give our bar an explicit dynamic
     // title color and a background matching the grouped table so the header
     // blends seamlessly into the dialog.
-    UIColor *headerBackground = [UIColor systemGroupedBackgroundColor];
+    UIColor *headerBackground = card.sbUsesSubmitColors
+        ? [UIColor colorWithDynamicProvider:^UIColor *(UITraitCollection *trait) {
+            return trait.userInterfaceStyle == UIUserInterfaceStyleDark ? [%c(YTColor) black3] : [UIColor whiteColor];
+        }]
+        : [UIColor systemGroupedBackgroundColor];
     NSMutableDictionary *titleAttributes = [[NSMutableDictionary alloc] init];
     titleAttributes[NSForegroundColorAttributeName] = [UIColor labelColor];
     // Same size as the × close button (16pt), but bold so the title reads
@@ -1090,6 +1113,7 @@ static UIView *sbNudgeControls(void (^nudge)(float delta)) {
         self.sbDraft = [@{@"videoID": videoID, @"category": @"sponsor", @"start": @(-1), @"end": @(-1)} mutableCopy];
     }
     YMSBCardViewController *card = [[YMSBCardViewController alloc] init];
+    card.sbUsesSubmitColors = YES;
     card.cardTitle = LOC(@"SB_SUBMIT_TITLE");
     card.message = LOC(@"SB_SUBMIT_MESSAGE");
     card.items = [self sbSubmitItemsForCard:card];
@@ -1150,6 +1174,7 @@ static UIView *sbNudgeControls(void (^nudge)(float delta)) {
             }]];
         }
         YMSBCardViewController *picker = [[YMSBCardViewController alloc] init];
+        picker.sbUsesSubmitColors = YES;
         picker.cardTitle = LOC(@"SB_SUBMIT_CATEGORY");
         picker.items = pickerItems;
         [c.navigationController pushViewController:picker animated:YES];

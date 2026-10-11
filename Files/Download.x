@@ -233,10 +233,10 @@ static void YouModShowDownloadManager(YTPlayerViewController *player, UIViewCont
 
     if (!sgvid.isLivePlayback) {
         [items addObject:[YouModMenuItem itemWithTitle:LOC(@"DOWNLOAD_TO_PHOTOS") subtitle:nil icon:YouModYTIconImage(57, NO, nil) handler:^{
-            [YMDownloadSheet presentForPlayer:player destination:YMDownloadDestinationPhotos presenter:presenter];
+            [YMDownloadSheet presentForPlayer:player destination:YMDownloadDestinationPhotos isShorts:isShorts presenter:presenter];
         }]];
         [items addObject:[YouModMenuItem itemWithTitle:LOC(@"DOWNLOAD_TO_FILES") subtitle:LOC(@"DOWNLOAD_TO_FILES_DESC") icon:YouModYTIconImage(isShorts ? 769 : 658, NO, nil) handler:^{
-            [YMDownloadSheet presentForPlayer:player destination:YMDownloadDestinationFiles presenter:presenter];
+            [YMDownloadSheet presentForPlayer:player destination:YMDownloadDestinationFiles isShorts:isShorts presenter:presenter];
         }]];
     }
     [items addObject:[YouModMenuItem itemWithTitle:LOC(@"DOWNLOAD_THUMBNAIL") subtitle:nil icon:YouModYTIconImage(367, NO, nil) handler:^{

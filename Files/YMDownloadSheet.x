@@ -12,6 +12,7 @@ typedef NS_ENUM(NSInteger, YMDownloadSheetSection) {
 
 @interface YMDownloadSheet () <UITableViewDelegate, UITableViewDataSource>
 @property (nonatomic, assign) YMDownloadDestination destination;
+@property (nonatomic, assign) BOOL isShorts;
 @property (nonatomic, copy) NSString *videoTitle;
 @property (nonatomic, copy) NSString *videoID;
 @property (nonatomic, strong) NSURL *thumbnailURL;
@@ -40,6 +41,7 @@ typedef NS_ENUM(NSInteger, YMDownloadSheetSection) {
 
 + (void)presentForPlayer:(YTPlayerViewController *)player
             destination:(YMDownloadDestination)destination
+                isShorts:(BOOL)isShorts
               presenter:(UIViewController *)presenter {
     NSArray<YMFormat *> *formats = YMFormatsFromPlayer(player);
     if (destination == YMDownloadDestinationPhotos) {
@@ -48,6 +50,7 @@ typedef NS_ENUM(NSInteger, YMDownloadSheetSection) {
     if (formats.count > 0) {
         YMDownloadSheet *sheet = [YMDownloadSheet new];
         sheet.destination = destination;
+        sheet.isShorts = isShorts;
         sheet.allFormats = formats;
         sheet.captions = YMCaptionTracksFromPlayer(player);
         sheet.videoTitle = YouModTitleForPlayer(player);
@@ -512,7 +515,7 @@ static NSString *YMByteCountString(unsigned long long bytes) {
         return;
     }
     [self dismissViewControllerAnimated:YES completion:^{
-        YMDownloadStart(video, audioTracks, captions, title, self.destination, self.thumbnailURL, presenter);
+        YMDownloadStart(video, audioTracks, captions, title, self.destination, self.thumbnailURL, self.isShorts, presenter);
     }];
 }
 

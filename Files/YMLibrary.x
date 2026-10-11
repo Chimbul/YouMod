@@ -3,6 +3,7 @@
 #import <AVKit/AVKit.h>
 #import <CoreMedia/CoreMedia.h>
 #import <Photos/Photos.h>
+#import <LocalAuthentication/LocalAuthentication.h>
 #import <math.h>
 
 static NSSet<NSString *> *ymLibraryMediaExtensions(void) {
@@ -15,6 +16,49 @@ static NSSet<NSString *> *ymLibraryMediaExtensions(void) {
 static BOOL ymIsAudioOnlyExtension(NSString *extension) {
     NSString *lower = extension.lowercaseString;
     return [lower isEqualToString:@"m4a"] || [lower isEqualToString:@"mka"];
+}
+
+static NSString * const kYMLibraryMetadataDefaultsKey = @"YouModDownloadLibraryMetadata";
+static NSString * const kYMLibraryPlaylistsDefaultsKey = @"YouModDownloadLibraryPlaylists";
+static NSString * const kYMLibraryTypeAll = @"All";
+static NSString * const kYMLibraryTypeVideos = @"Videos";
+static NSString * const kYMLibraryTypeShorts = @"Shorts";
+static NSString * const kYMLibraryTypeAudio = @"Audio";
+static NSString * const kYMLibraryTypePlaylists = @"Playlists";
+static NSString * const kYMLibraryTypePrivate = @"Private";
+
+static NSString *ymLibraryMetadataKeyForURL(NSURL *url) {
+    return url.lastPathComponent ?: @"";
+}
+
+static NSDictionary *ymLibraryMetadataForURL(NSURL *url) {
+    NSDictionary *metadata = [[NSUserDefaults standardUserDefaults] dictionaryForKey:kYMLibraryMetadataDefaultsKey];
+    NSDictionary *entry = metadata[ymLibraryMetadataKeyForURL(url)];
+    return [entry isKindOfClass:[NSDictionary class]] ? entry : @{};
+}
+
+static void ymSetLibraryMetadataForURL(NSURL *url, NSDictionary *entry) {
+    if (!url) return;
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    NSMutableDictionary *metadata = [[defaults dictionaryForKey:kYMLibraryMetadataDefaultsKey] mutableCopy] ?: [NSMutableDictionary dictionary];
+    NSString *key = ymLibraryMetadataKeyForURL(url);
+    if (entry.count > 0) metadata[key] = entry;
+    else [metadata removeObjectForKey:key];
+    [defaults setObject:metadata forKey:kYMLibraryMetadataDefaultsKey];
+}
+
+static NSArray<NSDictionary *> *ymLibraryPlaylists(void) {
+    NSArray *playlists = [[NSUserDefaults standardUserDefaults] arrayForKey:kYMLibraryPlaylistsDefaultsKey];
+    return [playlists isKindOfClass:[NSArray class]] ? playlists : @[];
+}
+
+static void ymSaveLibraryPlaylists(NSArray<NSDictionary *> *playlists) {
+    [[NSUserDefaults standardUserDefaults] setObject:playlists ?: @[] forKey:kYMLibraryPlaylistsDefaultsKey];
+}
+
+static NSString *ymLibraryText(NSString *key, NSString *fallback) {
+    NSString *value = LOC(key);
+    return [value isEqualToString:key] ? fallback : value;
 }
 
 static NSString *ymDisplayTitleForFileName(NSString *baseName) {
@@ -159,6 +203,12 @@ static NSString *ymMediaInfoStringForFile(NSURL *fileURL, unsigned long long byt
 @property (nonatomic, copy) NSString *sizeText;
 @property (nonatomic, strong) UIImage *thumbnail;
 @property (nonatomic, assign) BOOL isAudio;
+@property (nonatomic, assign) BOOL isShorts;
+@property (nonatomic, assign) BOOL isPrivate;
+@property (nonatomic, copy) NSArray<NSString *> *playlistIDs;
+@property (nonatomic, strong) NSDate *modifiedDate;
+@property (nonatomic, assign) BOOL isPlaylist;
+@property (nonatomic, copy) NSString *playlistID;
 @end
 @implementation YMLibraryRow
 @end
@@ -439,11 +489,21 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
 @interface YMLibraryViewController : UIViewController <UICollectionViewDataSource, UICollectionViewDelegate, UISearchBarDelegate>
 @property (nonatomic, strong) UICollectionView *collectionView;
 @property (nonatomic, strong) UISearchBar *searchBar;
+@property (nonatomic, strong) UIScrollView *typeScrollView;
+@property (nonatomic, strong) UIStackView *typeStackView;
+@property (nonatomic, strong) UIScrollView *sortScrollView;
+@property (nonatomic, strong) UIStackView *sortStackView;
 @property (nonatomic, strong) UILabel *emptyLabel;
 @property (nonatomic, strong) YMLibraryRefreshControl *refreshControl;
 @property (nonatomic, strong) NSMutableArray<YMLibraryRow *> *allRows; // unfiltered backing store
 @property (nonatomic, strong) NSMutableArray<YMLibraryRow *> *rows;    // currently displayed (search-filtered)
 @property (nonatomic, weak) id hostParentResponder;
+@property (nonatomic, copy) NSString *selectedType;
+@property (nonatomic, copy) NSString *selectedSort;
+@property (nonatomic, copy) NSString *selectedPlaylistID;
+@property (nonatomic, assign) BOOL privateUnlocked;
+@property (nonatomic, assign) BOOL isAuthenticatingPrivate;
+@property (nonatomic, assign) BOOL privateAuthWasBackgrounded;
 @end
 
 @implementation YMLibraryViewController
@@ -454,6 +514,14 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
     self.view.backgroundColor = ymYouTubeBackgroundColor();
     self.allRows = [NSMutableArray array];
     self.rows = [NSMutableArray array];
+    NSArray *types = @[kYMLibraryTypeAll, kYMLibraryTypeVideos, kYMLibraryTypeShorts, kYMLibraryTypeAudio, kYMLibraryTypePlaylists, kYMLibraryTypePrivate];
+    NSArray *sorts = @[@"Newest", @"Oldest", @"Largest", @"Smallest", @"A-Z", @"Z-A"];
+    NSString *savedType = [[NSUserDefaults standardUserDefaults] stringForKey:@"YouModDownloadLibrarySelectedType"];
+    NSString *savedSort = [[NSUserDefaults standardUserDefaults] stringForKey:@"YouModDownloadLibrarySelectedSort"];
+    // Never restore the protected category from preferences without a fresh auth.
+    self.selectedType = ([types containsObject:savedType] && ![savedType isEqualToString:kYMLibraryTypePrivate]) ? savedType : kYMLibraryTypeAll;
+    self.selectedSort = [sorts containsObject:savedSort] ? savedSort : @"Newest";
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(libraryDidEnterBackground) name:UIApplicationDidEnterBackgroundNotification object:nil];
 
     UIView *topBar = [UIView new];
     topBar.backgroundColor = ymYouTubeBackgroundColor();
@@ -482,6 +550,30 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
 
     [topBar addSubview:_searchBar];
     [topBar addSubview:settingsButton];
+
+    _typeScrollView = [UIScrollView new];
+    _typeScrollView.showsHorizontalScrollIndicator = NO;
+    _typeScrollView.translatesAutoresizingMaskIntoConstraints = NO;
+    _typeStackView = [[UIStackView alloc] initWithFrame:CGRectZero];
+    _typeStackView.axis = UILayoutConstraintAxisHorizontal;
+    _typeStackView.spacing = 20;
+    _typeStackView.alignment = UIStackViewAlignmentCenter;
+    _typeStackView.translatesAutoresizingMaskIntoConstraints = NO;
+    [_typeScrollView addSubview:_typeStackView];
+    [topBar addSubview:_typeScrollView];
+
+    _sortScrollView = [UIScrollView new];
+    _sortScrollView.showsHorizontalScrollIndicator = NO;
+    _sortScrollView.translatesAutoresizingMaskIntoConstraints = NO;
+    _sortStackView = [[UIStackView alloc] initWithFrame:CGRectZero];
+    _sortStackView.axis = UILayoutConstraintAxisHorizontal;
+    _sortStackView.spacing = 8;
+    _sortStackView.alignment = UIStackViewAlignmentCenter;
+    _sortStackView.translatesAutoresizingMaskIntoConstraints = NO;
+    [_sortScrollView addSubview:_sortStackView];
+    [topBar addSubview:_sortScrollView];
+
+    [self rebuildLibraryControls];
 
     UILayoutGuide *headerContentGuide = [UILayoutGuide new];
     [topBar addLayoutGuide:headerContentGuide];
@@ -518,7 +610,7 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
         [topBar.topAnchor constraintEqualToAnchor:self.view.topAnchor],
         [topBar.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
         [topBar.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
-        [topBar.heightAnchor constraintEqualToConstant:106],
+        [topBar.heightAnchor constraintEqualToConstant:206],
 
         [topBarSeparator.leadingAnchor constraintEqualToAnchor:topBar.leadingAnchor],
         [topBarSeparator.trailingAnchor constraintEqualToAnchor:topBar.trailingAnchor],
@@ -531,13 +623,33 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
         [headerContentGuide.trailingAnchor constraintEqualToAnchor:topBar.trailingAnchor],
 
         [_searchBar.leadingAnchor constraintEqualToAnchor:headerContentGuide.leadingAnchor],
-        [_searchBar.centerYAnchor constraintEqualToAnchor:headerContentGuide.centerYAnchor],
+        [_searchBar.centerYAnchor constraintEqualToAnchor:headerContentGuide.topAnchor constant:26],
 
         [settingsButton.leadingAnchor constraintEqualToAnchor:_searchBar.trailingAnchor constant:4],
         [settingsButton.trailingAnchor constraintEqualToAnchor:headerContentGuide.trailingAnchor constant:-14],
         [settingsButton.centerYAnchor constraintEqualToAnchor:_searchBar.centerYAnchor],
         [settingsButton.widthAnchor constraintEqualToConstant:35],
         [settingsButton.heightAnchor constraintEqualToConstant:35],
+
+        [_typeScrollView.topAnchor constraintEqualToAnchor:headerContentGuide.topAnchor constant:52],
+        [_typeScrollView.leadingAnchor constraintEqualToAnchor:topBar.leadingAnchor constant:16],
+        [_typeScrollView.trailingAnchor constraintEqualToAnchor:topBar.trailingAnchor constant:-16],
+        [_typeScrollView.heightAnchor constraintEqualToConstant:34],
+        [_typeStackView.topAnchor constraintEqualToAnchor:_typeScrollView.contentLayoutGuide.topAnchor],
+        [_typeStackView.bottomAnchor constraintEqualToAnchor:_typeScrollView.contentLayoutGuide.bottomAnchor],
+        [_typeStackView.leadingAnchor constraintEqualToAnchor:_typeScrollView.contentLayoutGuide.leadingAnchor],
+        [_typeStackView.trailingAnchor constraintEqualToAnchor:_typeScrollView.contentLayoutGuide.trailingAnchor],
+        [_typeStackView.heightAnchor constraintEqualToAnchor:_typeScrollView.frameLayoutGuide.heightAnchor],
+
+        [_sortScrollView.topAnchor constraintEqualToAnchor:_typeScrollView.bottomAnchor constant:8],
+        [_sortScrollView.leadingAnchor constraintEqualToAnchor:topBar.leadingAnchor constant:16],
+        [_sortScrollView.trailingAnchor constraintEqualToAnchor:topBar.trailingAnchor constant:-16],
+        [_sortScrollView.heightAnchor constraintEqualToConstant:36],
+        [_sortStackView.topAnchor constraintEqualToAnchor:_sortScrollView.contentLayoutGuide.topAnchor],
+        [_sortStackView.bottomAnchor constraintEqualToAnchor:_sortScrollView.contentLayoutGuide.bottomAnchor],
+        [_sortStackView.leadingAnchor constraintEqualToAnchor:_sortScrollView.contentLayoutGuide.leadingAnchor],
+        [_sortStackView.trailingAnchor constraintEqualToAnchor:_sortScrollView.contentLayoutGuide.trailingAnchor],
+        [_sortStackView.heightAnchor constraintEqualToAnchor:_sortScrollView.frameLayoutGuide.heightAnchor],
 
         [_collectionView.topAnchor constraintEqualToAnchor:topBar.bottomAnchor],
         [_collectionView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor],
@@ -562,6 +674,187 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
 
     [self updateSearchBarTheme];
     [self reload];
+}
+
+- (NSString *)displayTitleForType:(NSString *)type {
+    NSDictionary *labels = @{
+        kYMLibraryTypeAll: @[@"DOWNLOAD_LIBRARY_TYPE_ALL", @"All"],
+        kYMLibraryTypeVideos: @[@"DOWNLOAD_LIBRARY_TYPE_VIDEOS", @"Videos"],
+        kYMLibraryTypeShorts: @[@"DOWNLOAD_LIBRARY_TYPE_SHORTS", @"Shorts"],
+        kYMLibraryTypeAudio: @[@"DOWNLOAD_LIBRARY_TYPE_AUDIO", @"Audio"],
+        kYMLibraryTypePlaylists: @[@"DOWNLOAD_LIBRARY_TYPE_PLAYLISTS", @"Playlists"],
+        kYMLibraryTypePrivate: @[@"DOWNLOAD_LIBRARY_TYPE_PRIVATE", @"Private"],
+    };
+    NSArray *entry = labels[type];
+    return entry ? ymLibraryText(entry[0], entry[1]) : type;
+}
+
+- (NSString *)displayTitleForSort:(NSString *)sort {
+    NSDictionary *labels = @{
+        @"Newest": @[@"DOWNLOAD_LIBRARY_SORT_NEWEST", @"Newest"],
+        @"Oldest": @[@"DOWNLOAD_LIBRARY_SORT_OLDEST", @"Oldest"],
+        @"Largest": @[@"DOWNLOAD_LIBRARY_SORT_LARGEST", @"Largest"],
+        @"Smallest": @[@"DOWNLOAD_LIBRARY_SORT_SMALLEST", @"Smallest"],
+        @"A-Z": @[@"DOWNLOAD_LIBRARY_SORT_AZ", @"A-Z"],
+        @"Z-A": @[@"DOWNLOAD_LIBRARY_SORT_ZA", @"Z-A"],
+    };
+    NSArray *entry = labels[sort];
+    return entry ? ymLibraryText(entry[0], entry[1]) : sort;
+}
+
+- (UIButton *)libraryButtonWithTitle:(NSString *)title tag:(NSInteger)tag selector:(SEL)selector {
+    UIButton *button = [UIButton buttonWithType:UIButtonTypeSystem];
+    button.tag = tag;
+    [button setTitle:title forState:UIControlStateNormal];
+    [button addTarget:self action:selector forControlEvents:UIControlEventTouchUpInside];
+    button.titleLabel.font = [UIFont systemFontOfSize:14 weight:UIFontWeightMedium];
+    button.contentEdgeInsets = UIEdgeInsetsMake(7, 14, 7, 14);
+    button.layer.cornerRadius = 18;
+    button.clipsToBounds = YES;
+    return button;
+}
+
+- (void)rebuildLibraryControls {
+    [self.typeStackView.arrangedSubviews makeObjectsPerformSelector:@selector(removeFromSuperview)];
+    [self.sortStackView.arrangedSubviews makeObjectsPerformSelector:@selector(removeFromSuperview)];
+    NSArray *types = @[kYMLibraryTypeAll, kYMLibraryTypeVideos, kYMLibraryTypeShorts, kYMLibraryTypeAudio, kYMLibraryTypePlaylists, kYMLibraryTypePrivate];
+    [types enumerateObjectsUsingBlock:^(NSString *type, NSUInteger idx, BOOL *stop) {
+        UIButton *button = [UIButton buttonWithType:UIButtonTypeSystem];
+        button.tag = (NSInteger)idx;
+        NSString *title = [self displayTitleForType:type];
+        if ([type isEqualToString:kYMLibraryTypePlaylists] && self.selectedPlaylistID.length > 0) title = [NSString stringWithFormat:@"‹ %@", title];
+        [button setTitle:title forState:UIControlStateNormal];
+        button.titleLabel.font = [UIFont systemFontOfSize:15 weight:[self.selectedType isEqualToString:type] ? UIFontWeightSemibold : UIFontWeightRegular];
+        [button setTitleColor:[UIColor labelColor] forState:UIControlStateNormal];
+        [button addTarget:self action:@selector(libraryTypeTapped:) forControlEvents:UIControlEventTouchUpInside];
+        button.contentEdgeInsets = UIEdgeInsetsMake(2, 0, 4, 0);
+        [self.typeStackView addArrangedSubview:button];
+        if ([self.selectedType isEqualToString:type]) {
+            UIView *indicator = [UIView new];
+            indicator.backgroundColor = [UIColor labelColor];
+            indicator.translatesAutoresizingMaskIntoConstraints = NO;
+            [button addSubview:indicator];
+            [NSLayoutConstraint activateConstraints:@[
+                [indicator.leadingAnchor constraintEqualToAnchor:button.leadingAnchor],
+                [indicator.trailingAnchor constraintEqualToAnchor:button.trailingAnchor],
+                [indicator.bottomAnchor constraintEqualToAnchor:button.bottomAnchor],
+                [indicator.heightAnchor constraintEqualToConstant:2],
+            ]];
+        }
+        if ([type isEqualToString:kYMLibraryTypePlaylists]) {
+            UIButton *addPlaylist = [UIButton buttonWithType:UIButtonTypeSystem];
+            [addPlaylist setImage:[UIImage systemImageNamed:@"plus"] forState:UIControlStateNormal];
+            addPlaylist.accessibilityLabel = ymLibraryText(@"DOWNLOAD_LIBRARY_CREATE_PLAYLIST", @"Create playlist");
+            addPlaylist.hidden = ![self.selectedType isEqualToString:kYMLibraryTypePlaylists];
+            [addPlaylist addTarget:self action:@selector(createPlaylistTapped) forControlEvents:UIControlEventTouchUpInside];
+            addPlaylist.translatesAutoresizingMaskIntoConstraints = NO;
+            [NSLayoutConstraint activateConstraints:@[[addPlaylist.widthAnchor constraintEqualToConstant:32], [addPlaylist.heightAnchor constraintEqualToConstant:32]]];
+            [self.typeStackView addArrangedSubview:addPlaylist];
+
+            UIButton *deletePlaylist = [UIButton buttonWithType:UIButtonTypeSystem];
+            [deletePlaylist setImage:[UIImage systemImageNamed:@"trash"] forState:UIControlStateNormal];
+            deletePlaylist.accessibilityLabel = ymLibraryText(@"DOWNLOAD_LIBRARY_DELETE_PLAYLIST", @"Delete playlist");
+            deletePlaylist.enabled = ymLibraryPlaylists().count > 0;
+            deletePlaylist.hidden = ![self.selectedType isEqualToString:kYMLibraryTypePlaylists];
+            [deletePlaylist addTarget:self action:@selector(deletePlaylistTapped) forControlEvents:UIControlEventTouchUpInside];
+            deletePlaylist.translatesAutoresizingMaskIntoConstraints = NO;
+            [NSLayoutConstraint activateConstraints:@[[deletePlaylist.widthAnchor constraintEqualToConstant:32], [deletePlaylist.heightAnchor constraintEqualToConstant:32]]];
+            [self.typeStackView addArrangedSubview:deletePlaylist];
+        }
+    }];
+
+    NSArray *sorts = @[@"Newest", @"Oldest", @"Largest", @"Smallest", @"A-Z", @"Z-A"];
+    [sorts enumerateObjectsUsingBlock:^(NSString *sort, NSUInteger idx, BOOL *stop) {
+        UIButton *button = [self libraryButtonWithTitle:[self displayTitleForSort:sort] tag:(NSInteger)idx selector:@selector(librarySortTapped:)];
+        BOOL selected = [self.selectedSort isEqualToString:sort];
+        button.backgroundColor = selected ? [UIColor labelColor] : [UIColor secondarySystemBackgroundColor];
+        [button setTitleColor:selected ? [UIColor systemBackgroundColor] : [UIColor labelColor] forState:UIControlStateNormal];
+        [self.sortStackView addArrangedSubview:button];
+    }];
+}
+
+- (void)libraryTypeTapped:(UIButton *)sender {
+    NSArray *types = @[kYMLibraryTypeAll, kYMLibraryTypeVideos, kYMLibraryTypeShorts, kYMLibraryTypeAudio, kYMLibraryTypePlaylists, kYMLibraryTypePrivate];
+    if (sender.tag < 0 || sender.tag >= (NSInteger)types.count) return;
+    NSString *newType = types[(NSUInteger)sender.tag];
+    if ([newType isEqualToString:kYMLibraryTypePrivate]) {
+        [self authenticateForPrivateLibrary];
+        return;
+    }
+    if ([self.selectedType isEqualToString:kYMLibraryTypePrivate]) self.privateUnlocked = NO;
+    if ([newType isEqualToString:kYMLibraryTypePlaylists] && [self.selectedType isEqualToString:kYMLibraryTypePlaylists]) self.selectedPlaylistID = nil;
+    else if (![newType isEqualToString:kYMLibraryTypePlaylists]) self.selectedPlaylistID = nil;
+    self.selectedType = newType;
+    [[NSUserDefaults standardUserDefaults] setObject:self.selectedType forKey:@"YouModDownloadLibrarySelectedType"];
+    [self rebuildLibraryControls];
+    [self applyFiltersAndSort];
+}
+
+- (void)authenticateForPrivateLibrary {
+    if (self.privateUnlocked) {
+        [self selectPrivateLibrary];
+        return;
+    }
+    if (self.isAuthenticatingPrivate) return;
+    LAContext *context = [LAContext new];
+    NSError *error = nil;
+    if (![context canEvaluatePolicy:LAPolicyDeviceOwnerAuthentication error:&error]) {
+        YouModSendError(ymLibraryText(@"DOWNLOAD_LIBRARY_PRIVATE_AUTH_UNAVAILABLE", @"Set up Face ID, Touch ID, or a device passcode to open Private."));
+        return;
+    }
+    self.isAuthenticatingPrivate = YES;
+    self.privateAuthWasBackgrounded = NO;
+    __weak typeof(self) weakSelf = self;
+    [context evaluatePolicy:LAPolicyDeviceOwnerAuthentication
+            localizedReason:ymLibraryText(@"DOWNLOAD_LIBRARY_PRIVATE_AUTH_REASON", @"Authenticate to view private downloads")
+                      reply:^(BOOL success, NSError *authError) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            __strong typeof(weakSelf) strongSelf = weakSelf;
+            if (!strongSelf) return;
+            strongSelf.isAuthenticatingPrivate = NO;
+            BOOL backgrounded = strongSelf.privateAuthWasBackgrounded;
+            strongSelf.privateAuthWasBackgrounded = NO;
+            if (success && !backgrounded) {
+                strongSelf.privateUnlocked = YES;
+                [strongSelf selectPrivateLibrary];
+            } else if (authError && authError.code != LAErrorUserCancel && authError.code != LAErrorAppCancel && authError.code != LAErrorSystemCancel) {
+                YouModSendError(ymLibraryText(@"DOWNLOAD_LIBRARY_PRIVATE_AUTH_FAILED", @"Authentication failed. Private downloads remain locked."));
+            }
+        });
+    }];
+}
+
+- (void)selectPrivateLibrary {
+    self.selectedPlaylistID = nil;
+    self.selectedType = kYMLibraryTypePrivate;
+    [[NSUserDefaults standardUserDefaults] setObject:self.selectedType forKey:@"YouModDownloadLibrarySelectedType"];
+    [self rebuildLibraryControls];
+    [self applyFiltersAndSort];
+}
+
+- (void)libraryDidEnterBackground {
+    self.privateUnlocked = NO;
+    if (self.isAuthenticatingPrivate) self.privateAuthWasBackgrounded = YES;
+    if ([self.selectedType isEqualToString:kYMLibraryTypePrivate]) {
+        self.selectedType = kYMLibraryTypeAll;
+        self.selectedPlaylistID = nil;
+        [[NSUserDefaults standardUserDefaults] setObject:self.selectedType forKey:@"YouModDownloadLibrarySelectedType"];
+        [self rebuildLibraryControls];
+        [self applyFiltersAndSort];
+    }
+}
+
+- (void)dealloc {
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationDidEnterBackgroundNotification object:nil];
+}
+
+- (void)librarySortTapped:(UIButton *)sender {
+    NSArray *sorts = @[@"Newest", @"Oldest", @"Largest", @"Smallest", @"A-Z", @"Z-A"];
+    if (sender.tag < 0 || sender.tag >= (NSInteger)sorts.count) return;
+    self.selectedSort = sorts[(NSUInteger)sender.tag];
+    [[NSUserDefaults standardUserDefaults] setObject:self.selectedSort forKey:@"YouModDownloadLibrarySelectedSort"];
+    [self rebuildLibraryControls];
+    [self applyFiltersAndSort];
 }
 
 // Same treatment as the YouMod settings pages: the bar itself blends into the
@@ -616,6 +909,13 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
             row.bytes = size.unsignedLongLongValue;
             row.sizeText = ymFormattedFileSize(row.bytes);
             row.isAudio = ymIsAudioOnlyExtension(fileURL.pathExtension);
+            NSDictionary *metadata = ymLibraryMetadataForURL(fileURL);
+            row.isShorts = [metadata[@"shorts"] boolValue] && !row.isAudio;
+            row.isPrivate = [metadata[@"private"] boolValue];
+            row.playlistIDs = [metadata[@"playlists"] isKindOfClass:[NSArray class]] ? metadata[@"playlists"] : @[];
+            NSDate *modifiedDate = nil;
+            [fileURL getResourceValue:&modifiedDate forKey:NSURLContentModificationDateKey error:nil];
+            row.modifiedDate = modifiedDate ?: NSDate.distantPast;
             // Audio rows have no real artwork: render the note into a fixed
             // 48pt canvas so it stays a medium icon centered in the frame
             // instead of scaling up with the 16:9 thumbnail view.
@@ -639,13 +939,60 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
 
 - (void)applyFilter:(NSString *)query {
     query = [query stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-    if (query.length == 0) {
-        self.rows = [self.allRows mutableCopy];
-    } else {
-        NSPredicate *predicate = [NSPredicate predicateWithFormat:@"title CONTAINS[cd] %@", query];
-        self.rows = [[self.allRows filteredArrayUsingPredicate:predicate] mutableCopy];
+    NSMutableArray<YMLibraryRow *> *filtered = [NSMutableArray array];
+    if ([self.selectedType isEqualToString:kYMLibraryTypePlaylists] && self.selectedPlaylistID.length == 0) {
+        for (NSDictionary *playlist in ymLibraryPlaylists()) {
+            NSString *name = playlist[@"name"] ?: @"";
+            if (query.length > 0 && [name rangeOfString:query options:NSCaseInsensitiveSearch | NSDiacriticInsensitiveSearch].location == NSNotFound) continue;
+            NSString *playlistID = playlist[@"id"] ?: @"";
+            NSUInteger itemCount = 0;
+            for (YMLibraryRow *item in self.allRows) if (!item.isPrivate && [item.playlistIDs containsObject:playlistID]) itemCount++;
+            YMLibraryRow *playlistRow = [YMLibraryRow new];
+            playlistRow.isPlaylist = YES;
+            playlistRow.playlistID = playlistID;
+            playlistRow.title = name;
+            playlistRow.bytes = itemCount;
+            playlistRow.sizeText = [NSString stringWithFormat:ymLibraryText(@"DOWNLOAD_LIBRARY_PLAYLIST_ITEM_COUNT", @"%ld items"), (long)itemCount];
+            playlistRow.thumbnail = YouModSymbolImageInCanvas(@"music.note.list", 48, 24, UIImageSymbolWeightRegular);
+            playlistRow.modifiedDate = NSDate.distantPast;
+            [filtered addObject:playlistRow];
+        }
+        if ([self.selectedSort isEqualToString:@"A-Z"]) {
+            [filtered sortUsingComparator:^NSComparisonResult(YMLibraryRow *a, YMLibraryRow *b) { return [a.title localizedCaseInsensitiveCompare:b.title]; }];
+        } else if ([self.selectedSort isEqualToString:@"Z-A"]) {
+            [filtered sortUsingComparator:^NSComparisonResult(YMLibraryRow *a, YMLibraryRow *b) { return [b.title localizedCaseInsensitiveCompare:a.title]; }];
+        }
+        self.rows = filtered;
+        [self.collectionView reloadData];
+        self.emptyLabel.hidden = self.rows.count > 0;
+        return;
     }
+    for (YMLibraryRow *row in self.allRows) {
+        BOOL privateTab = [self.selectedType isEqualToString:kYMLibraryTypePrivate];
+        if (row.isPrivate != privateTab || (privateTab && !self.privateUnlocked)) continue;
+        BOOL typeMatches = YES;
+        if ([self.selectedType isEqualToString:kYMLibraryTypeVideos]) typeMatches = !row.isAudio && !row.isShorts;
+        else if ([self.selectedType isEqualToString:kYMLibraryTypeShorts]) typeMatches = row.isShorts;
+        else if ([self.selectedType isEqualToString:kYMLibraryTypeAudio]) typeMatches = row.isAudio;
+        else if ([self.selectedType isEqualToString:kYMLibraryTypePlaylists]) typeMatches = [row.playlistIDs containsObject:self.selectedPlaylistID ?: @""];
+        BOOL searchMatches = query.length == 0 || [row.title rangeOfString:query options:NSCaseInsensitiveSearch | NSDiacriticInsensitiveSearch].location != NSNotFound;
+        if (typeMatches && searchMatches) [filtered addObject:row];
+    }
+    [filtered sortUsingComparator:^NSComparisonResult(YMLibraryRow *a, YMLibraryRow *b) {
+        if ([self.selectedSort isEqualToString:@"Oldest"]) return [a.modifiedDate compare:b.modifiedDate];
+        if ([self.selectedSort isEqualToString:@"Largest"]) return a.bytes == b.bytes ? NSOrderedSame : (a.bytes > b.bytes ? NSOrderedAscending : NSOrderedDescending);
+        if ([self.selectedSort isEqualToString:@"Smallest"]) return a.bytes == b.bytes ? NSOrderedSame : (a.bytes < b.bytes ? NSOrderedAscending : NSOrderedDescending);
+        if ([self.selectedSort isEqualToString:@"A-Z"]) return [a.title localizedCaseInsensitiveCompare:b.title];
+        if ([self.selectedSort isEqualToString:@"Z-A"]) return [b.title localizedCaseInsensitiveCompare:a.title];
+        return [b.modifiedDate compare:a.modifiedDate];
+    }];
+    self.rows = filtered;
     [self.collectionView reloadData];
+    self.emptyLabel.hidden = self.rows.count > 0;
+}
+
+- (void)applyFiltersAndSort {
+    [self applyFilter:self.searchBar.text];
 }
 
 - (void)searchBar:(UISearchBar *)searchBar textDidChange:(NSString *)searchText {
@@ -670,6 +1017,132 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
     [self applyFilter:@""];
 }
 
+- (void)createPlaylistTapped {
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:ymLibraryText(@"DOWNLOAD_LIBRARY_CREATE_PLAYLIST", @"Create playlist")
+                                                                   message:nil
+                                                            preferredStyle:UIAlertControllerStyleAlert];
+    [alert addTextFieldWithConfigurationHandler:^(UITextField *field) {
+        field.placeholder = ymLibraryText(@"DOWNLOAD_LIBRARY_PLAYLIST_NAME", @"Playlist name");
+        field.autocapitalizationType = UITextAutocapitalizationTypeWords;
+    }];
+    [alert addAction:[UIAlertAction actionWithTitle:LOC(@"CANCEL") style:UIAlertActionStyleCancel handler:nil]];
+    __weak typeof(self) weakSelf = self;
+    [alert addAction:[UIAlertAction actionWithTitle:ymLibraryText(@"DOWNLOAD_LIBRARY_CREATE", @"Create") style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) {
+        NSString *name = [alert.textFields.firstObject.text stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
+        if (name.length == 0) return;
+        for (NSDictionary *playlist in ymLibraryPlaylists()) {
+            if ([playlist[@"name"] caseInsensitiveCompare:name] == NSOrderedSame) {
+                YouModSendError(ymLibraryText(@"DOWNLOAD_LIBRARY_PLAYLIST_EXISTS", @"A playlist with that name already exists"));
+                return;
+            }
+        }
+        NSMutableArray *playlists = [ymLibraryPlaylists() mutableCopy];
+        [playlists addObject:@{@"id": NSUUID.UUID.UUIDString, @"name": name}];
+        ymSaveLibraryPlaylists(playlists);
+        [weakSelf rebuildLibraryControls];
+        [weakSelf applyFiltersAndSort];
+    }]];
+    [self presentViewController:alert animated:YES completion:nil];
+}
+
+- (void)deletePlaylistTapped {
+    NSArray<NSDictionary *> *playlists = ymLibraryPlaylists();
+    if (playlists.count == 0) return;
+    UIAlertController *picker = [UIAlertController alertControllerWithTitle:ymLibraryText(@"DOWNLOAD_LIBRARY_DELETE_PLAYLIST", @"Delete playlist")
+                                                                     message:nil
+                                                              preferredStyle:UIAlertControllerStyleActionSheet];
+    __weak typeof(self) weakSelf = self;
+    for (NSDictionary *playlist in playlists) {
+        NSString *name = playlist[@"name"] ?: @"";
+        NSString *playlistID = playlist[@"id"] ?: @"";
+        [picker addAction:[UIAlertAction actionWithTitle:name style:UIAlertActionStyleDestructive handler:^(__unused UIAlertAction *action) {
+            UIAlertController *confirm = [UIAlertController alertControllerWithTitle:ymLibraryText(@"DOWNLOAD_LIBRARY_DELETE_PLAYLIST", @"Delete playlist")
+                                                                             message:[NSString stringWithFormat:ymLibraryText(@"DOWNLOAD_LIBRARY_DELETE_PLAYLIST_CONFIRM", @"Delete ‘%@’? Downloaded files will stay in the library."), name]
+                                                                      preferredStyle:UIAlertControllerStyleAlert];
+            [confirm addAction:[UIAlertAction actionWithTitle:LOC(@"CANCEL") style:UIAlertActionStyleCancel handler:nil]];
+            [confirm addAction:[UIAlertAction actionWithTitle:ymLibraryText(@"DELETE", @"Delete") style:UIAlertActionStyleDestructive handler:^(__unused UIAlertAction *confirmAction) {
+                NSMutableArray *updated = [ymLibraryPlaylists() mutableCopy];
+                NSIndexSet *matches = [updated indexesOfObjectsPassingTest:^BOOL(NSDictionary *entry, NSUInteger idx, BOOL *stop) {
+                    return [entry[@"id"] isEqualToString:playlistID];
+                }];
+                [updated removeObjectsAtIndexes:matches];
+                ymSaveLibraryPlaylists(updated);
+                if ([weakSelf.selectedPlaylistID isEqualToString:playlistID]) weakSelf.selectedPlaylistID = nil;
+                for (YMLibraryRow *row in weakSelf.allRows) {
+                    NSMutableArray *ids = [row.playlistIDs mutableCopy] ?: [NSMutableArray array];
+                    [ids removeObject:playlistID];
+                    row.playlistIDs = ids;
+                    NSMutableDictionary *metadata = [ymLibraryMetadataForURL([NSURL fileURLWithPath:row.path]) mutableCopy];
+                    if (ids.count > 0) metadata[@"playlists"] = ids;
+                    else [metadata removeObjectForKey:@"playlists"];
+                    ymSetLibraryMetadataForURL([NSURL fileURLWithPath:row.path], metadata);
+                }
+                [weakSelf rebuildLibraryControls];
+                [weakSelf applyFiltersAndSort];
+            }]];
+            [weakSelf presentViewController:confirm animated:YES completion:nil];
+        }]];
+    }
+    [picker addAction:[UIAlertAction actionWithTitle:LOC(@"CANCEL") style:UIAlertActionStyleCancel handler:nil]];
+    UIPopoverPresentationController *popover = picker.popoverPresentationController;
+    popover.sourceView = self.typeScrollView;
+    popover.sourceRect = CGRectMake(CGRectGetMidX(self.typeScrollView.bounds), CGRectGetMidY(self.typeScrollView.bounds), 1, 1);
+    [self presentViewController:picker animated:YES completion:nil];
+}
+
+- (void)togglePrivateForRow:(YMLibraryRow *)row {
+    row.isPrivate = !row.isPrivate;
+    NSURL *url = [NSURL fileURLWithPath:row.path];
+    NSMutableDictionary *metadata = [ymLibraryMetadataForURL(url) mutableCopy];
+    if (row.isPrivate) metadata[@"private"] = @YES;
+    else [metadata removeObjectForKey:@"private"];
+    ymSetLibraryMetadataForURL(url, metadata);
+    [self applyFiltersAndSort];
+}
+
+- (void)showPlaylistPickerForRow:(YMLibraryRow *)row sourceView:(UIView *)sourceView {
+    NSArray<NSDictionary *> *playlists = ymLibraryPlaylists();
+    if (playlists.count == 0) {
+        UIAlertController *alert = [UIAlertController alertControllerWithTitle:ymLibraryText(@"DOWNLOAD_LIBRARY_NO_PLAYLISTS", @"No playlists yet")
+                                                                       message:ymLibraryText(@"DOWNLOAD_LIBRARY_CREATE_PLAYLIST_FIRST", @"Create a playlist before adding downloads to it.")
+                                                                preferredStyle:UIAlertControllerStyleAlert];
+        [alert addAction:[UIAlertAction actionWithTitle:LOC(@"CANCEL") style:UIAlertActionStyleCancel handler:nil]];
+        [alert addAction:[UIAlertAction actionWithTitle:ymLibraryText(@"DOWNLOAD_LIBRARY_CREATE", @"Create") style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) {
+            [self createPlaylistTapped];
+        }]];
+        [self presentViewController:alert animated:YES completion:nil];
+        return;
+    }
+    UIAlertController *picker = [UIAlertController alertControllerWithTitle:ymLibraryText(@"DOWNLOAD_LIBRARY_ADD_TO_PLAYLIST", @"Add to playlist")
+                                                                     message:row.title
+                                                              preferredStyle:UIAlertControllerStyleActionSheet];
+    __weak typeof(self) weakSelf = self;
+    for (NSDictionary *playlist in playlists) {
+        NSString *playlistID = playlist[@"id"] ?: @"";
+        NSString *name = playlist[@"name"] ?: @"";
+        BOOL alreadyAdded = [row.playlistIDs containsObject:playlistID];
+        NSString *title = alreadyAdded
+            ? [NSString stringWithFormat:ymLibraryText(@"DOWNLOAD_LIBRARY_REMOVE_FROM_PLAYLIST", @"Remove from %@"), name]
+            : name;
+        [picker addAction:[UIAlertAction actionWithTitle:title style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) {
+            NSMutableArray *ids = [row.playlistIDs mutableCopy] ?: [NSMutableArray array];
+            if ([ids containsObject:playlistID]) [ids removeObject:playlistID];
+            else [ids addObject:playlistID];
+            row.playlistIDs = ids;
+            NSMutableDictionary *metadata = [ymLibraryMetadataForURL([NSURL fileURLWithPath:row.path]) mutableCopy];
+            if (ids.count > 0) metadata[@"playlists"] = ids;
+            else [metadata removeObjectForKey:@"playlists"];
+            ymSetLibraryMetadataForURL([NSURL fileURLWithPath:row.path], metadata);
+            [weakSelf applyFiltersAndSort];
+        }]];
+    }
+    [picker addAction:[UIAlertAction actionWithTitle:LOC(@"CANCEL") style:UIAlertActionStyleCancel handler:nil]];
+    UIPopoverPresentationController *popover = picker.popoverPresentationController;
+    popover.sourceView = sourceView ?: self.view;
+    popover.sourceRect = sourceView ? sourceView.bounds : self.view.bounds;
+    [self presentViewController:picker animated:YES completion:nil];
+}
+
 - (NSInteger)collectionView:(UICollectionView *)collectionView numberOfItemsInSection:(NSInteger)section {
     return self.rows.count;
 }
@@ -691,9 +1164,10 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
     cell.sizeLabel.text = row.sizeText;
     // Audio rows show a small centered icon on the placeholder fill; video
     // rows fill the frame with their real thumbnail.
-    cell.thumbnailImageView.contentMode = row.isAudio ? UIViewContentModeCenter : UIViewContentModeScaleAspectFill;
+    cell.thumbnailImageView.contentMode = (row.isAudio || row.isPlaylist) ? UIViewContentModeCenter : UIViewContentModeScaleAspectFill;
     cell.thumbnailImageView.image = row.thumbnail;
-    cell.thumbnailImageView.tintColor = row.isAudio ? [UIColor secondaryLabelColor] : nil;
+    cell.thumbnailImageView.tintColor = (row.isAudio || row.isPlaylist) ? [UIColor secondaryLabelColor] : nil;
+    cell.menuButton.hidden = row.isPlaylist;
     __weak typeof(self) weakSelf = self;
     cell.menuTappedHandler = ^(UIView *sourceView) {
         [weakSelf showActionSheetForRowAtIndexPath:indexPath sourceView:sourceView];
@@ -704,6 +1178,11 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
 - (void)collectionView:(UICollectionView *)collectionView didSelectItemAtIndexPath:(NSIndexPath *)indexPath {
     [collectionView deselectItemAtIndexPath:indexPath animated:YES];
     YMLibraryRow *row = self.rows[indexPath.item];
+    if (row.isPlaylist) {
+        self.selectedPlaylistID = row.playlistID;
+        [self applyFiltersAndSort];
+        return;
+    }
     NSURL *fileURL = [NSURL fileURLWithPath:row.path];
 
     AVURLAsset *asset = [AVURLAsset URLAssetWithURL:fileURL options:nil];
@@ -746,6 +1225,20 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
                                                         style:0
                                                       handler:^(__unused YTActionSheetAction *action) {
         YouModShareItem(fileURL, self, sourceView);
+    }]];
+    [sheet addAction:[%c(YTActionSheetAction) actionWithTitle:ymLibraryText(@"DOWNLOAD_LIBRARY_ADD_TO_PLAYLIST", @"Add to playlist")
+                                                    iconImage:YouModSymbolImageInCanvas(@"text.badge.plus", 24, 22, UIImageSymbolWeightMedium)
+                                                        style:0
+                                                      handler:^(__unused YTActionSheetAction *action) {
+        [self showPlaylistPickerForRow:row sourceView:sourceView];
+    }]];
+    NSString *privateActionTitle = ymLibraryText(row.isPrivate ? @"DOWNLOAD_LIBRARY_MARK_PUBLIC" : @"DOWNLOAD_LIBRARY_MARK_PRIVATE",
+                                                 row.isPrivate ? @"Remove from Private" : @"Mark as Private");
+    [sheet addAction:[%c(YTActionSheetAction) actionWithTitle:privateActionTitle
+                                                    iconImage:YouModSymbolImageInCanvas(row.isPrivate ? @"lock.open" : @"lock", 24, 22, UIImageSymbolWeightMedium)
+                                                        style:0
+                                                      handler:^(__unused YTActionSheetAction *action) {
+        [self togglePrivateForRow:row];
     }]];
     if (!row.isAudio) {
         [sheet addAction:[%c(YTActionSheetAction) actionWithTitle:LOC(@"LIBRARY_SAVE_THUMBNAIL")
@@ -831,6 +1324,12 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
     if ([fm fileExistsAtPath:oldSibling]) [fm moveItemAtPath:oldSibling toPath:newSibling error:nil];
     [fm removeItemAtPath:ymGeneratedThumbCacheURL([NSURL fileURLWithPath:row.path]).path error:nil];
 
+    NSURL *oldURL = [NSURL fileURLWithPath:row.path];
+    NSURL *newURL = [NSURL fileURLWithPath:newPath];
+    NSDictionary *metadata = ymLibraryMetadataForURL(oldURL);
+    if (metadata.count > 0) ymSetLibraryMetadataForURL(newURL, metadata);
+    ymSetLibraryMetadataForURL(oldURL, nil);
+
     row.path = newPath;
     row.title = newBase;
     return YES;
@@ -890,6 +1389,7 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
     NSURL *fileURL = [NSURL fileURLWithPath:row.path];
     [[NSFileManager defaultManager] removeItemAtURL:fileURL error:nil];
     ymDeleteThumbnailsForFile(fileURL);
+    ymSetLibraryMetadataForURL(fileURL, nil);
     [self.allRows removeObject:row];
     [self.rows removeObjectAtIndex:indexPath.item];
     [self.collectionView deleteItemsAtIndexPaths:@[indexPath]];
