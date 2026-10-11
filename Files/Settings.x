@@ -513,7 +513,7 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
             YMToggle(YMLOC(@"HIDE_SORT_FILTER_PANEL"), YMLOC(@"HIDE_SORT_FILTER_PANEL_DESC"), HideSortFilerPanel),
             YMToggle(YMLOC(@"FLOATING_KEYBOARD"), YMLOC(@"FLOATING_KEYBOARD_DESC"), FloatingKeyboard),
             YMToggle(YMLOC(@"DISABLES_RTL"), YMLOC(@"DISABLES_RTL_DESC"), DisablesRTL),
-            YMHeader(@"");
+            YMHeader(@""),
             YMPicker(YMLOC(@"STARTUP_ANIMATION"), YMLOC(@"STARTUP_ANIMATION_DESC"), StartupAnimation, (@[YMLOC(@"DEFAULT"), YMLOC(@"STARTUP_ANIMATION_SHOW"), YMLOC(@"DISABLED"), YMLOC(@"SELECT_MANUALLY")]), 0),
             [YMAction(YMLOC(@"STARTUP_VIDEO_PICK"), YMLOC(@"STARTUP_VIDEO_PICK_DESC"), ^(UIViewController *vc) {
                 YMStartupVideoPresentPicker(vc);
