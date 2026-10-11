@@ -150,7 +150,6 @@ BOOL YMStartupVideoPrepare(YTStartupAnimationViewController *controller) {
     AVPlayerLayer *layer = [AVPlayerLayer playerLayerWithPlayer:player];
     layer.videoGravity = AVLayerVideoGravityResize; // Stretch to the full startup screen.
     layer.frame = controller.view.bounds;
-    layer.autoresizingMask = kCALayerWidthSizable | kCALayerHeightSizable;
     controller.view.backgroundColor = UIColor.blackColor;
     [controller.view.layer addSublayer:layer];
     YMStartupVideoTapHandler *tapHandler = [YMStartupVideoTapHandler new];
