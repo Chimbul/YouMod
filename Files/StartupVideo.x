@@ -2,6 +2,14 @@
 #import <AVFoundation/AVFoundation.h>
 #import <PhotosUI/PhotosUI.h>
 
+@interface YTTimedAction : NSObject
++ (instancetype)scheduledTimedActionWithTimeInterval:(CFTimeInterval)timeInterval
+                                            repeats:(BOOL)repeats
+                                              queue:(dispatch_queue_t)queue
+                                              block:(dispatch_block_t)block;
+- (void)invalidate;
+@end
+
 @interface UIViewController (YouModStartupVideoSettingsRefresh)
 - (void)updateDisplayedItemsAnimated:(BOOL)animated;
 @end
@@ -169,6 +177,27 @@ BOOL YMStartupVideoIsPrepared(YTStartupAnimationViewController *controller) {
     return objc_getAssociatedObject(controller, kYMStartupPlayerKey) != nil;
 }
 
+static void YMStartupVideoStopSafeguardTimer(YTStartupAnimationViewController *controller) {
+    if (!controller) return;
+    YTTimedAction *action = [controller valueForKey:@"_safeguardToDismissAnimationAction"];
+    [action invalidate];
+    [controller setValue:nil forKey:@"_safeguardToDismissAnimationAction"];
+}
+
+static void YMStartupVideoStartSafeguardTimer(YTStartupAnimationViewController *controller) {
+    if (!controller) return;
+    YMStartupVideoStopSafeguardTimer(controller);
+
+    __weak YTStartupAnimationViewController *weakController = controller;
+    YTTimedAction *action = [%c(YTTimedAction) scheduledTimedActionWithTimeInterval:10.0
+                                                                           repeats:NO
+                                                                             queue:dispatch_get_main_queue()
+                                                                             block:^{
+        YMStartupVideoDismiss(weakController, YES);
+    }];
+    if (action) [controller setValue:action forKey:@"_safeguardToDismissAnimationAction"];
+}
+
 void YMStartupVideoLayout(YTStartupAnimationViewController *controller) {
     AVPlayerLayer *layer = objc_getAssociatedObject(controller, kYMStartupLayerKey);
     if (layer) layer.frame = controller.view.bounds;
@@ -179,6 +208,7 @@ void YMStartupVideoDismiss(YTStartupAnimationViewController *controller, BOOL an
     objc_setAssociatedObject(controller, kYMStartupDismissedKey, @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     AVPlayer *player = objc_getAssociatedObject(controller, kYMStartupPlayerKey);
     [player pause];
+    YMStartupVideoStopSafeguardTimer(controller);
     id observer = objc_getAssociatedObject(controller, kYMStartupEndObserverKey);
     if (observer) [[NSNotificationCenter defaultCenter] removeObserver:observer];
     objc_setAssociatedObject(controller, kYMStartupEndObserverKey, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
@@ -195,13 +225,43 @@ void YMStartupVideoPlay(YTStartupAnimationViewController *controller) {
         YMStartupVideoDismiss(controller, YES);
         return;
     }
+    YMStartupVideoStartSafeguardTimer(controller);
     __weak YTStartupAnimationViewController *weakController = controller;
     id observer = [[NSNotificationCenter defaultCenter] addObserverForName:AVPlayerItemDidPlayToEndTimeNotification object:item queue:NSOperationQueue.mainQueue usingBlock:^(__unused NSNotification *note) {
         YMStartupVideoDismiss(weakController, YES);
     }];
     objc_setAssociatedObject(controller, kYMStartupEndObserverKey, observer, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     [player play];
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(10.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        YMStartupVideoDismiss(weakController, YES);
-    });
 }
+
+%hook YTStartupAnimationViewController
+- (void)setUpLottieAnimation {
+    %orig;
+    if (INTFORVAL(StartupAnimation) == 3 && YMStartupVideoFileExists()) YMStartupVideoPrepare(self);
+}
+- (void)playLottieAnimation {
+    if (INTFORVAL(StartupAnimation) == 3 && YMStartupVideoIsPrepared(self)) {
+        YMStartupVideoPlay(self);
+        return;
+    }
+    %orig;
+}
+- (void)viewWillAppear:(BOOL)animated {
+    if (INTFORVAL(StartupAnimation) == 3 && YMStartupVideoIsPrepared(self)) YMStartupVideoLayout(self);
+    %orig;
+}
+- (void)startSafeguardAnimationTimer {
+    if (INTFORVAL(StartupAnimation) == 3 && YMStartupVideoIsPrepared(self)) {
+        YMStartupVideoStartSafeguardTimer(self);
+        return;
+    }
+    %orig;
+}
+- (void)stopAnimationTimer {
+    if (INTFORVAL(StartupAnimation) == 3 && YMStartupVideoIsPrepared(self)) {
+        YMStartupVideoStopSafeguardTimer(self);
+        return;
+    }
+    %orig;
+}
+%end
