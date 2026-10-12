@@ -547,6 +547,7 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
     [settingsButton addTarget:self action:@selector(openSettingsTapped) forControlEvents:UIControlEventTouchUpInside];
     if ([settingsButton respondsToSelector:@selector(enableNewTouchFeedback)]) [settingsButton enableNewTouchFeedback];
     settingsButton.translatesAutoresizingMaskIntoConstraints = NO;
+    if (IS_IOS_OR_NEWER(iOS_26_0)) [settingsButton ax_setWantsFlexibleGlassAppearance:YES];
 
     [topBar addSubview:_searchBar];
     [topBar addSubview:settingsButton];

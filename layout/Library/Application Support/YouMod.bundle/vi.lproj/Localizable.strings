@@ -49,11 +49,11 @@
 "DONE" = "Xong";
 "AUTO_CLEARCACHE" = "Tự động xóa bộ nhớ đệm";
 "AUTO_CLEARCACHE_DESC" = "Tự động xóa bộ nhớ đệm của ứng dụng khi khởi động.";
-"CHECK_UPDATES" = "Thông báo cập nhật YouMod";
-"CHECK_UPDATES_DESC" = "Kiểm tra bản phát hành mới trên GitHub và hiển thị lời nhắc cập nhật.";
-"UPDATE_AVAILABLE_TITLE" = "Đã có phiên bản YouMod mới (v. %@)";
-"UPDATE_AVAILABLE_MESSAGE" = "Bạn có muốn cập nhật tweak không?";
-"UPDATE_NOW" = "Cập nhật";
+"CHECK_UPDATES" = "Notify about YouMod updates";
+"CHECK_UPDATES_DESC" = "Check GitHub for updates on first startup; retry briefly if the request fails.";
+"UPDATE" = "Update";
+"UPDATE_AVAILABLE_MESSAGE" = "A newer YouMod version is available (v. %@). Do you want to update the tweak?";
+"UPDATE_NOW" = "Update";
 
 "DOWNLOADING" = "Đang tải xuống";
 "DOWNLOAD_MANAGER" = "Trình quản lý tải xuống";

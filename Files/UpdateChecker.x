@@ -2,8 +2,44 @@
 
 static NSString *const YouModLatestReleaseAPI = @"https://api.github.com/repos/Tonwalter888/YouMod/releases/latest";
 static NSString *const YouModLatestReleaseURL = @"https://github.com/Tonwalter888/YouMod/releases/latest";
-static const NSTimeInterval YouModUpdateCheckInterval = 24.0 * 60.0 * 60.0;
+static const NSInteger YouModMaximumUpdateCheckAttempts = 4; // Initial request plus three retries.
+static const NSTimeInterval YouModUpdateRetryDelays[] = {5.0, 15.0, 45.0};
 static BOOL YouModUpdateCheckInFlight = NO;
+static BOOL YouModUpdateRetryScheduled = NO;
+
+static void YouModCheckForUpdate(void);
+
+static void YouModScheduleUpdateRetryAfter(NSTimeInterval delay) {
+    if (YouModUpdateRetryScheduled) return;
+    YouModUpdateRetryScheduled = YES;
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(MAX(0, delay) * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        YouModUpdateRetryScheduled = NO;
+        YouModCheckForUpdate();
+    });
+}
+
+static void YouModFinishUpdateCheck(void) {
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    [defaults setBool:YES forKey:UpdateHasChecked];
+    [defaults removeObjectForKey:UpdateCheckAttempts];
+    [defaults removeObjectForKey:UpdateNextRetryDate];
+}
+
+static void YouModRetryOrFinishUpdateCheck(void) {
+    YouModUpdateCheckInFlight = NO;
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    NSInteger attempts = [defaults integerForKey:UpdateCheckAttempts];
+    if (attempts < 1) attempts = 1;
+    if (attempts >= YouModMaximumUpdateCheckAttempts) {
+        YouModFinishUpdateCheck();
+        return;
+    }
+
+    NSTimeInterval delay = YouModUpdateRetryDelays[attempts - 1];
+    NSDate *retryDate = [NSDate dateWithTimeIntervalSinceNow:delay];
+    [defaults setObject:retryDate forKey:UpdateNextRetryDate];
+    YouModScheduleUpdateRetryAfter(delay);
+}
 
 static NSString *YouModVersionFromTag(id value) {
     if (![value isKindOfClass:[NSString class]]) return nil;
@@ -16,16 +52,23 @@ static NSString *YouModVersionFromTag(id value) {
 
 static void YouModCheckForUpdate(void) {
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-    if (![defaults boolForKey:NotifyUpdates] || YouModUpdateCheckInFlight) return;
+    if (![defaults boolForKey:NotifyUpdates] || [defaults boolForKey:UpdateHasChecked] || YouModUpdateCheckInFlight) return;
+    if ([UIApplication sharedApplication].applicationState != UIApplicationStateActive) return;
 
-    NSDate *lastCheck = [defaults objectForKey:UpdateLastCheckDate];
-    if ([lastCheck isKindOfClass:[NSDate class]] && [[NSDate date] timeIntervalSinceDate:lastCheck] < YouModUpdateCheckInterval) return;
+    NSDate *nextRetryDate = [defaults objectForKey:UpdateNextRetryDate];
+    if ([nextRetryDate isKindOfClass:[NSDate class]]) {
+        NSTimeInterval retryDelay = [nextRetryDate timeIntervalSinceNow];
+        if (retryDelay > 0) {
+            YouModScheduleUpdateRetryAfter(retryDelay);
+            return;
+        }
+    }
 
     NSURL *url = [NSURL URLWithString:YouModLatestReleaseAPI];
     if (!url) return;
 
     YouModUpdateCheckInFlight = YES;
-    [defaults setObject:[NSDate date] forKey:UpdateLastCheckDate];
+    [defaults setInteger:[defaults integerForKey:UpdateCheckAttempts] + 1 forKey:UpdateCheckAttempts];
 
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url cachePolicy:NSURLRequestReloadIgnoringLocalCacheData timeoutInterval:15.0];
     [request setValue:@"application/vnd.github+json" forHTTPHeaderField:@"Accept"];
@@ -33,25 +76,34 @@ static void YouModCheckForUpdate(void) {
 
     NSURLSessionDataTask *task = [[NSURLSession sharedSession] dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
         dispatch_async(dispatch_get_main_queue(), ^{
-            YouModUpdateCheckInFlight = NO;
-            if (error || ![response isKindOfClass:[NSHTTPURLResponse class]] || ((NSHTTPURLResponse *)response).statusCode != 200 || !data) return;
-
-            id release = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
-            if (![release isKindOfClass:[NSDictionary class]]) return;
-            NSString *latestVersion = YouModVersionFromTag(release[@"tag_name"]);
-            NSString *installedVersion = YouModVersionFromTag(YouModVersion);
-            if (!latestVersion || !installedVersion || [latestVersion compare:installedVersion options:NSNumericSearch] != NSOrderedDescending) return;
-            if (![defaults boolForKey:NotifyUpdates]) return;
-            if ([UIApplication sharedApplication].applicationState != UIApplicationStateActive) {
-                [defaults removeObjectForKey:UpdateLastCheckDate];
+            if (error || ![response isKindOfClass:[NSHTTPURLResponse class]] || ((NSHTTPURLResponse *)response).statusCode != 200 || !data) {
+                YouModRetryOrFinishUpdateCheck();
                 return;
             }
+
+            id release = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
+            if (![release isKindOfClass:[NSDictionary class]]) {
+                YouModRetryOrFinishUpdateCheck();
+                return;
+            }
+            NSString *latestVersion = YouModVersionFromTag(release[@"tag_name"]);
+            NSString *installedVersion = YouModVersionFromTag(YouModVersion);
+            if (!latestVersion || !installedVersion) {
+                YouModRetryOrFinishUpdateCheck();
+                return;
+            }
+
+            YouModUpdateCheckInFlight = NO;
+            YouModFinishUpdateCheck();
+            if ([latestVersion compare:installedVersion options:NSNumericSearch] != NSOrderedDescending) return;
+            if (![defaults boolForKey:NotifyUpdates]) return;
+            if ([UIApplication sharedApplication].applicationState != UIApplicationStateActive) return;
 
             YTAlertView *alert = [%c(YTAlertView) confirmationDialogWithAction:^{
                 [%c(YTUIUtils) openURL:[NSURL URLWithString:YouModLatestReleaseURL]];
             } actionTitle:LOC(@"UPDATE_NOW")];
-            alert.title = [NSString stringWithFormat:LOC(@"UPDATE_AVAILABLE_TITLE"), latestVersion];
-            alert.subtitle = LOC(@"UPDATE_AVAILABLE_MESSAGE");
+            alert.title = LOC(@"UPDATE");
+            alert.subtitle = [NSString stringWithFormat:LOC(@"UPDATE_AVAILABLE_MESSAGE"), latestVersion];
             alert.shouldDismissOnBackgroundTap = YES;
             [alert show];
         });

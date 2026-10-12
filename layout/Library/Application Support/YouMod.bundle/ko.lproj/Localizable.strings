@@ -49,11 +49,11 @@
 "DONE" = "완료";
 "AUTO_CLEARCACHE" = "캐시 자동 삭제";
 "AUTO_CLEARCACHE_DESC" = "앱을 시작할 때 캐시를 자동으로 삭제합니다.";
-"CHECK_UPDATES" = "YouMod 업데이트 알림";
-"CHECK_UPDATES_DESC" = "GitHub에서 새 릴리스를 확인하고 업데이트 알림을 표시합니다.";
-"UPDATE_AVAILABLE_TITLE" = "새 YouMod 버전을 사용할 수 있습니다 (v. %@)";
-"UPDATE_AVAILABLE_MESSAGE" = "트윅을 업데이트하시겠습니까?";
-"UPDATE_NOW" = "업데이트";
+"CHECK_UPDATES" = "Notify about YouMod updates";
+"CHECK_UPDATES_DESC" = "Check GitHub for updates on first startup; retry briefly if the request fails.";
+"UPDATE" = "Update";
+"UPDATE_AVAILABLE_MESSAGE" = "A newer YouMod version is available (v. %@). Do you want to update the tweak?";
+"UPDATE_NOW" = "Update";
 
 "DOWNLOADING" = "다운로드";
 "DOWNLOAD_MANAGER" = "다운로드 관리자";

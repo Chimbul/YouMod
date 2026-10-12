@@ -136,7 +136,9 @@
 // Cache
 #define AutoClearCache @"YouModAutoClearCache"
 #define NotifyUpdates @"YouModNotifyUpdates"
-#define UpdateLastCheckDate @"YouModUpdateLastCheckDate"
+#define UpdateHasChecked @"YouModUpdateHasChecked"
+#define UpdateCheckAttempts @"YouModUpdateCheckAttempts"
+#define UpdateNextRetryDate @"YouModUpdateNextRetryDate"
 // Appearance
 #define OLEDTheme @"YouModEnablesOLEDTheme"
 #define OLEDKeyboard @"YouModEnablesOLEDKeyboard"
@@ -404,7 +406,7 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 - (YTLightweightQTMButton *)connectionsInboxButton;
 - (YTLightweightQTMButton *)MDXButton;
 - (YTLightweightQTMButton *)rightButton;
-- (NSArray *)visibleButtons;
+- (NSArray <YTQTMButton *> *)visibleButtons;
 @end
 
 @interface YTVideoFreeZoomOverlayController : NSObject
@@ -415,6 +417,12 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 @end
 
 @interface YTFullscreenActionsView : UIView
+@end
+
+@interface YTSearchBarView : UIView
+@end
+
+@interface GSKRedMicButton : UIButton
 @end
 
 @interface YTMainAppVideoPlayerOverlayView (YouMod) <UIGestureRecognizerDelegate>
@@ -581,6 +589,8 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 @interface YTEngagementPanelHeaderView : UIView
 - (YTQTMButton *)informationButton;
 - (YTQTMButton *)sortFilterMenuButton;
+- (YTQTMButton *)closeButton;
+- (YTQTMButton *)backButton;
 @end
 
 @interface YTEngagementPanelView : UIView
@@ -599,6 +609,7 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 
 @interface YTMainAppControlsOverlayView (YouMod)
 - (YTMainAppVideoPlayerOverlayViewController *)eventsDelegate;
+- (UIControl *)playPauseButton;
 @end
 
 @interface YTVideoQualitySwitchOriginalController (YouMod)
@@ -608,10 +619,17 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 @interface UIView (YouMod)
 @property (nonatomic, assign, readonly) BOOL _mapkit_isDarkModeEnabled;
 - (UIViewController *)_viewControllerForAncestor;
+- (void)ax_setWantsFlexibleGlassAppearance:(BOOL)arg;
 @end
 
 @interface UIKeyboard : UIView // Regular keyboard
 + (instancetype)activeKeyboard;
+@end
+
+@interface YTChipCloudChipView : UIControl
+@end
+
+@interface YTPlaybackButton : UIControl
 @end
 
 @interface UIPredictionViewController : UIViewController // Keyboard with enabled predictions panel
@@ -630,8 +648,10 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 
 @interface YTInlinePlayerBarContainerView (YouMod)
 @property (nonatomic, strong) NSString *endTimeString;
-- (YTQTMButton *)exitFullscreenButton;
+- (YTQTMButton *)enterExitFullscreenButton;
 - (BOOL)isPeekableViewVisible;
+- (UIView *)timestampGestureView;
+- (YTQTMButton *)liveSyncButton;
 @end
 
 // Custom perferences logics
@@ -664,6 +684,10 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 - (YTCaptionTrackSwitchController *)captionTrackController;
 - (NSString *)videoID;
 - (CGFloat)mediaTime;
+@end
+
+@interface YTLeftNavigationButtons : UIView
+- (YTQTMButton *)backButton;
 @end
 
 @interface YTSingleVideo (YouMod)

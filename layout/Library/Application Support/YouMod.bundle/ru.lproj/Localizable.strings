@@ -49,11 +49,11 @@
 "DONE" = "Готово";
 "AUTO_CLEARCACHE" = "Автоочистка кэша";
 "AUTO_CLEARCACHE_DESC" = "Автоматически очищает кэш приложения при запуске.";
-"CHECK_UPDATES" = "Уведомлять об обновлениях YouMod";
-"CHECK_UPDATES_DESC" = "Проверять новые выпуски на GitHub и показывать предложение обновить твик.";
-"UPDATE_AVAILABLE_TITLE" = "Доступна новая версия YouMod (v. %@)";
-"UPDATE_AVAILABLE_MESSAGE" = "Обновить твик?";
-"UPDATE_NOW" = "Обновить";
+"CHECK_UPDATES" = "Notify about YouMod updates";
+"CHECK_UPDATES_DESC" = "Check GitHub for updates on first startup; retry briefly if the request fails.";
+"UPDATE" = "Update";
+"UPDATE_AVAILABLE_MESSAGE" = "A newer YouMod version is available (v. %@). Do you want to update the tweak?";
+"UPDATE_NOW" = "Update";
 
 "DOWNLOADING" = "Скачивание";
 "DOWNLOAD_MANAGER" = "Менеджер загрузок";

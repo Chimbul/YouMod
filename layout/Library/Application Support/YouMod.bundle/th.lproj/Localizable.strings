@@ -50,9 +50,9 @@
 "AUTO_CLEARCACHE" = "ล้างแคชอัตโนมัติ";
 "AUTO_CLEARCACHE_DESC" = "ล้างแคชของแอปอัตโนมัติตอนเปิดแอป";
 "CHECK_UPDATES" = "แจ้งเตือนเมื่อมีอัปเดต YouMod";
-"CHECK_UPDATES_DESC" = "ตรวจสอบรุ่นใหม่บน GitHub และแสดงข้อความแจ้งให้อัปเดต";
-"UPDATE_AVAILABLE_TITLE" = "มี YouMod รุ่นใหม่แล้ว (v. %@)";
-"UPDATE_AVAILABLE_MESSAGE" = "ต้องการอัปเดต tweak หรือไม่?";
+"CHECK_UPDATES_DESC" = "ตรวจสอบการอัปเดตจาก GitHub เมื่อเปิด YouTube ครั้งแรก และลองใหม่อีกไม่กี่ครั้งหากคำขอล้มเหลว";
+"UPDATE" = "อัปเดต";
+"UPDATE_AVAILABLE_MESSAGE" = "มี YouMod เวอร์ชันใหม่ (v. %@) ต้องการอัปเดต tweak หรือไม่?";
 "UPDATE_NOW" = "อัปเดต";
 
 "DOWNLOADING" = "การดาวน์โหลด";

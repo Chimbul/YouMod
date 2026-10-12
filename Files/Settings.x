@@ -593,6 +593,7 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
             YMAction(YMLOC(@"RESTORE"), YMLOC(@"RESTORE_DESC"), ^(UIViewController *vc) {
                 [[YouModPrefsManager sharedManager] restoreYouModDefaults];
             }),
+            YMHeader(YMLOC(@"UPDATE")),
             YMToggle(YMLOC(@"CHECK_UPDATES"), YMLOC(@"CHECK_UPDATES_DESC"), NotifyUpdates),
             YMHeader(YMLOC(@"CACHE")),
             YMAction(YMLOC(@"CLEARCACHE"), GetCacheSize(), ^(UIViewController *vc) {
