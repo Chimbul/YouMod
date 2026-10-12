@@ -135,6 +135,8 @@
 #define DownloadPost @"YouModDownloadPost"
 // Cache
 #define AutoClearCache @"YouModAutoClearCache"
+#define NotifyUpdates @"YouModNotifyUpdates"
+#define UpdateLastCheckDate @"YouModUpdateLastCheckDate"
 // Appearance
 #define OLEDTheme @"YouModEnablesOLEDTheme"
 #define OLEDKeyboard @"YouModEnablesOLEDKeyboard"

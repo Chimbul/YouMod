@@ -49,6 +49,11 @@
 "DONE" = "完成";
 "AUTO_CLEARCACHE" = "自动清除缓存";
 "AUTO_CLEARCACHE_DESC" = "启动时自动清除应用缓存。";
+"CHECK_UPDATES" = "通知 YouMod 更新";
+"CHECK_UPDATES_DESC" = "检查 GitHub 上的新版本并显示更新提示。";
+"UPDATE_AVAILABLE_TITLE" = "YouMod 有新版本可用（v. %@）";
+"UPDATE_AVAILABLE_MESSAGE" = "要更新这个 tweak 吗？";
+"UPDATE_NOW" = "更新";
 
 "DOWNLOADING" = "下载中";
 "DOWNLOAD_MANAGER" = "下载管理器";

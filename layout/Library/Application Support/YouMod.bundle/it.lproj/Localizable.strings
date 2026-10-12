@@ -49,6 +49,11 @@
 "DONE" = "Fatto";
 "AUTO_CLEARCACHE" = "Svuota automaticamente la cache";
 "AUTO_CLEARCACHE_DESC" = "Svuota automaticamente la cache dell'app all'avvio.";
+"CHECK_UPDATES" = "Avvisami degli aggiornamenti di YouMod";
+"CHECK_UPDATES_DESC" = "Controlla le nuove versioni su GitHub e mostra un avviso di aggiornamento.";
+"UPDATE_AVAILABLE_TITLE" = "È disponibile una nuova versione di YouMod (v. %@)";
+"UPDATE_AVAILABLE_MESSAGE" = "Vuoi aggiornare il tweak?";
+"UPDATE_NOW" = "Aggiorna";
 
 "DOWNLOADING" = "Download in corso";
 "DOWNLOAD_MANAGER" = "Gestore download";

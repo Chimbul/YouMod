@@ -49,6 +49,11 @@
 "DONE" = "Готово";
 "AUTO_CLEARCACHE" = "Автоочистка кэша";
 "AUTO_CLEARCACHE_DESC" = "Автоматически очищает кэш приложения при запуске.";
+"CHECK_UPDATES" = "Уведомлять об обновлениях YouMod";
+"CHECK_UPDATES_DESC" = "Проверять новые выпуски на GitHub и показывать предложение обновить твик.";
+"UPDATE_AVAILABLE_TITLE" = "Доступна новая версия YouMod (v. %@)";
+"UPDATE_AVAILABLE_MESSAGE" = "Обновить твик?";
+"UPDATE_NOW" = "Обновить";
 
 "DOWNLOADING" = "Скачивание";
 "DOWNLOAD_MANAGER" = "Менеджер загрузок";

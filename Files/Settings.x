@@ -593,6 +593,7 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
             YMAction(YMLOC(@"RESTORE"), YMLOC(@"RESTORE_DESC"), ^(UIViewController *vc) {
                 [[YouModPrefsManager sharedManager] restoreYouModDefaults];
             }),
+            YMToggle(YMLOC(@"CHECK_UPDATES"), YMLOC(@"CHECK_UPDATES_DESC"), NotifyUpdates),
             YMHeader(YMLOC(@"CACHE")),
             YMAction(YMLOC(@"CLEARCACHE"), GetCacheSize(), ^(UIViewController *vc) {
                 __weak UIViewController *weakVC = vc;
@@ -685,6 +686,7 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
 %ctor {
     [[NSUserDefaults standardUserDefaults] registerDefaults:@{
         AutoClearCache: @YES,
+        NotifyUpdates: @YES,
         YTLogoIndex: @1,
         BackgroundPlayback: @YES,
         DownloadManager: @YES,

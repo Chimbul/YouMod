@@ -49,6 +49,11 @@
 "DONE" = "เสร็จสิ้น";
 "AUTO_CLEARCACHE" = "ล้างแคชอัตโนมัติ";
 "AUTO_CLEARCACHE_DESC" = "ล้างแคชของแอปอัตโนมัติตอนเปิดแอป";
+"CHECK_UPDATES" = "แจ้งเตือนเมื่อมีอัปเดต YouMod";
+"CHECK_UPDATES_DESC" = "ตรวจสอบรุ่นใหม่บน GitHub และแสดงข้อความแจ้งให้อัปเดต";
+"UPDATE_AVAILABLE_TITLE" = "มี YouMod รุ่นใหม่แล้ว (v. %@)";
+"UPDATE_AVAILABLE_MESSAGE" = "ต้องการอัปเดต tweak หรือไม่?";
+"UPDATE_NOW" = "อัปเดต";
 
 "DOWNLOADING" = "การดาวน์โหลด";
 "DOWNLOAD_MANAGER" = "ตัวจัดการดาวน์โหลด";

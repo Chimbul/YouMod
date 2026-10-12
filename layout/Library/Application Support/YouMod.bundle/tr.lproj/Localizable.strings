@@ -49,6 +49,11 @@
 "DONE" = "Tamamlandı";
 "AUTO_CLEARCACHE" = "Otomatik önbellek temizleme";
 "AUTO_CLEARCACHE_DESC" = "Başlangıçta uygulama önbelleğini otomatik olarak temizler.";
+"CHECK_UPDATES" = "YouMod güncellemelerini bildir";
+"CHECK_UPDATES_DESC" = "GitHub’da yeni sürümleri kontrol et ve güncelleme istemi göster.";
+"UPDATE_AVAILABLE_TITLE" = "Yeni bir YouMod sürümü mevcut (v. %@)";
+"UPDATE_AVAILABLE_MESSAGE" = "Tweak’i güncellemek istiyor musunuz?";
+"UPDATE_NOW" = "Güncelle";
 
 "DOWNLOADING" = "İndiriliyor";
 "DOWNLOAD_MANAGER" = "İndirme yöneticisi";
