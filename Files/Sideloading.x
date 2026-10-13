@@ -79,14 +79,14 @@ static NSString *accessGroupID() {
     if (info[@"CFBundleIdentifier"]) info[@"CFBundleIdentifier"] = YT_BUNDLE_ID;
     if (info[@"CFBundleDisplayName"]) info[@"CFBundleDisplayName"] = YT_NAME;
     if (info[@"CFBundleName"]) info[@"CFBundleName"] = YT_NAME;
-    if (info[@"UIDesignRequiresCompatibility"] && IS_IOS_OR_NEWER(iOS_26_0)) info[@"UIDesignRequiresCompatibility"] = @NO;
+    if (info[@"UIDesignRequiresCompatibility"]) info[@"UIDesignRequiresCompatibility"] = @NO;
     return info;
 }
 - (id)objectForInfoDictionaryKey:(NSString *)key {
     if (![self isEqual:NSBundle.mainBundle]) return %orig;
     else if ([key isEqualToString:@"CFBundleIdentifier"]) return YT_BUNDLE_ID;
     else if ([key isEqualToString:@"CFBundleDisplayName"] || [key isEqualToString:@"CFBundleName"]) return YT_NAME;
-    else if ([key isEqualToString:@"UIDesignRequiresCompatibility"] && IS_IOS_OR_NEWER(iOS_26_0)) return @NO;
+    else if ([key isEqualToString:@"UIDesignRequiresCompatibility"]) return @NO;
     return %orig;
 }
 %end

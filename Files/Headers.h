@@ -619,7 +619,8 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 @interface UIView (YouMod)
 @property (nonatomic, assign, readonly) BOOL _mapkit_isDarkModeEnabled;
 - (UIViewController *)_viewControllerForAncestor;
-- (void)ax_setWantsFlexibleGlassAppearance:(BOOL)arg;
+- (void)tuui_applyFlexibleSmallGlassBackground;
+- (void)tuui_applyFlexibleClearGlassWithShadowBackground;
 @end
 
 @interface UIKeyboard : UIView // Regular keyboard
@@ -648,10 +649,11 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 
 @interface YTInlinePlayerBarContainerView (YouMod)
 @property (nonatomic, strong) NSString *endTimeString;
-- (YTQTMButton *)enterExitFullscreenButton;
+- (UIView *)enterExitFullscreenButton;
 - (BOOL)isPeekableViewVisible;
 - (UIView *)timestampGestureView;
 - (YTQTMButton *)liveSyncButton;
+- (YTQTMButton *)exitFullscreenButton;
 @end
 
 // Custom perferences logics

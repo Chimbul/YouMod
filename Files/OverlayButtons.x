@@ -556,7 +556,8 @@ static void YMFrostedBackgroundUpdate(YTInlinePlayerBarContainerView *self_, NSA
         [[self viewWithTag:YMFrostedBackgroundTag] removeFromSuperview];
         return;
     }
-    UIView *button = [self.enterExitFullscreenButton valueForKey:@"_enterExitFullscreenButton"];
+    UIView *button = [self exitFullscreenButton];
+    if (button == nil) button = [[self enterExitFullscreenButton] valueForKey:@"_enterExitFullscreenButton"];
     // A mid-transition anchor can report a zero rect; anchoring to it would
     // stack the row on a garbage frame, so wait for a real one.
     BOOL hasAnchor = button && button.window && !CGRectIsEmpty(button.bounds);
