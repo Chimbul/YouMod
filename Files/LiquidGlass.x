@@ -31,12 +31,12 @@ void YouModApplyLiquidGlassToView(UIView *view, BOOL wantsBackground) {
     nextBut = [self valueForKey:@"_seekForwardAccessibilityButtonView"];
     if (prevBut != nil) YouModApplyLiquidGlassToView(prevBut, NO);
     if (nextBut != nil) YouModApplyLiquidGlassToView(nextBut, NO);
-    YouModApplyLiquidGlassToView(self.playPauseButton);
+    YouModApplyLiquidGlassToView(self.playPauseButton, NO);
 }
 %end
 
 %hook YTInlinePlayerBarContainerView
-- (void)layoutSubviews {
+- (void)didMoveToWindow {
     %orig;
     YouModApplyLiquidGlassToView(self.enterExitFullscreenButton, NO);
     YouModApplyLiquidGlassToView(self.exitFullscreenButton, NO);
