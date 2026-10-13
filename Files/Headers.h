@@ -1225,3 +1225,4 @@ extern void YouModRemoveShortsPausedButtons(_ASDisplayView *view, NSString *iden
 extern void YouModApplyOLEDCollectionView(ASCollectionView *self, NSString *iden);
 extern void YouModRemoveDrawerAds(YTELMViewController *self);
 extern void YouModRemoveFullscreenActionsButtons(YTELMViewController *controller);
+extern void YouModApplyLiquidGlassToView(UIView *view, BOOL arg);

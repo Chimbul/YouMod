@@ -2,7 +2,13 @@
 
 void YouModApplyLiquidGlassToView(UIView *view, BOOL wantsBackground) {
     if (wantsBackground && [view respondsToSelector:@selector(tuui_applyFlexibleClearGlassWithShadowBackground)]) [view tuui_applyFlexibleClearGlassWithShadowBackground];
-    else if ([view respondsToSelector:@selector(tuui_applyFlexibleSmallGlassBackground)]) [view tuui_applyFlexibleSmallGlassBackground];
+    else if (!wantsBackground && [view respondsToSelector:@selector(tuui_applyFlexibleSmallGlassBackground)]) [view tuui_applyFlexibleSmallGlassBackground];
+    for (UIView *sub in view.subviews) {
+        if ([sub isKindOfClass:%c(YTFrostedGlassView)]) {
+            sub.hidden = YES;
+            break;
+        }
+    }
 }
 
 %hook YTChipCloudChipView
@@ -40,8 +46,8 @@ void YouModApplyLiquidGlassToView(UIView *view, BOOL wantsBackground) {
     %orig;
     YouModApplyLiquidGlassToView(self.enterExitFullscreenButton, NO);
     YouModApplyLiquidGlassToView(self.exitFullscreenButton, NO);
-    // YouModApplyLiquidGlassToView(self.timestampGestureView);
-    // if (self.liveSyncButton != nil) YouModApplyLiquidGlassToView(self.liveSyncButton);
+    YouModApplyLiquidGlassToView(self.timestampGestureView, NO);
+    if (self.liveSyncButton != nil) YouModApplyLiquidGlassToView(self.liveSyncButton, NO);
     // YTLightweightQTMButton *button = ((UIView *)[self valueForKey:@"_chapterTitleFrostedGlassView"]).superview;
     // YouModApplyLiquidGlassToView(button);
 }
@@ -54,6 +60,14 @@ void YouModApplyLiquidGlassToView(UIView *view, BOOL wantsBackground) {
     if (self.sortFilterMenuButton != nil) YouModApplyLiquidGlassToView(self.sortFilterMenuButton, YES);
     if (self.closeButton != nil) YouModApplyLiquidGlassToView(self.closeButton, YES);
     if (self.backButton != nil) YouModApplyLiquidGlassToView(self.backButton, YES);
+    for (UIView *button in self.subviews) {
+        if ([button isKindOfClass:%c(YTQTMButton)]) {
+            YTIButtonRenderer *renderer = [button valueForKey:@"_buttonRenderer"];
+            if (renderer == nil) continue;
+            NSString *desc = [renderer description];
+            if ([desc containsString:@"FEcommunity_page"] || [desc containsString:@"live_chat_filter_mode_option.eml"]) YouModApplyLiquidGlassToView(button, YES);
+        }
+    }
 }
 %end
 

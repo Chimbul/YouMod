@@ -299,6 +299,7 @@ static YTQTMButton *YMCreateOverlayButton(UIView *parent, YMOverlayButtonSpec *s
     button.tag = spec.viewTag;
     button.frame = CGRectMake(0, 0, YMOverlayButtonSize, YMOverlayButtonSize);
     [button addTarget:parent action:@selector(ymOverlayButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
+    YouModApplyLiquidGlassToView(button, NO);
     [parent addSubview:button];
     return button;
 }
