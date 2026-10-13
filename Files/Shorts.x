@@ -259,7 +259,7 @@ void YouModFilterShortsDisplayView(_ASDisplayView *view, NSString *iden) {
     if (gesture.state != UIGestureRecognizerStateBegan) return;
     isShortsOnlyOn = NO;
     UIView *parent = sbGetNotificationParent();
-    [SBSkipNotificationView showSuccessInView:parent message:LOC(@"SHORTS_ONLY_DISABLED") duration:3.0];
+    [YouModPillView showSuccessInView:parent message:LOC(@"SHORTS_ONLY_DISABLED") duration:3.0];
     [[[[self valueForKey:@"_parentResponder"] valueForKey:@"_delegate"] valueForKey:@"_pivotBarProvider"] performSelector:@selector(showPivotBar)];
     [UIView animateWithDuration:0.3 animations:^{ self.playbackOverlay.alpha = 1; }];
 }

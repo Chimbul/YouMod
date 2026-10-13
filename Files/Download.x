@@ -19,14 +19,51 @@
 }
 @end
 
-typedef void (^YouModFileDownloadCompletion)(NSURL *fileURL, NSError *error);
-typedef void (^YouModMergeCompletion)(BOOL success, NSError *error);
-typedef void (^YouModRangeDownloadProgress)(unsigned long long completedBytes);
+@protocol YouModDownloadComponentAccess
+- (id)parent;
+- (id)owningComponent;
+@end
+
+@interface YouModDownloadActions : NSObject
++ (YTIPlayerResponse *)playerDataForPlayer:(YTPlayerViewController *)player;
++ (YTIVideoDetails *)videoDetailsForPlayer:(YTPlayerViewController *)player;
++ (NSString *)authorForPlayer:(YTPlayerViewController *)player;
++ (NSString *)titleForPlayer:(YTPlayerViewController *)player;
++ (NSString *)videoIDForPlayer:(YTPlayerViewController *)player;
++ (NSString *)descriptionForPlayer:(YTPlayerViewController *)player;
++ (NSURL *)thumbnailURLForPlayer:(YTPlayerViewController *)player;
++ (void)presentMenuForPlayer:(YTPlayerViewController *)player items:(NSArray<YouModMenuItem *> *)items presenter:(UIViewController *)presenter sender:(UIView *)sender;
++ (void)showThumbnailViewerForPlayer:(YTPlayerViewController *)player presenter:(UIViewController *)presenter;
++ (void)copyThumbnailForPlayer:(YTPlayerViewController *)player presenter:(UIViewController *)presenter;
++ (void)downloadThumbnailForPlayer:(YTPlayerViewController *)player presenter:(UIViewController *)presenter;
++ (void)copyTextToPasteboard:(NSString *)text successKey:(NSString *)successKey;
++ (void)copyImageToPasteboard:(UIImage *)image successKey:(NSString *)successKey;
++ (void)showCopyVideoInfoSheetForPlayer:(YTPlayerViewController *)player presenter:(UIViewController *)presenter sender:(UIView *)sender;
++ (void)showThumbnailSheetForPlayer:(YTPlayerViewController *)player presenter:(UIViewController *)presenter sender:(UIView *)sender;
++ (void)showDownloadManagerForPlayer:(YTPlayerViewController *)player presenter:(UIViewController *)presenter sender:(UIView *)sender isShorts:(BOOL)isShorts;
+@end
+
+@interface YouModDownloadActions (ContentActions)
++ (void)configureDownloadButtonForView:(_ASDisplayView *)view identifier:(NSString *)identifier;
++ (void)showTranslationDialog:(NSString *)text presenter:(UIViewController *)presenter;
++ (NSString *)extractCommentTextFromView:(UIView *)cellView isPost:(BOOL)isPost;
++ (UIImage *)renderImageFromView:(_ASDisplayView *)view;
++ (void)setupDownloadGesturesForView:(_ASDisplayView *)view identifier:(NSString *)identifier;
++ (void)handleCommentLongPressForView:(_ASDisplayView *)view;
++ (void)handlePostLongPressForView:(_ASDisplayView *)view;
++ (void)handleDownloadButtonForView:(_ASDisplayView *)view;
+@end
 
 YTPlayerViewController *YouModCurrentPlayerViewController = nil;
+static id YouModDownloadParentResponder = nil;
 
-static YTIPlayerResponse *YouModPlayerDataForPlayer(YTPlayerViewController *player) {
+#pragma mark - Player and download menu actions
+
+@implementation YouModDownloadActions
+
++ (YTIPlayerResponse *)playerDataForPlayer:(YTPlayerViewController *)player {
     YTPlayerResponse *response;
+    // YouTube has exposed both response properties across app versions.
     if ([player respondsToSelector:@selector(contentPlayerResponse)]) {
         response = player.contentPlayerResponse;
     } else {
@@ -36,34 +73,34 @@ static YTIPlayerResponse *YouModPlayerDataForPlayer(YTPlayerViewController *play
     return playerData;
 }
 
-static YTIVideoDetails *YouModVideoDetailsForPlayer(YTPlayerViewController *player) {
-    YTIPlayerResponse *ires = YouModPlayerDataForPlayer(player);
++ (YTIVideoDetails *)videoDetailsForPlayer:(YTPlayerViewController *)player {
+    YTIPlayerResponse *ires = [self playerDataForPlayer:player];
     return ires.videoDetails;
 }
 
-NSString *YouModAuthorForPlayer(YTPlayerViewController *player) {
-    YTIVideoDetails *details = YouModVideoDetailsForPlayer(player);
++ (NSString *)authorForPlayer:(YTPlayerViewController *)player {
+    YTIVideoDetails *details = [self videoDetailsForPlayer:player];
     return details.author;
 }
 
-NSString *YouModTitleForPlayer(YTPlayerViewController *player) {
-    YTIVideoDetails *details = YouModVideoDetailsForPlayer(player);
++ (NSString *)titleForPlayer:(YTPlayerViewController *)player {
+    YTIVideoDetails *details = [self videoDetailsForPlayer:player];
     return details.title;
 }
 
-NSString *YouModVideoIDForPlayer(YTPlayerViewController *player) {
-    YTIVideoDetails *details = YouModVideoDetailsForPlayer(player);
++ (NSString *)videoIDForPlayer:(YTPlayerViewController *)player {
+    YTIVideoDetails *details = [self videoDetailsForPlayer:player];
     return details.videoId;
 }
 
-static NSString *YouModDescriptionForPlayer(YTPlayerViewController *player) {
-    YTIVideoDetails *details = YouModVideoDetailsForPlayer(player);
++ (NSString *)descriptionForPlayer:(YTPlayerViewController *)player {
+    YTIVideoDetails *details = [self videoDetailsForPlayer:player];
     return details.shortDescription;
 }
 
-NSURL *YouModThumbnailURL(YTPlayerViewController *player) {
++ (NSURL *)thumbnailURLForPlayer:(YTPlayerViewController *)player {
     if (!player) return nil;
-    YTIVideoDetails *details = YouModVideoDetailsForPlayer(player);
+    YTIVideoDetails *details = [self videoDetailsForPlayer:player];
     YTIThumbnailDetails *thumbmain = details.thumbnail;
     YTIThumbnailDetails_Thumbnail *bestThumbnail = nil;
     NSUInteger maxPixels = 0;
@@ -79,10 +116,8 @@ NSURL *YouModThumbnailURL(YTPlayerViewController *player) {
     return [NSURL URLWithString:bestThumbnail.URL];
 }
 
-static id parentResponder = nil;
-
-static void YouModPresentMenu(YTPlayerViewController *player, NSArray <YouModMenuItem *> *items, UIViewController *presenter, UIView *sender) {
-    YTDefaultSheetController *sheet = [%c(YTDefaultSheetController) sheetControllerWithParentResponder:parentResponder];
++ (void)presentMenuForPlayer:(YTPlayerViewController *)player items:(NSArray<YouModMenuItem *> *)items presenter:(UIViewController *)presenter sender:(UIView *)sender {
+    YTDefaultSheetController *sheet = [%c(YTDefaultSheetController) sheetControllerWithParentResponder:YouModDownloadParentResponder];
     for (YouModMenuItem *item in items) {
         YTActionSheetAction *action;
         if (item.subtitle == nil) {
@@ -96,8 +131,8 @@ static void YouModPresentMenu(YTPlayerViewController *player, NSArray <YouModMen
         }
         [sheet addAction:action];
     }
-    if (player && player != nil) {
-        [sheet addHeaderWithTitle:YouModAuthorForPlayer(player) subtitle:YouModTitleForPlayer(player)];
+    if (player) {
+        [sheet addHeaderWithTitle:[self authorForPlayer:player] subtitle:[self titleForPlayer:player]];
     }
     if (sender) {
         [sheet presentFromView:sender animated:YES completion:nil];
@@ -107,8 +142,8 @@ static void YouModPresentMenu(YTPlayerViewController *player, NSArray <YouModMen
 }
 
 
-static void YouModShowThumbnailViewer(YTPlayerViewController *player, UIViewController *presenter) {
-    NSURL *thumbnailURL = YouModThumbnailURL(player);
++ (void)showThumbnailViewerForPlayer:(YTPlayerViewController *)player presenter:(UIViewController *)presenter {
+    NSURL *thumbnailURL = [self thumbnailURLForPlayer:player];
     if (!thumbnailURL) {
         YouModSendError(LOC(@"NO_THUMBNAIL_FOUND"));
         return;
@@ -132,8 +167,8 @@ static void YouModShowThumbnailViewer(YTPlayerViewController *player, UIViewCont
     }] resume];
 }
 
-static void YouModCopyThumbnail(YTPlayerViewController *player, UIViewController *presenter) {
-    NSURL *thumbnailURL = YouModThumbnailURL(player);
++ (void)copyThumbnailForPlayer:(YTPlayerViewController *)player presenter:(UIViewController *)presenter {
+    NSURL *thumbnailURL = [self thumbnailURLForPlayer:player];
     if (!thumbnailURL) {
         YouModSendError(LOC(@"NO_THUMBNAIL_FOUND"));
         return;
@@ -153,8 +188,8 @@ static void YouModCopyThumbnail(YTPlayerViewController *player, UIViewController
     }] resume];
 }
 
-static void YouModDownloadThumbnail(YTPlayerViewController *player, UIViewController *presenter) {
-    NSURL *thumbnailURL = YouModThumbnailURL(player);
++ (void)downloadThumbnailForPlayer:(YTPlayerViewController *)player presenter:(UIViewController *)presenter {
+    NSURL *thumbnailURL = [self thumbnailURLForPlayer:player];
     if (!thumbnailURL) {
         YouModSendError(LOC(@"NO_THUMBNAIL_FOUND"));
         return;
@@ -173,56 +208,56 @@ static void YouModDownloadThumbnail(YTPlayerViewController *player, UIViewContro
     }] resume];
 }
 
-static void YouModCopyTextToPasteboard(NSString *text, NSString *successKey) {
++ (void)copyTextToPasteboard:(NSString *)text successKey:(NSString *)successKey {
     UIPasteboard.generalPasteboard.string = text;
     YouModSendSuccess(LOC(successKey));
 }
 
-static void YouModCopyImageToPasteboard(UIImage *image, NSString *successKey) {
++ (void)copyImageToPasteboard:(UIImage *)image successKey:(NSString *)successKey {
     UIPasteboard.generalPasteboard.image = image;
     YouModSendSuccess(LOC(successKey));
 }
 
-static void YouModShowCopyVideoInfoSheet(YTPlayerViewController *player, UIViewController *presenter, UIView *sender) {
-    NSString *author = YouModAuthorForPlayer(player);
-    NSString *title = YouModTitleForPlayer(player);
-    NSString *description = YouModDescriptionForPlayer(player);
++ (void)showCopyVideoInfoSheetForPlayer:(YTPlayerViewController *)player presenter:(UIViewController *)presenter sender:(UIView *)sender {
+    NSString *author = [self authorForPlayer:player];
+    NSString *title = [self titleForPlayer:player];
+    NSString *description = [self descriptionForPlayer:player];
     NSString *all = [NSString stringWithFormat:@"%@ - %@\n%@", author, title, description];
 
     NSMutableArray *items = [NSMutableArray array];
     [items addObject:[YouModMenuItem itemWithTitle:LOC(@"COPY_ALL_VID_INFO") subtitle:nil icon:YouModYTIconImage(250, NO, nil) handler:^{
-        YouModCopyTextToPasteboard(all, @"COPIED_VID_INFO");
+        [self copyTextToPasteboard:all successKey:@"COPIED_VID_INFO"];
     }]];
     [items addObject:[YouModMenuItem itemWithTitle:LOC(@"COPY_AUTHOR") subtitle:nil icon:YouModYTIconImage(250, NO, nil) handler:^{
-        YouModCopyTextToPasteboard(author, @"COPIED_AUTHOR");
+        [self copyTextToPasteboard:author successKey:@"COPIED_AUTHOR"];
     }]];
     [items addObject:[YouModMenuItem itemWithTitle:LOC(@"COPY_TITLE") subtitle:nil icon:YouModYTIconImage(250, NO, nil) handler:^{
-        YouModCopyTextToPasteboard(title, @"COPIED_TITLE");
+        [self copyTextToPasteboard:title successKey:@"COPIED_TITLE"];
     }]];
     [items addObject:[YouModMenuItem itemWithTitle:LOC(@"COPY_DESCRIPTION") subtitle:nil icon:YouModYTIconImage(250, NO, nil) handler:^{
-        YouModCopyTextToPasteboard(description, @"COPIED_DESCRIPTION");
+        [self copyTextToPasteboard:description successKey:@"COPIED_DESCRIPTION"];
     }]];
 
-    YouModPresentMenu(nil, items, presenter, sender);
+    [self presentMenuForPlayer:nil items:items presenter:presenter sender:sender];
 }
 
-static void YouModShowThumbnailSheet(YTPlayerViewController *player, UIViewController *presenter, UIView *sender) {
++ (void)showThumbnailSheetForPlayer:(YTPlayerViewController *)player presenter:(UIViewController *)presenter sender:(UIView *)sender {
     NSMutableArray *items = [NSMutableArray array];
 
     [items addObject:[YouModMenuItem itemWithTitle:LOC(@"SAVE_THUMBNAIL") subtitle:nil icon:YouModYTIconImage(57, NO, nil) handler:^{
-        YouModDownloadThumbnail(player, presenter);
+        [self downloadThumbnailForPlayer:player presenter:presenter];
     }]];
     [items addObject:[YouModMenuItem itemWithTitle:LOC(@"SHOW_THUMBNAIL") subtitle:nil icon:YouModYTIconImage(208, NO, nil) handler:^{
-        YouModShowThumbnailViewer(player, presenter);
+        [self showThumbnailViewerForPlayer:player presenter:presenter];
     }]];
     [items addObject:[YouModMenuItem itemWithTitle:LOC(@"COPY_THUMBNAIL") subtitle:nil icon:YouModYTIconImage(250, NO, nil) handler:^{
-        YouModCopyThumbnail(player, presenter);
+        [self copyThumbnailForPlayer:player presenter:presenter];
     }]];
 
-    YouModPresentMenu(nil, items, presenter, sender);
+    [self presentMenuForPlayer:nil items:items presenter:presenter sender:sender];
 }
 
-static void YouModShowDownloadManager(YTPlayerViewController *player, UIViewController *presenter, UIView *sender, BOOL isShorts) {
++ (void)showDownloadManagerForPlayer:(YTPlayerViewController *)player presenter:(UIViewController *)presenter sender:(UIView *)sender isShorts:(BOOL)isShorts {
     if (!player) {
         YouModSendError(LOC(@"OPEN_VID_BEFORE"));
         return;
@@ -240,12 +275,30 @@ static void YouModShowDownloadManager(YTPlayerViewController *player, UIViewCont
         }]];
     }
     [items addObject:[YouModMenuItem itemWithTitle:LOC(@"DOWNLOAD_THUMBNAIL") subtitle:nil icon:YouModYTIconImage(367, NO, nil) handler:^{
-        YouModShowThumbnailSheet(player, presenter, sender);
+        [self showThumbnailSheetForPlayer:player presenter:presenter sender:sender];
     }]];
     [items addObject:[YouModMenuItem itemWithTitle:LOC(@"COPY_VID_INFO") subtitle:nil icon:YouModYTIconImage(250, NO, nil) handler:^{
-        YouModShowCopyVideoInfoSheet(player, presenter, sender);
+        [self showCopyVideoInfoSheetForPlayer:player presenter:presenter sender:sender];
     }]];
-    YouModPresentMenu(player, items, presenter, sender);
+    [self presentMenuForPlayer:player items:items presenter:presenter sender:sender];
+}
+
+@end
+
+NSString *YouModAuthorForPlayer(YTPlayerViewController *player) {
+    return [YouModDownloadActions authorForPlayer:player];
+}
+
+NSString *YouModTitleForPlayer(YTPlayerViewController *player) {
+    return [YouModDownloadActions titleForPlayer:player];
+}
+
+NSString *YouModVideoIDForPlayer(YTPlayerViewController *player) {
+    return [YouModDownloadActions videoIDForPlayer:player];
+}
+
+NSURL *YouModThumbnailURL(YTPlayerViewController *player) {
+    return [YouModDownloadActions thumbnailURLForPlayer:player];
 }
 
 %hook YTPlayerViewController
@@ -295,9 +348,11 @@ NSString *YouModGlobalAuthHeader = nil;
 }
 %end
 
-void YouModConfigureDownloadButton(_ASDisplayView *view, NSString *iden) {
+@implementation YouModDownloadActions (ContentActions)
+
++ (void)configureDownloadButtonForView:(_ASDisplayView *)view identifier:(NSString *)identifier {
     if (!IS_ENABLED(DownloadManager) || INTFORVAL(DownloadButtonPosition) == DownloadButtonPositionOverlay) return;
-    if ([iden isEqualToString:@"id.ui.add_to.offline.button"]) {
+    if ([identifier isEqualToString:@"id.ui.add_to.offline.button"]) {
         view.userInteractionEnabled = YES;
         UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:view action:@selector(YouModDownloadButtonTapped:)];
         tap.cancelsTouchesInView = YES;
@@ -305,10 +360,14 @@ void YouModConfigureDownloadButton(_ASDisplayView *view, NSString *iden) {
         tap.delaysTouchesEnded = YES;
         [view addGestureRecognizer:tap];
         objc_setAssociatedObject(view, @selector(YouModDownloadButtonTapped:), @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-    } else if ([iden isEqualToString:@"id.elements.list_item"]) {
+    } else if ([identifier isEqualToString:@"id.elements.list_item"]) {
         NSString *desc = nil;
         @try {
-            desc = [[[view.keepalive_node.nodeController performSelector:@selector(owningComponent)] performSelector:@selector(owningComponent)] description];
+            id<YouModDownloadComponentAccess> nodeController = (id<YouModDownloadComponentAccess>)view.keepalive_node.nodeController;
+            id firstOwner = [nodeController owningComponent];
+            id<YouModDownloadComponentAccess> firstOwnerAccess = (id<YouModDownloadComponentAccess>)firstOwner;
+            id secondOwner = [firstOwnerAccess owningComponent];
+            desc = [secondOwner description];
         } @catch (id ex) {
             return;
         }
@@ -325,7 +384,9 @@ void YouModConfigureDownloadButton(_ASDisplayView *view, NSString *iden) {
     }
 }
 
-static void YouModShowTranslationDialog(NSString *text, UIViewController *presenter) {
+#pragma mark - Community post and comment actions
+
++ (void)showTranslationDialog:(NSString *)text presenter:(UIViewController *)presenter {
     if (!text || text.length == 0 || !presenter) return;
     
     YouModTranslationViewController *vc = [[YouModTranslationViewController alloc] init];
@@ -333,7 +394,7 @@ static void YouModShowTranslationDialog(NSString *text, UIViewController *presen
     
     UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:vc];
     
-    if ([nav respondsToSelector:@selector(sheetPresentationController)]) {
+    if (@available(iOS 15.0, *)) {
         UISheetPresentationController *sheet = nav.sheetPresentationController;
         if (sheet) {
             sheet.detents = @[ 
@@ -350,7 +411,7 @@ static void YouModShowTranslationDialog(NSString *text, UIViewController *presen
     [presenter presentViewController:nav animated:YES completion:nil];
 }
 
-static NSString *YouModExtractCommentText(UIView *cellView, BOOL isPost) {
++ (NSString *)extractCommentTextFromView:(UIView *)cellView isPost:(BOOL)isPost {
     NSString *resultText = nil;
     NSMutableArray<UIView *> *queue = [NSMutableArray arrayWithObject:cellView];
 
@@ -365,7 +426,7 @@ static NSString *YouModExtractCommentText(UIView *cellView, BOOL isPost) {
                     resultText = current.accessibilityLabel;
                     break;
                 }
-                ASDisplayNode *node = [current performSelector:@selector(keepalive_node)];
+                ASDisplayNode *node = ((_ASDisplayView *)current).keepalive_node;
                 if (![node isKindOfClass:%c(ELMTextNode)]) {
                     for (id child in node.yogaChildren) {
                         if ([child isKindOfClass:%c(ELMTextNode)]) {
@@ -380,7 +441,7 @@ static NSString *YouModExtractCommentText(UIView *cellView, BOOL isPost) {
                     break;
                 }
             } else {
-                ASDisplayNode *node = [current performSelector:@selector(keepalive_node)];
+                ASDisplayNode *node = ((_ASDisplayView *)current).keepalive_node;
                 if (![node isKindOfClass:%c(ELMTextNode)]) {
                     for (id child in node.yogaChildren) {
                         if ([child isKindOfClass:%c(ELMTextNode)]) {
@@ -391,7 +452,11 @@ static NSString *YouModExtractCommentText(UIView *cellView, BOOL isPost) {
                 }
                 NSString *desc = nil;
                 @try {
-                    desc = [[[[node nodeController] performSelector:@selector(parent)] performSelector:@selector(owningComponent)] description];
+                    id<YouModDownloadComponentAccess> nodeController = (id<YouModDownloadComponentAccess>)[node nodeController];
+                    id parentController = [nodeController parent];
+                    id<YouModDownloadComponentAccess> parentAccess = (id<YouModDownloadComponentAccess>)parentController;
+                    id owningComponent = [parentAccess owningComponent];
+                    desc = [owningComponent description];
                 } @catch (id ex) {}
                 if (desc != nil && [desc containsString:@"post_text.eml"]) {
                     NSAttributedString *strings = [node valueForKey:@"_attributedText"];
@@ -407,7 +472,7 @@ static NSString *YouModExtractCommentText(UIView *cellView, BOOL isPost) {
     return resultText;
 }
 
-static UIImage *YouModRenderViewToImage(_ASDisplayView *view) {
++ (UIImage *)renderImageFromView:(_ASDisplayView *)view {
     if (!view || view.bounds.size.width <= 0 || view.bounds.size.height <= 0) return nil;
     
     UIColor *realBgColor = isDarkMode(view) ? [%c(YTColor) black3] : [%c(YTColor) white1];  
@@ -422,45 +487,8 @@ static UIImage *YouModRenderViewToImage(_ASDisplayView *view) {
     return image;
 }
 
-/*
-static UIImage *YouModExtractPostImage(UIView *cellView) {
-    NSMutableArray<UIView *> *queue = [NSMutableArray arrayWithObject:cellView];
-    Class asDisplayClass = NSClassFromString(@"_ASDisplayView");
-    Class imageZoomNodeClass = NSClassFromString(@"YTImageZoomNode");
-    UIView *targetViewForRender = nil;
-
-    while (queue.count > 0) {
-        UIView *current = queue.firstObject;
-        [queue removeObjectAtIndex:0];
-
-        if (asDisplayClass && [current isKindOfClass:asDisplayClass]) {
-            id node = [current performSelector:@selector(keepalive_node)];
-            
-            if (imageZoomNodeClass && [node isKindOfClass:imageZoomNodeClass]) {
-                if (!targetViewForRender) {
-                    targetViewForRender = current;
-                }
-            }
-        }
-
-        @synchronized (current) {
-            [queue addObjectsFromArray:current.subviews];
-        }
-    }
-
-    if (targetViewForRender && targetViewForRender.bounds.size.width > 0 && targetViewForRender.bounds.size.height > 0) {
-        UIGraphicsImageRenderer *renderer = [[UIGraphicsImageRenderer alloc] initWithSize:targetViewForRender.bounds.size];
-        return [renderer imageWithActions:^(UIGraphicsImageRendererContext * _Nonnull rendererContext) {
-            [targetViewForRender.layer renderInContext:rendererContext.CGContext];
-        }];
-    }
-
-    return nil;
-}
-*/
-
-void YouModSetupDownloadGestures(_ASDisplayView *view, NSString *iden) {
-    if ([iden isEqualToString:@"id.ui.comment_cell"] && IS_ENABLED(DownloadComment)) {
++ (void)setupDownloadGesturesForView:(_ASDisplayView *)view identifier:(NSString *)identifier {
+    if ([identifier isEqualToString:@"id.ui.comment_cell"] && IS_ENABLED(DownloadComment)) {
         BOOL hasGesture = NO;
         for (UIGestureRecognizer *g in view.gestureRecognizers) {
             if ([g.name isEqualToString:@"YouModCommentLongPress"]) {
@@ -475,7 +503,7 @@ void YouModSetupDownloadGestures(_ASDisplayView *view, NSString *iden) {
             longPress.minimumPressDuration = 0.3;
             [view addGestureRecognizer:longPress];
         }
-    } else if ([iden isEqualToString:@"id.ui.backstage.original_post"] && IS_ENABLED(DownloadPost)) {
+    } else if ([identifier isEqualToString:@"id.ui.backstage.original_post"] && IS_ENABLED(DownloadPost)) {
         BOOL hasGesture = NO;
         for (UIGestureRecognizer *g in view.gestureRecognizers) {
             if ([g.name isEqualToString:@"YouModPostLongPress"]) {
@@ -493,23 +521,23 @@ void YouModSetupDownloadGestures(_ASDisplayView *view, NSString *iden) {
     }
 }
 
-void YouModHandleCommentLongPressAction(_ASDisplayView *view) {
++ (void)handleCommentLongPressForView:(_ASDisplayView *)view {
     NSMutableArray *items = [NSMutableArray array];
-    NSString *commentText = YouModExtractCommentText(view, NO);
+    NSString *commentText = [self extractCommentTextFromView:view isPost:NO];
 
     if (commentText && commentText.length > 0) {
         [items addObject:[YouModMenuItem itemWithTitle:LOC(@"TRANSLATE_COMMENT") subtitle:nil icon:YouModYTIconImage(897, NO, nil) handler:^{
             UIViewController *presenter = view._viewControllerForAncestor;
-            YouModShowTranslationDialog(commentText, presenter);
+            [self showTranslationDialog:commentText presenter:presenter];
         }]];
 
         [items addObject:[YouModMenuItem itemWithTitle:LOC(@"COPY_COMMENT_TEXT") subtitle:nil icon:YouModYTIconImage(243, NO, nil) handler:^{
-            YouModCopyTextToPasteboard(commentText, @"COPIED_TO_CLIPBOARD");
+            [self copyTextToPasteboard:commentText successKey:@"COPIED_TO_CLIPBOARD"];
         }]];
     }
 
     [items addObject:[YouModMenuItem itemWithTitle:LOC(@"SAVE_COMMENT_IMAGE") subtitle:nil icon:YouModYTIconImage(367, NO, nil) handler:^{
-        UIImage *image = YouModRenderViewToImage(view);
+        UIImage *image = [self renderImageFromView:view];
         if (image) {
             UIViewController *p = view._viewControllerForAncestor;
             YouModHandlePostDownloadImage(image, p);
@@ -517,35 +545,35 @@ void YouModHandleCommentLongPressAction(_ASDisplayView *view) {
     }]];
 
     [items addObject:[YouModMenuItem itemWithTitle:LOC(@"COPY_COMMENT_IMAGE") subtitle:nil icon:YouModYTIconImage(208, NO, nil) handler:^{
-        UIImage *image = YouModRenderViewToImage(view);
+        UIImage *image = [self renderImageFromView:view];
         if (image) {
-            YouModCopyImageToPasteboard(image, @"COPIED_TO_CLIPBOARD");
+            [self copyImageToPasteboard:image successKey:@"COPIED_TO_CLIPBOARD"];
         }
     }]];
 
     UIViewController *presenter = view._viewControllerForAncestor;
     if (!presenter) return;
 
-    YouModPresentMenu(nil, items, presenter, view);
+    [self presentMenuForPlayer:nil items:items presenter:presenter sender:view];
 }
 
-void YouModHandlePostLongPressAction(_ASDisplayView *view) {
++ (void)handlePostLongPressForView:(_ASDisplayView *)view {
     NSMutableArray *items = [NSMutableArray array];
-    NSString *postText = YouModExtractCommentText(view, YES);
+    NSString *postText = [self extractCommentTextFromView:view isPost:YES];
 
     if (postText && postText.length > 0) {
         [items addObject:[YouModMenuItem itemWithTitle:LOC(@"TRANSLATE_POST") subtitle:nil icon:YouModYTIconImage(897, NO, nil) handler:^{
             UIViewController *presenter = view._viewControllerForAncestor;
-            YouModShowTranslationDialog(postText, presenter);
+            [self showTranslationDialog:postText presenter:presenter];
         }]];
 
         [items addObject:[YouModMenuItem itemWithTitle:LOC(@"COPY_POST_TEXT") subtitle:nil icon:YouModYTIconImage(243, NO, nil) handler:^{
-            YouModCopyTextToPasteboard(postText, @"COPIED_TO_CLIPBOARD");
+            [self copyTextToPasteboard:postText successKey:@"COPIED_TO_CLIPBOARD"];
         }]];
     }
 
     [items addObject:[YouModMenuItem itemWithTitle:LOC(@"SAVE_POST_IMAGE") subtitle:nil icon:YouModYTIconImage(367, NO, nil) handler:^{
-        UIImage *image = YouModRenderViewToImage(view);
+        UIImage *image = [self renderImageFromView:view];
         if (image) {
             UIViewController *p = view._viewControllerForAncestor;
             YouModHandlePostDownloadImage(image, p);
@@ -553,22 +581,44 @@ void YouModHandlePostLongPressAction(_ASDisplayView *view) {
     }]];
 
     [items addObject:[YouModMenuItem itemWithTitle:LOC(@"COPY_POST_IMAGE") subtitle:nil icon:YouModYTIconImage(208, NO, nil) handler:^{
-        UIImage *image = YouModRenderViewToImage(view);
+        UIImage *image = [self renderImageFromView:view];
         if (image) {
-            YouModCopyImageToPasteboard(image, @"COPIED_TO_CLIPBOARD");
+            [self copyImageToPasteboard:image successKey:@"COPIED_TO_CLIPBOARD"];
         }
     }]];
 
     UIViewController *presenter = view._viewControllerForAncestor;
     if (!presenter) return;
 
-    YouModPresentMenu(nil, items, presenter, view);
+    [self presentMenuForPlayer:nil items:items presenter:presenter sender:view];
+}
+
++ (void)handleDownloadButtonForView:(_ASDisplayView *)view {
+    UIViewController *presenter = view._viewControllerForAncestor;
+    YouModDownloadParentResponder = [presenter valueForKey:@"_parentResponder"];
+    [self showDownloadManagerForPlayer:YouModCurrentPlayerViewController presenter:presenter sender:view isShorts:NO];
+}
+
+@end
+
+void YouModConfigureDownloadButton(_ASDisplayView *view, NSString *iden) {
+    [YouModDownloadActions configureDownloadButtonForView:view identifier:iden];
+}
+
+void YouModSetupDownloadGestures(_ASDisplayView *view, NSString *iden) {
+    [YouModDownloadActions setupDownloadGesturesForView:view identifier:iden];
+}
+
+void YouModHandleCommentLongPressAction(_ASDisplayView *view) {
+    [YouModDownloadActions handleCommentLongPressForView:view];
+}
+
+void YouModHandlePostLongPressAction(_ASDisplayView *view) {
+    [YouModDownloadActions handlePostLongPressForView:view];
 }
 
 void YouModHandleDownloadButtonAction(_ASDisplayView *view) {
-    UIViewController *presenter = view._viewControllerForAncestor;
-    parentResponder = [presenter valueForKey:@"_parentResponder"];
-    YouModShowDownloadManager(YouModCurrentPlayerViewController, presenter, view, NO);
+    [YouModDownloadActions handleDownloadButtonForView:view];
 }
 
 %hook YTReelWatchPlaybackOverlayView
@@ -611,8 +661,8 @@ void YouModHandleDownloadButtonAction(_ASDisplayView *view) {
     YTShortsPlayerViewController *shortsPlayerView = (YTShortsPlayerViewController *)self._viewControllerForAncestor;
     YTPlayerViewController *player = (YTPlayerViewController *)shortsPlayerView.childViewControllers[0];
     UIViewController *presenter = button._viewControllerForAncestor;
-    parentResponder = [presenter valueForKey:@"_parentResponder"];
-    YouModShowDownloadManager(player, presenter, button, YES);
+    YouModDownloadParentResponder = [presenter valueForKey:@"_parentResponder"];
+    [YouModDownloadActions showDownloadManagerForPlayer:player presenter:presenter sender:button isShorts:YES];
 }
 %end
 
@@ -629,8 +679,8 @@ void YouModHandleDownloadButtonAction(_ASDisplayView *view) {
     };
     download.onTap = ^(YTPlayerViewController *player, UIButton *button) {
         UIViewController *presenter = button._viewControllerForAncestor;
-        parentResponder = [presenter valueForKey:@"_parentResponder"];
-        YouModShowDownloadManager(YouModCurrentPlayerViewController, presenter, button, NO);
+        YouModDownloadParentResponder = [presenter valueForKey:@"_parentResponder"];
+        [YouModDownloadActions showDownloadManagerForPlayer:YouModCurrentPlayerViewController presenter:presenter sender:button isShorts:NO];
     };
     YMRegisterOverlayButton(download);
 }

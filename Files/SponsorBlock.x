@@ -112,8 +112,8 @@ void sbDismissAllNotifications(void) {
     if (!rootView) return;
     for (UIView *sub in [rootView.subviews copy]) {
         [sub.layer removeAllAnimations];
-        if ([sub isKindOfClass:[SBSkipNotificationView class]]) {
-            [((SBSkipNotificationView *)sub).progressOverlay.layer removeAllAnimations];
+        if ([sub isKindOfClass:[YouModPillView class]]) {
+            [((YouModPillView *)sub).progressOverlay.layer removeAllAnimations];
         }
         [sub removeFromSuperview];
     }
@@ -398,7 +398,7 @@ static void sbSendViewedSegment(SBSegment *segment) {
 %property (nonatomic, strong) NSString *sbLastVideoID;
 %property (nonatomic, strong) NSArray *sbSegments;
 %property (nonatomic, strong) NSMutableSet *sbSkippedSegments;
-%property (nonatomic, strong) SBSkipNotificationView *sbNotificationView;
+%property (nonatomic, strong) YouModPillView *sbNotificationView;
 %property (nonatomic, strong) NSMutableSet *sbAcceptedMutes;
 %property (nonatomic, assign) BOOL sbMutedBySegment;
 - (void)playbackController:(id)playbackController didActivateVideo:(id)video withPlaybackData:(id)playbackData {
@@ -556,7 +556,7 @@ static void sbSendViewedSegment(SBSegment *segment) {
         if (![segment.actionType isEqualToString:@"full"]) continue;
         if ([segment configuredAction] == SBSegmentActionDisable) continue;
         NSString *catName = [YouModBundle() localizedStringForKey:[NSString stringWithFormat:@"SB_CAT_%@", segment.category] value:segment.category table:nil];
-        [SBSkipNotificationView showSuccessInView:sbGetNotificationParent()
+        [YouModPillView showSuccessInView:sbGetNotificationParent()
                                           message:[NSString stringWithFormat:LOC(@"SB_FULL_VIDEO_LABEL"), catName]
                                          duration:SBClampedAlertDuration(SBSkipAlertDuration)];
         return;
@@ -591,7 +591,7 @@ static void sbSendViewedSegment(SBSegment *segment) {
             if (!strongSelf) return;
             if ([UIApplication sharedApplication].applicationState != UIApplicationStateActive) return;
             UIView *parentView = sbGetNotificationParent();
-            strongSelf.sbNotificationView = [SBSkipNotificationView showInView:parentView
+            strongSelf.sbNotificationView = [YouModPillView showInView:parentView
                 message:message
                 buttonTitle:unskipTitle
                 action:^{
@@ -616,7 +616,7 @@ static void sbSendViewedSegment(SBSegment *segment) {
 
     UIView *parentView = sbGetNotificationParent();
     __weak typeof(self) weakSelf = self;
-    self.sbNotificationView = [SBSkipNotificationView showInView:parentView
+    self.sbNotificationView = [YouModPillView showInView:parentView
         message:message
         buttonTitle:isMute ? LOC(@"SB_MUTE_NOW") : [bundle localizedStringForKey:@"SB_SKIP_NOW" value:@"Skip" table:nil]
         action:^{
@@ -657,7 +657,7 @@ static void sbSendViewedSegment(SBSegment *segment) {
                     float alertDuration = SBClampedAlertDuration(SBSkipAlertDuration);
 
                     UIView *parentView = sbGetNotificationParent();
-                    SBSkipNotificationView *pill = [SBSkipNotificationView showInView:parentView
+                    YouModPillView *pill = [YouModPillView showInView:parentView
                         message:message
                         buttonTitle:skipTitle
                         action:^{ [self sbSkipToHighlight]; }
@@ -690,7 +690,7 @@ static void sbSendViewedSegment(SBSegment *segment) {
                 float alertDuration = SBClampedAlertDuration(SBUnskipAlertDuration);
 
                 __weak typeof(self) weakSelf = self;
-                SBSkipNotificationView *pill = [SBSkipNotificationView showInView:sbGetNotificationParent()
+                YouModPillView *pill = [YouModPillView showInView:sbGetNotificationParent()
                     message:message
                     buttonTitle:unskipTitle
                     action:^{

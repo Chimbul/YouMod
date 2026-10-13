@@ -66,7 +66,7 @@ static void YMStartupVideoDismissInternal(YTStartupAnimationViewController *cont
     NSItemProvider *provider = result.itemProvider;
     if (![provider hasItemConformingToTypeIdentifier:@"public.movie"]) {
         dispatch_async(dispatch_get_main_queue(), ^{
-            sbShowSBPill(LOC(@"STARTUP_VIDEO_INVALID"), NO);
+            YouModShowPill(LOC(@"STARTUP_VIDEO_INVALID"), NO);
         });
         return;
     }
@@ -74,7 +74,7 @@ static void YMStartupVideoDismissInternal(YTStartupAnimationViewController *cont
     [provider loadFileRepresentationForTypeIdentifier:@"public.movie" completionHandler:^(NSURL *temporaryURL, NSError *loadError) {
         if (!temporaryURL || loadError) {
             dispatch_async(dispatch_get_main_queue(), ^{
-                sbShowSBPill(LOC(@"STARTUP_VIDEO_IMPORT_FAILED"), NO);
+                YouModShowPill(LOC(@"STARTUP_VIDEO_IMPORT_FAILED"), NO);
             });
             return;
         }
@@ -84,7 +84,7 @@ static void YMStartupVideoDismissInternal(YTStartupAnimationViewController *cont
         NSError *copyError = nil;
         if (![[NSFileManager defaultManager] copyItemAtURL:temporaryURL toURL:inputURL error:&copyError]) {
             dispatch_async(dispatch_get_main_queue(), ^{
-                sbShowSBPill(LOC(@"STARTUP_VIDEO_IMPORT_FAILED"), NO);
+                YouModShowPill(LOC(@"STARTUP_VIDEO_IMPORT_FAILED"), NO);
             });
             return;
         }
@@ -115,7 +115,7 @@ static void YMStartupVideoDismissInternal(YTStartupAnimationViewController *cont
 
             dispatch_async(dispatch_get_main_queue(), ^{
                 YMStartupVideoRefreshSettings(presenter);
-                sbShowSBPill(LOC(success ? @"STARTUP_VIDEO_SAVED" : @"STARTUP_VIDEO_CONVERT_FAILED"), success);
+                YouModShowPill(LOC(success ? @"STARTUP_VIDEO_SAVED" : @"STARTUP_VIDEO_CONVERT_FAILED"), success);
             });
         });
     }];
@@ -143,7 +143,7 @@ void YMStartupVideoDelete(UIViewController *presenter) {
         NSError *error = nil;
         [[NSFileManager defaultManager] removeItemAtURL:YMStartupVideoURL() error:&error];
         YMStartupVideoRefreshSettings(presenter);
-        sbShowSBPill(error.localizedDescription ?: LOC(error ? @"STARTUP_VIDEO_DELETE_FAILED" : @"STARTUP_VIDEO_DELETED"), error == nil);
+        YouModShowPill(error.localizedDescription ?: LOC(error ? @"STARTUP_VIDEO_DELETE_FAILED" : @"STARTUP_VIDEO_DELETED"), error == nil);
     } actionTitle:LOC(@"DELETE")];
     confirm.title = LOC(@"STARTUP_VIDEO_DELETE_CONFIRM");
     confirm.subtitle = LOC(@"STARTUP_VIDEO_DELETE_CONFIRM_DESC");

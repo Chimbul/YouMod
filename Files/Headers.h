@@ -591,6 +591,7 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 - (YTQTMButton *)sortFilterMenuButton;
 - (YTQTMButton *)closeButton;
 - (YTQTMButton *)backButton;
+- (YTQTMButton *)actionButton;
 @end
 
 @interface YTEngagementPanelView : UIView
@@ -686,10 +687,6 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 - (YTCaptionTrackSwitchController *)captionTrackController;
 - (NSString *)videoID;
 - (CGFloat)mediaTime;
-@end
-
-@interface YTLeftNavigationButtons : UIView
-- (YTQTMButton *)backButton;
 @end
 
 @interface YTSingleVideo (YouMod)
@@ -822,29 +819,6 @@ typedef NS_ENUM(NSInteger, SBSegmentAction) {
 + (void)submitSegmentForVideoID:(NSString *)videoID category:(NSString *)category start:(float)start end:(float)end duration:(float)duration completion:(void (^)(BOOL success, NSString *errorMessage))completion;
 @end
 
-@interface SBSkipNotificationView : UIView
-@property (nonatomic, strong) UILabel *messageLabel;
-@property (nonatomic, strong) UIButton *actionButton;
-@property (nonatomic, strong) UIView *progressOverlay;
-@property (nonatomic, strong) UIImageView *infoIconView;
-@property (nonatomic, assign) BOOL showsInfoIcon;
-@property (nonatomic, copy) void (^onAction)(void);
-@property (nonatomic, assign) NSTimeInterval totalDuration;
-@property (nonatomic, assign) NSTimeInterval remainingDuration;
-@property (nonatomic, assign) BOOL isPaused;
-@property (nonatomic, assign) BOOL isHighlightPill;
-@property (nonatomic, assign) BOOL isDismissing;
-@property (nonatomic, strong) NSDate *backgroundDate;
-+ (instancetype)showInView:(UIView *)parentView message:(NSString *)message buttonTitle:(NSString *)buttonTitle action:(void (^)(void))action duration:(NSTimeInterval)duration;
-+ (instancetype)showDownloadCompleteDialogInView:(UIView *)parentView message:(NSString *)message saveHandler:(void (^)(void))saveHandler shareHandler:(void (^)(void))shareHandler duration:(NSTimeInterval)duration;
-+ (instancetype)showSuccessInView:(UIView *)parentView message:(NSString *)message duration:(NSTimeInterval)duration;
-+ (instancetype)showErrorInView:(UIView *)parentView message:(NSString *)message duration:(NSTimeInterval)duration;
-- (void)dismiss;
-- (void)dismissWithCompletion:(void (^)(void))completion;
-- (void)pauseProgress;
-- (void)resumeProgress;
-@end
-
 // Engagement panel pieces used to host YMSBCardViewController (SponsorBlockMenu.x).
 // Protobuf fields resolve at runtime, so these are only declarations.
 @interface YTIEngagementPanelTitleHeaderRenderer : GPBMessage
@@ -890,6 +864,7 @@ extern UIView *sbGetNotificationParent(void);
 extern void sbDismissAllNotifications(void);
 extern void sbUpdateOverlayInsetForPivotBar(void);
 extern void YMPresentTabOrderModally(id parentResponder);
+extern void YouModShowPill(NSString *message, BOOL success);
 
 // SponsorBlock menu / voting / whitelist (SponsorBlockMenu.x)
 extern BOOL sbActiveForVideo(YTPlayerViewController *player);
@@ -898,7 +873,6 @@ extern NSString *sbLocalUserID(void);
 extern NSString *sbPublicUserID(void);
 extern void sbSetPrivateUserID(NSString *userID);
 extern void sbSetPublicUserIDManual(NSString *userID);
-extern void sbShowSBPill(NSString *message, BOOL success);
 extern void YMSBPresentWhitelistManager(void);
 extern YTPlayerViewController *YouModCurrentPlayerViewController;
 
@@ -1121,6 +1095,33 @@ extern NSString *YouModGlobalAuthHeader;
 
 #define LOC(x) [YouModBundle() localizedStringForKey:x value:nil table:nil]
 
+// Shared success, error, and action feedback pill (YouModPill.x).
+@interface YouModPillView : UIView
+@property (nonatomic, strong) UILabel *messageLabel;
+@property (nonatomic, strong) UIButton *actionButton;
+@property (nonatomic, strong) UIView *progressOverlay;
+@property (nonatomic, strong) UIImageView *infoIconView;
+@property (nonatomic, assign) BOOL showsInfoIcon;
+@property (nonatomic, copy) void (^onAction)(void);
+@property (nonatomic, assign) NSTimeInterval totalDuration;
+@property (nonatomic, assign) NSTimeInterval remainingDuration;
+@property (nonatomic, assign) BOOL isPaused;
+@property (nonatomic, assign) BOOL isHighlightPill;
+@property (nonatomic, assign) BOOL isDismissing;
+@property (nonatomic, strong) NSDate *backgroundDate;
++ (instancetype)showInView:(UIView *)parentView message:(NSString *)message buttonTitle:(NSString *)buttonTitle action:(void (^)(void))action duration:(NSTimeInterval)duration;
++ (instancetype)showDownloadCompleteDialogInView:(UIView *)parentView message:(NSString *)message saveHandler:(void (^)(void))saveHandler shareHandler:(void (^)(void))shareHandler duration:(NSTimeInterval)duration;
++ (instancetype)showSuccessInView:(UIView *)parentView message:(NSString *)message duration:(NSTimeInterval)duration;
++ (instancetype)showErrorInView:(UIView *)parentView message:(NSString *)message duration:(NSTimeInterval)duration;
++ (NSInteger)nextAnimationSequence;
++ (NSInteger)currentAnimationSequence;
++ (void)dismissExistingPillsInView:(UIView *)parentView completion:(void (^)(void))completion;
+- (void)dismiss;
+- (void)dismissWithCompletion:(void (^)(void))completion;
+- (void)pauseProgress;
+- (void)resumeProgress;
+@end
+
 @interface YMDownloadProgressView : UIView
 @property (nonatomic, strong) UILabel *titleLabel;
 @property (nonatomic, strong) UILabel *subtitleLabel;
@@ -1138,7 +1139,7 @@ extern NSString *YouModGlobalAuthHeader;
 @property (nonatomic, strong) NSString *sbLastVideoID;
 @property (nonatomic, strong) NSArray<SBSegment *> *sbSegments;
 @property (nonatomic, strong) NSMutableSet<NSString *> *sbSkippedSegments;
-@property (nonatomic, strong) SBSkipNotificationView *sbNotificationView;
+@property (nonatomic, strong) YouModPillView *sbNotificationView;
 @property (nonatomic, strong) NSMutableSet<NSString *> *sbAcceptedMutes;
 @property (nonatomic, assign) BOOL sbMutedBySegment;
 @property (nonatomic, strong) NSMutableDictionary *sbDraft;

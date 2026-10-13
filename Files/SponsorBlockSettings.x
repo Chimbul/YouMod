@@ -755,13 +755,13 @@ static const void *kSBAllFlatRowsKey = &kSBAllFlatRowsKey;
 
     [alert addAction:[UIAlertAction actionWithTitle:LOC(@"SB_COPY_ID") style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
         UIPasteboard.generalPasteboard.string = userID;
-        sbShowSBPill(LOC(@"SB_ID_COPIED"), YES);
+        YouModShowPill(LOC(@"SB_ID_COPIED"), YES);
     }]];
 
     UIAlertAction *saveAction = [UIAlertAction actionWithTitle:LOC(@"SB_ID_SAVE") style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
         NSString *newValue = [alert.textFields.firstObject.text stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
         if (newValue.length < 30) {
-            sbShowSBPill(LOC(@"SB_ID_INVALID"), NO);
+            YouModShowPill(LOC(@"SB_ID_INVALID"), NO);
             return;
         }
         if (isPublic) {
@@ -769,7 +769,7 @@ static const void *kSBAllFlatRowsKey = &kSBAllFlatRowsKey;
         } else {
             sbSetPrivateUserID(newValue);
         }
-        sbShowSBPill(LOC(@"SB_ID_SAVED"), YES);
+        YouModShowPill(LOC(@"SB_ID_SAVED"), YES);
         __strong typeof(weakSelf) strongSelf = weakSelf;
         [strongSelf.tableView reloadData];
     }];

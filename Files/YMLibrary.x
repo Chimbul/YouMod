@@ -629,8 +629,8 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
         [settingsButton.leadingAnchor constraintEqualToAnchor:_searchBar.trailingAnchor constant:4],
         [settingsButton.trailingAnchor constraintEqualToAnchor:headerContentGuide.trailingAnchor constant:-14],
         [settingsButton.centerYAnchor constraintEqualToAnchor:_searchBar.centerYAnchor],
-        [settingsButton.widthAnchor constraintEqualToConstant:35],
-        [settingsButton.heightAnchor constraintEqualToConstant:35],
+        [settingsButton.widthAnchor constraintEqualToConstant:40],
+        [settingsButton.heightAnchor constraintEqualToConstant:40],
 
         [_typeScrollView.topAnchor constraintEqualToAnchor:headerContentGuide.topAnchor constant:52],
         [_typeScrollView.leadingAnchor constraintEqualToAnchor:topBar.leadingAnchor constant:16],

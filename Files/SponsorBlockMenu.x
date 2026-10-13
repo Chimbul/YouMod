@@ -9,15 +9,6 @@
 
 #pragma mark - Small helpers
 
-void sbShowSBPill(NSString *message, BOOL success) {
-    UIView *parent = sbGetNotificationParent();
-    if (success) {
-        [SBSkipNotificationView showSuccessInView:parent message:message duration:3.0];
-    } else {
-        [SBSkipNotificationView showErrorInView:parent message:message duration:4.0];
-    }
-}
-
 static NSString *sbFormatTime(float t) {
     NSInteger total = (NSInteger)lroundf(t);
     if (total < 0) total = 0;
@@ -924,11 +915,11 @@ static UINavigationController *sbCardNavigationController(YMSBCardViewController
 static void sbHandleVoteResult(YTPlayerViewController *player, SBSegment *droppedSegment, NSString *videoID, BOOL success, NSString *errorMessage) {
     if (!success) {
         NSString *reason = errorMessage.length > 0 ? [NSString stringWithFormat:@"%@ — %@", LOC(@"SB_VOTE_FAILED"), errorMessage] : LOC(@"SB_VOTE_FAILED");
-        sbShowSBPill(reason, NO);
+        YouModShowPill(reason, NO);
         return;
     }
     sbInvalidateSegmentCache(videoID);
-    sbShowSBPill(LOC(@"SB_VOTE_SUCCESS"), YES);
+    YouModShowPill(LOC(@"SB_VOTE_SUCCESS"), YES);
     if (!player || !droppedSegment || ![[player currentVideoID] isEqualToString:videoID]) return;
     NSMutableArray *remaining = [player.sbSegments mutableCopy];
     [remaining removeObject:droppedSegment];
@@ -947,7 +938,7 @@ static void sbHandleVoteResult(YTPlayerViewController *player, SBSegment *droppe
         return a.startTime < b.startTime ? NSOrderedAscending : NSOrderedDescending;
     }];
     if (segments.count == 0) {
-        sbShowSBPill(LOC(@"SB_VOTE_NO_SEGMENTS"), NO);
+        YouModShowPill(LOC(@"SB_VOTE_NO_SEGMENTS"), NO);
         return;
     }
 
@@ -1231,7 +1222,7 @@ static UIView *sbNudgeControls(void (^nudge)(float delta)) {
         float submitEnd = isFull ? 0 : (isPoi ? start : end);
         BOOL valid = isFull || (isPoi ? submitStart >= 0 : (submitStart >= 0 && submitEnd > submitStart));
         if (!valid) {
-            sbShowSBPill(LOC(@"SB_SUBMIT_INVALID"), NO);
+            YouModShowPill(LOC(@"SB_SUBMIT_INVALID"), NO);
             return;
         }
         NSString *videoID = draft[@"videoID"];
@@ -1245,10 +1236,10 @@ static UIView *sbNudgeControls(void (^nudge)(float delta)) {
             __strong typeof(weakSelf) ss = weakSelf;
             if (!success) {
                 NSString *reason = errorMessage.length > 0 ? [NSString stringWithFormat:@"%@ — %@", LOC(@"SB_SUBMIT_FAILED"), errorMessage] : LOC(@"SB_SUBMIT_FAILED");
-                sbShowSBPill(reason, NO);
+                YouModShowPill(reason, NO);
                 return;
             }
-            sbShowSBPill(LOC(@"SB_SUBMIT_SUCCESS"), YES);
+            YouModShowPill(LOC(@"SB_SUBMIT_SUCCESS"), YES);
             if (!ss) return;
             ss.sbDraft = nil;
             if ([[ss currentVideoID] isEqualToString:videoID]) sbPostSegmentsForPlayer(ss, YES);
@@ -1263,7 +1254,7 @@ static UIView *sbNudgeControls(void (^nudge)(float delta)) {
 - (void)sbToggleWhitelistFromMenu {
     NSString *channelID = sbCurrentChannelID(self);
     if (channelID.length == 0) {
-        sbShowSBPill(LOC(@"SB_VOTE_FAILED"), NO);
+        YouModShowPill(LOC(@"SB_VOTE_FAILED"), NO);
         return;
     }
     NSString *channelName = sbCurrentChannelName(self) ?: channelID;
@@ -1274,7 +1265,7 @@ static UIView *sbNudgeControls(void (^nudge)(float delta)) {
     // being watched right now; adding it clears them.
     sbPostSegmentsForPlayer(self, wasListed);
 
-    sbShowSBPill(LOC(wasListed ? @"SB_WHITELIST_REMOVE" : @"SB_WHITELIST_ADD"), YES);
+    YouModShowPill(LOC(wasListed ? @"SB_WHITELIST_REMOVE" : @"SB_WHITELIST_ADD"), YES);
 }
 
 %end

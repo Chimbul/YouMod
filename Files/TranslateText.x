@@ -380,7 +380,7 @@ static void YouModTranslateText(NSString *text, NSString *targetLang, void (^com
         [feedback impactOccurred];
 
         UIView *parent = sbGetNotificationParent();
-        [SBSkipNotificationView showSuccessInView:parent message:LOC(@"COPIED_TO_CLIPBOARD") duration:3.0];
+        [YouModPillView showSuccessInView:parent message:LOC(@"COPIED_TO_CLIPBOARD") duration:3.0];
     }
 }
 

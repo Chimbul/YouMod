@@ -43,13 +43,13 @@ static void showTranscript(YTFormat3CaptionViewController *cvc) {
         }
     }];
     if (transcript.length == 0) {
-        [SBSkipNotificationView showErrorInView:parent message:LOC(@"NO_CAPTIONS") duration:4.0];
+        [YouModPillView showErrorInView:parent message:LOC(@"NO_CAPTIONS") duration:4.0];
         return;
     }
     YTAlertView *alertView = [%c(YTAlertView) confirmationDialogWithAction:^{
         UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
         pasteboard.string = transcript;
-        [SBSkipNotificationView showSuccessInView:parent message:LOC(@"COPIED_TO_CLIPBOARD") duration:3.0];
+        [YouModPillView showSuccessInView:parent message:LOC(@"COPIED_TO_CLIPBOARD") duration:3.0];
     } actionTitle:LOC(@"COPY")];
     alertView.title = nil;
     alertView.subtitle = transcript;
@@ -299,7 +299,6 @@ static YTQTMButton *YMCreateOverlayButton(UIView *parent, YMOverlayButtonSpec *s
     button.tag = spec.viewTag;
     button.frame = CGRectMake(0, 0, YMOverlayButtonSize, YMOverlayButtonSize);
     [button addTarget:parent action:@selector(ymOverlayButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
-    YouModApplyLiquidGlassToView(button, NO);
     [parent addSubview:button];
     return button;
 }
@@ -685,8 +684,8 @@ static void YMFrostedBackgroundUpdate(YTInlinePlayerBarContainerView *self_, NSA
 
 static void YouModShowShareNotification(NSString *message, BOOL success) {
     UIView *parent = sbGetNotificationParent();
-    if (success) [SBSkipNotificationView showSuccessInView:parent message:message duration:3.0];
-    else [SBSkipNotificationView showErrorInView:parent message:message duration:4.0];
+    if (success) [YouModPillView showSuccessInView:parent message:message duration:3.0];
+    else [YouModPillView showErrorInView:parent message:message duration:4.0];
 }
 
 %hook YTPlayerViewController

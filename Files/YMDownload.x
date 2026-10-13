@@ -93,15 +93,15 @@ static NSString *YMDLByteCountString(unsigned long long bytes) {
 #pragma mark - Notifications
 
 void YouModSendToast(NSString *message) {
-    [SBSkipNotificationView showInView:sbGetNotificationParent() message:message buttonTitle:nil action:nil duration:3.0];
+    [YouModPillView showInView:sbGetNotificationParent() message:message buttonTitle:nil action:nil duration:3.0];
 }
 
 void YouModSendSuccess(NSString *message) {
-    [SBSkipNotificationView showSuccessInView:sbGetNotificationParent() message:message duration:3.0];
+    [YouModPillView showSuccessInView:sbGetNotificationParent() message:message duration:3.0];
 }
 
 void YouModSendError(NSString *message) {
-    [SBSkipNotificationView showErrorInView:sbGetNotificationParent() message:message duration:4.0];
+    [YouModPillView showErrorInView:sbGetNotificationParent() message:message duration:4.0];
 }
 
 #pragma mark - File helpers

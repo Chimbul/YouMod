@@ -33,33 +33,6 @@ void YouModApplyLiquidGlassToView(UIView *view, BOOL wantsBackground) {
 }
 %end
 
-%hook YTMainAppControlsOverlayView
-- (void)didMoveToWindow {
-    %orig;
-    UIView *prevBut = [self valueForKey:@"_previousButtonView"];
-    UIView *nextBut = [self valueForKey:@"_nextButtonView"];
-    if (prevBut != nil) YouModApplyLiquidGlassToView(prevBut, NO);
-    if (nextBut != nil) YouModApplyLiquidGlassToView(nextBut, NO);
-    prevBut = [self valueForKey:@"_seekBackwardAccessibilityButtonView"];
-    nextBut = [self valueForKey:@"_seekForwardAccessibilityButtonView"];
-    if (prevBut != nil) YouModApplyLiquidGlassToView(prevBut, NO);
-    if (nextBut != nil) YouModApplyLiquidGlassToView(nextBut, NO);
-    YouModApplyLiquidGlassToView(self.playPauseButton, NO);
-}
-%end
-
-%hook YTInlinePlayerBarContainerView
-- (void)didMoveToWindow {
-    %orig;
-    YouModApplyLiquidGlassToView(self.enterExitFullscreenButton, NO);
-    YouModApplyLiquidGlassToView(self.exitFullscreenButton, NO);
-    YouModApplyLiquidGlassToView(self.timestampGestureView, NO);
-    if (self.liveSyncButton != nil) YouModApplyLiquidGlassToView(self.liveSyncButton, NO);
-    // YTLightweightQTMButton *button = ((UIView *)[self valueForKey:@"_chapterTitleFrostedGlassView"]).superview;
-    // YouModApplyLiquidGlassToView(button);
-}
-%end
-
 %hook YTEngagementPanelHeaderView
 - (void)didMoveToWindow {
     %orig;
@@ -67,6 +40,7 @@ void YouModApplyLiquidGlassToView(UIView *view, BOOL wantsBackground) {
     if (self.sortFilterMenuButton != nil) YouModApplyLiquidGlassToView(self.sortFilterMenuButton, YES);
     if (self.closeButton != nil) YouModApplyLiquidGlassToView(self.closeButton, YES);
     if (self.backButton != nil) YouModApplyLiquidGlassToView(self.backButton, YES);
+    if (self.actionButton != nil) YouModApplyLiquidGlassToView(self.actionButton, YES);
     for (UIView *button in self.subviews) {
         if ([button isKindOfClass:%c(YTQTMButton)]) {
             YTIButtonRenderer *renderer = [button valueForKey:@"_buttonRenderer"];
@@ -93,8 +67,37 @@ void YouModApplyLiquidGlassToView(UIView *view, BOOL wantsBackground) {
 %end
 
 %hook YTLeftNavigationButtons
-- (void)didMoveToWindow {
+- (YTQTMButton *)backButton {
+    YTQTMButton *orig = %orig;
+    if (orig) YouModApplyLiquidGlassToView(orig, YES);
+    return orig;
+}
+%end
+
+%hook YTFirstTimeSignInView
+- (YTQTMButton *)chooseAccountButton {
+    YTQTMButton *orig = %orig;
+    if (orig) YouModApplyLiquidGlassToView(orig, NO);
+    return orig;
+}
+- (YTQTMButton *)alternateAccountButton {
+    YTQTMButton *orig = %orig;
+    if (orig) YouModApplyLiquidGlassToView(orig, NO);
+    return orig;
+}
+%end
+
+%hook YTBackgroundPromoCell
+- (YTQTMButton *)ctaButton {
+    YTQTMButton *orig = %orig;
+    if (orig) YouModApplyLiquidGlassToView(orig, NO);
+    return orig;
+}
+%end
+
+%hook YTReelHeaderView
+- (void)addBackButton:(YTQTMButton *)button toStackView:(UIStackView *)stackView {
+    if (button) YouModApplyLiquidGlassToView(button, NO);
     %orig;
-    if (self.backButton != nil) YouModApplyLiquidGlassToView(self.backButton, YES);
 }
 %end
