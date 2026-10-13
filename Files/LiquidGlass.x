@@ -1,21 +1,8 @@
 #import "Headers.h"
 
 void YouModApplyLiquidGlassToView(UIView *view, BOOL wantsBackground) {
-    BOOL success = 0;
-    if (wantsBackground && [view respondsToSelector:@selector(tuui_applyFlexibleClearGlassWithShadowBackground)]) {
-        [view tuui_applyFlexibleClearGlassWithShadowBackground];
-        success = 1;
-    } else if (!wantsBackground && [view respondsToSelector:@selector(tuui_applyFlexibleSmallGlassBackground)]) {
-        [view tuui_applyFlexibleSmallGlassBackground];
-        success = 1;
-    }
-    if (!success) return;
-    for (UIView *sub in view.subviews) {
-        if ([sub isKindOfClass:%c(YTFrostedGlassView)]) {
-            sub.hidden = YES;
-            break;
-        }
-    }
+    if (wantsBackground && [view respondsToSelector:@selector(tuui_applyFlexibleClearGlassWithShadowBackground)]) [view tuui_applyFlexibleClearGlassWithShadowBackground];
+    else if (!wantsBackground && [view respondsToSelector:@selector(tuui_applyFlexibleSmallGlassBackground)]) [view tuui_applyFlexibleSmallGlassBackground];
 }
 
 %hook YTChipCloudChipView
@@ -75,15 +62,10 @@ void YouModApplyLiquidGlassToView(UIView *view, BOOL wantsBackground) {
 %end
 
 %hook YTFirstTimeSignInView
-- (YTQTMButton *)chooseAccountButton {
-    YTQTMButton *orig = %orig;
-    if (orig) YouModApplyLiquidGlassToView(orig, NO);
-    return orig;
-}
-- (YTQTMButton *)alternateAccountButton {
-    YTQTMButton *orig = %orig;
-    if (orig) YouModApplyLiquidGlassToView(orig, NO);
-    return orig;
+- (void)didMoveToWindow {
+    %orig;
+    if (self.chooseAccountButton != nil) YouModApplyLiquidGlassToView(self.chooseAccountButton, NO);
+    if (self.alternateAccountButton != nil) YouModApplyLiquidGlassToView(self.alternateAccountButton, NO);
 }
 %end
 

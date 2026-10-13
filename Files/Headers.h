@@ -437,10 +437,6 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 - (void)enableNewTouchFeedback;
 @end
 
-@interface YTHeaderContentComboView : UIView
-- (void)disableSubheaderBar;
-@end
-
 @interface YTHeaderView : UIView
 - (void)setStickyNavHeaderEnabled:(BOOL)arg;
 @end
@@ -652,6 +648,11 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 - (UIView *)enterExitFullscreenButton;
 - (BOOL)isPeekableViewVisible;
 - (YTQTMButton *)exitFullscreenButton;
+@end
+
+@interface YTFirstTimeSignInView : UIView
+- (YTQTMButton *)chooseAccountButton;
+- (YTQTMButton *)alternateAccountButton;
 @end
 
 // Custom perferences logics
