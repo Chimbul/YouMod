@@ -201,7 +201,7 @@ static NSInteger YouModPillSequence = 0;
                 [view startProgressAnimation];
             }
         }];
-    });
+    }];
 
     return view;
 }
@@ -505,7 +505,7 @@ static NSInteger YouModPillSequence = 0;
                 [view startProgressAnimation];
             }
         }];
-    });
+    }];
 
     return view;
 }
