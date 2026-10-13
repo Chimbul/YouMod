@@ -610,7 +610,6 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 
 @interface YTMainAppControlsOverlayView (YouMod)
 - (YTMainAppVideoPlayerOverlayViewController *)eventsDelegate;
-- (UIControl *)playPauseButton;
 @end
 
 @interface YTVideoQualitySwitchOriginalController (YouMod)
@@ -652,8 +651,6 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 @property (nonatomic, strong) NSString *endTimeString;
 - (UIView *)enterExitFullscreenButton;
 - (BOOL)isPeekableViewVisible;
-- (UIView *)timestampGestureView;
-- (YTQTMButton *)liveSyncButton;
 - (YTQTMButton *)exitFullscreenButton;
 @end
 

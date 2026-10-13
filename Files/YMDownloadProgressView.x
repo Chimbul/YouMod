@@ -129,7 +129,7 @@
             view.transform = CGAffineTransformIdentity;
             view.alpha = 1.0;
         } completion:nil];
-    });
+    }];
 
     return view;
 }
