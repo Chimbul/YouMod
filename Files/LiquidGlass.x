@@ -1,24 +1,25 @@
 #import "Headers.h"
+#import <objc/message.h>
 
 static const void *kYMPivotBarSystemEffectKey = &kYMPivotBarSystemEffectKey;
 static const void *kYMPivotBarSystemEffectViewKey = &kYMPivotBarSystemEffectViewKey;
 static const void *kYMPivotBarOriginalBackgroundColorKey = &kYMPivotBarOriginalBackgroundColorKey;
 static const void *kYMPivotBarHasOriginalBackgroundColorKey = &kYMPivotBarHasOriginalBackgroundColorKey;
 
-static UIVisualEffect *YMCreateSystemPivotBarGlassEffect() {
+static UIGlassEffect *YMCreateSystemPivotBarGlassEffect() {
     if (@available(iOS 26.0, *)) {
         Class glass = %c(UIGlassEffect);
-        if ([glass respondsToSelector:@selector(effectWithStyle:)]) {
-            UIVisualEffect *effect = [glass effectWithStyle:UIGlassEffectStyleRegular];
-            if (effect) return effect;
+        SEL selector = @selector(effectWithStyle:);
+        if (glass && [glass respondsToSelector:selector]) {
+            UIGlassEffect *(*createEffect)(id, SEL, UIGlassEffectStyle) = (UIGlassEffect *(*)(id, SEL, UIGlassEffectStyle))objc_msgSend;
+            return createEffect(glass, selector, UIGlassEffectStyleRegular);
         }
     }
-    // System material blur keeps the bar translucent on older iOS versions.
-    return [UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemMaterial];
+    return nil;
 }
 
-static UIVisualEffect *YMSystemGlassForPivotBar(YTPivotBarView *pivotBar) {
-    UIVisualEffect *effect = objc_getAssociatedObject(pivotBar, kYMPivotBarSystemEffectKey);
+static UIGlassEffect *YMSystemGlassForPivotBar(YTPivotBarView *pivotBar) {
+    UIGlassEffect *effect = objc_getAssociatedObject(pivotBar, kYMPivotBarSystemEffectKey);
     if (!effect) {
         effect = YMCreateSystemPivotBarGlassEffect();
         objc_setAssociatedObject(pivotBar, kYMPivotBarSystemEffectKey, effect, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
@@ -29,7 +30,9 @@ static UIVisualEffect *YMSystemGlassForPivotBar(YTPivotBarView *pivotBar) {
 static UIVisualEffectView *YMSystemGlassViewForPivotBar(YTPivotBarView *pivotBar) {
     UIVisualEffectView *glassView = objc_getAssociatedObject(pivotBar, kYMPivotBarSystemEffectViewKey);
     if (!glassView) {
-        glassView = [[UIVisualEffectView alloc] initWithEffect:YMSystemGlassForPivotBar(pivotBar)];
+        UIGlassEffect *effect = YMSystemGlassForPivotBar(pivotBar);
+        if (!effect) return nil;
+        glassView = [[UIVisualEffectView alloc] initWithEffect:effect];
         glassView.userInteractionEnabled = NO;
         glassView.isAccessibilityElement = NO;
         glassView.accessibilityElementsHidden = YES;
@@ -58,14 +61,17 @@ static void YMInstallSystemGlassOnPivotBar(YTPivotBarView *pivotBar) {
         return;
     }
 
+    UIGlassEffect *systemEffect = YMSystemGlassForPivotBar(pivotBar);
+    if (!systemEffect) return;
+
     if (![objc_getAssociatedObject(pivotBar, kYMPivotBarHasOriginalBackgroundColorKey) boolValue]) {
         id originalBackgroundColor = pivotBar.backgroundColor ?: [NSNull null];
         objc_setAssociatedObject(pivotBar, kYMPivotBarOriginalBackgroundColorKey, originalBackgroundColor, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
         objc_setAssociatedObject(pivotBar, kYMPivotBarHasOriginalBackgroundColorKey, @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     }
 
-    UIVisualEffect *systemEffect = YMSystemGlassForPivotBar(pivotBar);
     UIVisualEffectView *glassView = YMSystemGlassViewForPivotBar(pivotBar);
+    if (!glassView) return;
     if (glassView.effect != systemEffect) glassView.effect = systemEffect;
     if (glassView.superview != pivotBar) [pivotBar insertSubview:glassView atIndex:0];
     if (!CGRectEqualToRect(glassView.frame, pivotBar.bounds)) glassView.frame = pivotBar.bounds;
