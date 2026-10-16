@@ -369,9 +369,9 @@ static BOOL isTabSelected = NO;
 }
 // Translucent tab bar
 - (BOOL)isFrostedPivotBarPermitted {
-    if (INTFORVAL(UseFrostedTabBar) == 1) return YES;
-    else if (INTFORVAL(UseFrostedTabBar) == 2) return NO;
-    return %orig;
+    // The pivot bar installs its own UIKit glass view in LiquidGlass.x.
+    // Disallow YouTube's separate frosted background implementation.
+    return NO;
 }
 %end
 
