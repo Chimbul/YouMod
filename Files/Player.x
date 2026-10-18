@@ -660,10 +660,14 @@ static void YouModAddEndTime(YTInlinePlayerBarContainerView *playerbar, YTPlayer
     YTQTMButton *right = [[self valueForKey:@"_previousButtonView"] valueForKey:@"_button"];
     left.frame.size.width = 20;
     left.frame.size.height = 20;
+    right.frame.size.width = 20;
+    right.frame.size.height = 20;
     left = [[self valueForKey:@"_seekBackwardAccessibilityButtonView"] valueForKey:@"_button"];
     right = [[self valueForKey:@"_seekForwardAccessibilityButtonView"] valueForKey:@"_button"];
     left.frame.size.width = 20;
     left.frame.size.height = 20;
+    right.frame.size.width = 20;
+    right.frame.size.height = 20;
 }
 %end
 
