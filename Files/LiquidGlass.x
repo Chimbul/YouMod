@@ -1,4 +1,5 @@
 #import "Headers.h"
+#import <objc/message.h>
 
 static const void *kYMPivotBarSystemEffectKey = &kYMPivotBarSystemEffectKey;
 static const void *kYMPivotBarSystemEffectViewKey = &kYMPivotBarSystemEffectViewKey;
@@ -9,7 +10,11 @@ static const void *kYMLiquidGlassBackdropKey = &kYMLiquidGlassBackdropKey;
 static UIGlassEffect *YMCreateSystemPivotBarGlassEffect() {
     if (@available(iOS 26.0, *)) {
         Class glass = %c(UIGlassEffect);
-        if (glass && [glass respondsToSelector:@selector(effectWithStyle:)]) return [glass effectWithStyle:UIGlassEffectStyleRegular];
+        SEL selector = @selector(effectWithStyle:);
+        if (glass && [glass respondsToSelector:selector]) {
+            UIGlassEffect *(*createEffect)(id, SEL, UIGlassEffectStyle) = (UIGlassEffect *(*)(id, SEL, UIGlassEffectStyle))objc_msgSend;
+            return createEffect(glass, selector, UIGlassEffectStyleRegular);
+        }
     }
     return nil;
 }
