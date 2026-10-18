@@ -1,5 +1,7 @@
 // YouModSettings.x — Reusable UIKit-based sub-page for YouMod settings sections
 #import "Headers.h"
+
+extern void YouModApplyLiquidGlassBackdropToView(UIView *view, CGFloat cornerRadius);
 #import <objc/runtime.h>
 #import <objc/message.h>
 
@@ -550,20 +552,19 @@ static const void *kYMCachedDisplayedItemsKey = &kYMCachedDisplayedItemsKey;
 - (void)updateSearchBarTheme {
     UISearchBar *sb = self.searchBar;
     if (!sb) return;
-    UIColor *bgColor = (self.traitCollection.userInterfaceStyle == UIUserInterfaceStyleDark)
-        ? [%c(YTColor) black3]
-        : [UIColor systemBackgroundColor];
-    sb.backgroundColor = bgColor;
-    sb.barTintColor = bgColor;
+    sb.backgroundColor = UIColor.clearColor;
+    sb.barTintColor = UIColor.clearColor;
     if ([sb respondsToSelector:@selector(searchTextField)]) {
         UITextField *tf = sb.searchTextField;
         if (self.traitCollection.userInterfaceStyle == UIUserInterfaceStyleDark) {
             tf.textColor = [UIColor whiteColor];
-            tf.backgroundColor = [UIColor colorWithWhite:0.15 alpha:1.0];
         } else {
             tf.textColor = [UIColor labelColor];
-            tf.backgroundColor = [UIColor colorWithWhite:0.94 alpha:1.0];
         }
+        tf.backgroundColor = UIColor.clearColor;
+        tf.tintColor = sb.tintColor;
+        tf.attributedPlaceholder = [[NSAttributedString alloc] initWithString:sb.placeholder ?: @"" attributes:@{NSForegroundColorAttributeName: [UIColor secondaryLabelColor]}];
+        YouModApplyLiquidGlassBackdropToView(tf, 18);
     }
 }
 

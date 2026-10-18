@@ -1,19 +1,15 @@
 #import "Headers.h"
-#import <objc/message.h>
 
 static const void *kYMPivotBarSystemEffectKey = &kYMPivotBarSystemEffectKey;
 static const void *kYMPivotBarSystemEffectViewKey = &kYMPivotBarSystemEffectViewKey;
 static const void *kYMPivotBarOriginalBackgroundColorKey = &kYMPivotBarOriginalBackgroundColorKey;
 static const void *kYMPivotBarHasOriginalBackgroundColorKey = &kYMPivotBarHasOriginalBackgroundColorKey;
+static const void *kYMLiquidGlassBackdropKey = &kYMLiquidGlassBackdropKey;
 
 static UIGlassEffect *YMCreateSystemPivotBarGlassEffect() {
     if (@available(iOS 26.0, *)) {
         Class glass = %c(UIGlassEffect);
-        SEL selector = @selector(effectWithStyle:);
-        if (glass && [glass respondsToSelector:selector]) {
-            UIGlassEffect *(*createEffect)(id, SEL, UIGlassEffectStyle) = (UIGlassEffect *(*)(id, SEL, UIGlassEffectStyle))objc_msgSend;
-            return createEffect(glass, selector, UIGlassEffectStyleRegular);
-        }
+        if (glass && [glass respondsToSelector:@selector(effectWithStyle:)]) return [glass effectWithStyle:UIGlassEffectStyleRegular];
     }
     return nil;
 }
@@ -79,37 +75,42 @@ static void YMInstallSystemGlassOnPivotBar(YTPivotBarView *pivotBar) {
 }
 
 %hook YTPivotBarView
-- (UIGlassEffect *)liquidGlassEffect {
-    return YMSystemGlassForPivotBar(self);
-}
-- (UIGlassEffect *)liquidGlassEffectForPageStyle:(NSInteger)pageStyle {
-    return YMSystemGlassForPivotBar(self);
-}
-- (UIVisualEffectView *)blurView {
-    YMInstallSystemGlassOnPivotBar(self);
-    return YMSystemGlassViewForPivotBar(self);
-}
-- (void)setBlurView:(UIVisualEffectView *)blurView {
-    UIVisualEffectView *ourBlurView = YMSystemGlassViewForPivotBar(self);
-    ourBlurView.effect = YMSystemGlassForPivotBar(self);
-    YMInstallSystemGlassOnPivotBar(self);
-    %orig(ourBlurView);
-}
-/*
 - (void)layoutSubviews {
     %orig;
     YMInstallSystemGlassOnPivotBar(self);
 }
-- (void)didMoveToWindow {
-    %orig;
-    YMInstallSystemGlassOnPivotBar(self);
-}
-*/
 %end
 
 void YouModApplyLiquidGlassToView(UIView *view, BOOL wantsBackground) {
     if (wantsBackground && [view respondsToSelector:@selector(tuui_applyFlexibleClearGlassWithShadowBackground)]) [view tuui_applyFlexibleClearGlassWithShadowBackground];
     else if (!wantsBackground && [view respondsToSelector:@selector(tuui_applyFlexibleSmallGlassBackground)]) [view tuui_applyFlexibleSmallGlassBackground];
+}
+
+void YouModApplyLiquidGlassBackdropToView(UIView *view, CGFloat cornerRadius) {
+    if (!view) return;
+
+    UIVisualEffectView *glassView = objc_getAssociatedObject(view, kYMLiquidGlassBackdropKey);
+    if (!glassView) {
+        UIVisualEffect *effect = YMCreateSystemPivotBarGlassEffect();
+        if (!effect) effect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemMaterial];
+        glassView = [[UIVisualEffectView alloc] initWithEffect:effect];
+        glassView.userInteractionEnabled = NO;
+        glassView.isAccessibilityElement = NO;
+        glassView.accessibilityElementsHidden = YES;
+        glassView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+        [view insertSubview:glassView atIndex:0];
+        objc_setAssociatedObject(view, kYMLiquidGlassBackdropKey, glassView, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    }
+
+    glassView.frame = view.bounds;
+    view.backgroundColor = UIColor.clearColor;
+    view.layer.cornerRadius = cornerRadius;
+    view.layer.cornerCurve = kCACornerCurveContinuous;
+    view.layer.masksToBounds = YES;
+    BOOL dark = view.traitCollection.userInterfaceStyle == UIUserInterfaceStyleDark;
+    UIColor *edgeColor = [(dark ? UIColor.whiteColor : UIColor.blackColor) colorWithAlphaComponent:dark ? 0.20 : 0.10];
+    view.layer.borderWidth = 0.5;
+    view.layer.borderColor = edgeColor.CGColor;
 }
 
 %hook YTChipCloudChipView

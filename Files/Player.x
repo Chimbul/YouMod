@@ -654,6 +654,17 @@ static void YouModAddEndTime(YTInlinePlayerBarContainerView *playerbar, YTPlayer
     YTPlayerViewController *playerViewController = (YTPlayerViewController *)mainOverlayController.parentViewController;
     visible ? [playerViewController pause] : [playerViewController play];
 }
+- (void)didMoveToWindow {
+    %orig;
+    YTQTMButton *left = [[self valueForKey:@"_nextButtonView"] valueForKey:@"_button"];
+    YTQTMButton *right = [[self valueForKey:@"_previousButtonView"] valueForKey:@"_button"];
+    left.frame.size.width = 20;
+    left.frame.size.height = 20;
+    left = [[self valueForKey:@"_seekBackwardAccessibilityButtonView"] valueForKey:@"_button"];
+    right = [[self valueForKey:@"_seekForwardAccessibilityButtonView"] valueForKey:@"_button"];
+    left.frame.size.width = 20;
+    left.frame.size.height = 20;
+}
 %end
 
 %hook YTTransportControlsButtonView

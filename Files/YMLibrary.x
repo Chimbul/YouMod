@@ -1,4 +1,6 @@
 #import "Headers.h"
+
+extern void YouModApplyLiquidGlassBackdropToView(UIView *view, CGFloat cornerRadius);
 #import <AVFoundation/AVFoundation.h>
 #import <AVKit/AVKit.h>
 #import <CoreMedia/CoreMedia.h>
@@ -489,10 +491,10 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
 @interface YMLibraryViewController : UIViewController <UICollectionViewDataSource, UICollectionViewDelegate, UISearchBarDelegate>
 @property (nonatomic, strong) UICollectionView *collectionView;
 @property (nonatomic, strong) UISearchBar *searchBar;
+@property (nonatomic, strong) YTQTMButton *sortButton;
+@property (nonatomic, strong) UIView *typeGlassView;
 @property (nonatomic, strong) UIScrollView *typeScrollView;
 @property (nonatomic, strong) UIStackView *typeStackView;
-@property (nonatomic, strong) UIScrollView *sortScrollView;
-@property (nonatomic, strong) UIStackView *sortStackView;
 @property (nonatomic, strong) UILabel *emptyLabel;
 @property (nonatomic, strong) YMLibraryRefreshControl *refreshControl;
 @property (nonatomic, strong) NSMutableArray<YMLibraryRow *> *allRows; // unfiltered backing store
@@ -504,6 +506,10 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
 @property (nonatomic, assign) BOOL privateUnlocked;
 @property (nonatomic, assign) BOOL isAuthenticatingPrivate;
 @property (nonatomic, assign) BOOL privateAuthWasBackgrounded;
+- (NSString *)displayTitleForSort:(NSString *)sort;
+- (void)updateSortMenu;
+- (void)updateSortButtonAccessibilityLabel;
+- (void)rebuildLibraryControls;
 @end
 
 @implementation YMLibraryViewController
@@ -541,6 +547,15 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
     _searchBar.tintColor = [UIColor colorWithRed:0.6 green:0.2 blue:0.9 alpha:1.0];
     _searchBar.translatesAutoresizingMaskIntoConstraints = NO;
 
+    _sortButton = [%c(YTQTMButton) iconButton];
+    [_sortButton setImage:[UIImage systemImageNamed:@"arrow.up.arrow.down"] forState:UIControlStateNormal];
+    _sortButton.tintColor = [UIColor labelColor];
+    if ([_sortButton respondsToSelector:@selector(enableNewTouchFeedback)]) [_sortButton enableNewTouchFeedback];
+    _sortButton.translatesAutoresizingMaskIntoConstraints = NO;
+    [_sortButton addTarget:self action:@selector(updateSortMenu) forControlEvents:UIControlEventTouchUpInside];
+    [_sortButton addTarget:self action:@selector(updateSortButtonAccessibilityLabel) forControlEvents:UIControlEventTouchUpInside];
+    YouModApplyLiquidGlassToView(_sortButton, YES);
+
     YTQTMButton *settingsButton = [%c(YTQTMButton) iconButton];
     [settingsButton setImage:YouModYTIconImage(44, NO, nil) forState:UIControlStateNormal];
     settingsButton.tintColor = [UIColor labelColor];
@@ -550,29 +565,24 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
     YouModApplyLiquidGlassToView(settingsButton, YES);
 
     [topBar addSubview:_searchBar];
+    [topBar addSubview:_sortButton];
     [topBar addSubview:settingsButton];
+
+    _typeGlassView = [UIView new];
+    _typeGlassView.translatesAutoresizingMaskIntoConstraints = NO;
+    YouModApplyLiquidGlassBackdropToView(_typeGlassView, 21);
+    [topBar addSubview:_typeGlassView];
 
     _typeScrollView = [UIScrollView new];
     _typeScrollView.showsHorizontalScrollIndicator = NO;
     _typeScrollView.translatesAutoresizingMaskIntoConstraints = NO;
     _typeStackView = [[UIStackView alloc] initWithFrame:CGRectZero];
     _typeStackView.axis = UILayoutConstraintAxisHorizontal;
-    _typeStackView.spacing = 20;
+    _typeStackView.spacing = 0;
     _typeStackView.alignment = UIStackViewAlignmentCenter;
     _typeStackView.translatesAutoresizingMaskIntoConstraints = NO;
     [_typeScrollView addSubview:_typeStackView];
     [topBar addSubview:_typeScrollView];
-
-    _sortScrollView = [UIScrollView new];
-    _sortScrollView.showsHorizontalScrollIndicator = NO;
-    _sortScrollView.translatesAutoresizingMaskIntoConstraints = NO;
-    _sortStackView = [[UIStackView alloc] initWithFrame:CGRectZero];
-    _sortStackView.axis = UILayoutConstraintAxisHorizontal;
-    _sortStackView.spacing = 8;
-    _sortStackView.alignment = UIStackViewAlignmentCenter;
-    _sortStackView.translatesAutoresizingMaskIntoConstraints = NO;
-    [_sortScrollView addSubview:_sortStackView];
-    [topBar addSubview:_sortScrollView];
 
     [self rebuildLibraryControls];
 
@@ -611,7 +621,7 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
         [topBar.topAnchor constraintEqualToAnchor:self.view.topAnchor],
         [topBar.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
         [topBar.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
-        [topBar.heightAnchor constraintEqualToConstant:206],
+        [topBar.heightAnchor constraintEqualToConstant:174],
 
         [topBarSeparator.leadingAnchor constraintEqualToAnchor:topBar.leadingAnchor],
         [topBarSeparator.trailingAnchor constraintEqualToAnchor:topBar.trailingAnchor],
@@ -623,34 +633,34 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
         [headerContentGuide.leadingAnchor constraintEqualToAnchor:topBar.leadingAnchor],
         [headerContentGuide.trailingAnchor constraintEqualToAnchor:topBar.trailingAnchor],
 
-        [_searchBar.leadingAnchor constraintEqualToAnchor:headerContentGuide.leadingAnchor],
+        [_searchBar.leadingAnchor constraintEqualToAnchor:headerContentGuide.leadingAnchor constant:14],
         [_searchBar.centerYAnchor constraintEqualToAnchor:headerContentGuide.topAnchor constant:26],
+        [_searchBar.trailingAnchor constraintEqualToAnchor:_sortButton.leadingAnchor constant:-6],
 
-        [settingsButton.leadingAnchor constraintEqualToAnchor:_searchBar.trailingAnchor constant:4],
+        [_sortButton.trailingAnchor constraintEqualToAnchor:settingsButton.leadingAnchor constant:-8],
+        [_sortButton.centerYAnchor constraintEqualToAnchor:_searchBar.centerYAnchor],
+        [_sortButton.widthAnchor constraintEqualToConstant:40],
+        [_sortButton.heightAnchor constraintEqualToConstant:40],
+
         [settingsButton.trailingAnchor constraintEqualToAnchor:headerContentGuide.trailingAnchor constant:-14],
         [settingsButton.centerYAnchor constraintEqualToAnchor:_searchBar.centerYAnchor],
         [settingsButton.widthAnchor constraintEqualToConstant:40],
         [settingsButton.heightAnchor constraintEqualToConstant:40],
 
-        [_typeScrollView.topAnchor constraintEqualToAnchor:headerContentGuide.topAnchor constant:52],
+        [_typeGlassView.topAnchor constraintEqualToAnchor:headerContentGuide.topAnchor constant:58],
+        [_typeGlassView.leadingAnchor constraintEqualToAnchor:topBar.leadingAnchor constant:14],
+        [_typeGlassView.trailingAnchor constraintEqualToAnchor:topBar.trailingAnchor constant:-14],
+        [_typeGlassView.heightAnchor constraintEqualToConstant:42],
+
+        [_typeScrollView.topAnchor constraintEqualToAnchor:headerContentGuide.topAnchor constant:58],
         [_typeScrollView.leadingAnchor constraintEqualToAnchor:topBar.leadingAnchor constant:16],
         [_typeScrollView.trailingAnchor constraintEqualToAnchor:topBar.trailingAnchor constant:-16],
-        [_typeScrollView.heightAnchor constraintEqualToConstant:34],
+        [_typeScrollView.heightAnchor constraintEqualToConstant:42],
         [_typeStackView.topAnchor constraintEqualToAnchor:_typeScrollView.contentLayoutGuide.topAnchor],
         [_typeStackView.bottomAnchor constraintEqualToAnchor:_typeScrollView.contentLayoutGuide.bottomAnchor],
         [_typeStackView.leadingAnchor constraintEqualToAnchor:_typeScrollView.contentLayoutGuide.leadingAnchor],
         [_typeStackView.trailingAnchor constraintEqualToAnchor:_typeScrollView.contentLayoutGuide.trailingAnchor],
         [_typeStackView.heightAnchor constraintEqualToAnchor:_typeScrollView.frameLayoutGuide.heightAnchor],
-
-        [_sortScrollView.topAnchor constraintEqualToAnchor:_typeScrollView.bottomAnchor constant:8],
-        [_sortScrollView.leadingAnchor constraintEqualToAnchor:topBar.leadingAnchor constant:16],
-        [_sortScrollView.trailingAnchor constraintEqualToAnchor:topBar.trailingAnchor constant:-16],
-        [_sortScrollView.heightAnchor constraintEqualToConstant:36],
-        [_sortStackView.topAnchor constraintEqualToAnchor:_sortScrollView.contentLayoutGuide.topAnchor],
-        [_sortStackView.bottomAnchor constraintEqualToAnchor:_sortScrollView.contentLayoutGuide.bottomAnchor],
-        [_sortStackView.leadingAnchor constraintEqualToAnchor:_sortScrollView.contentLayoutGuide.leadingAnchor],
-        [_sortStackView.trailingAnchor constraintEqualToAnchor:_sortScrollView.contentLayoutGuide.trailingAnchor],
-        [_sortStackView.heightAnchor constraintEqualToAnchor:_sortScrollView.frameLayoutGuide.heightAnchor],
 
         [_collectionView.topAnchor constraintEqualToAnchor:topBar.bottomAnchor],
         [_collectionView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor],
@@ -703,21 +713,40 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
     return entry ? ymLibraryText(entry[0], entry[1]) : sort;
 }
 
-- (UIButton *)libraryButtonWithTitle:(NSString *)title tag:(NSInteger)tag selector:(SEL)selector {
-    UIButton *button = [UIButton buttonWithType:UIButtonTypeSystem];
-    button.tag = tag;
-    [button setTitle:title forState:UIControlStateNormal];
-    [button addTarget:self action:selector forControlEvents:UIControlEventTouchUpInside];
-    button.titleLabel.font = [UIFont systemFontOfSize:14 weight:UIFontWeightMedium];
-    button.contentEdgeInsets = UIEdgeInsetsMake(7, 14, 7, 14);
-    button.layer.cornerRadius = 18;
-    button.clipsToBounds = YES;
-    return button;
+- (void)updateSortButtonAccessibilityLabel {
+    NSString *selectedTitle = [self displayTitleForSort:self.selectedSort ?: @"Newest"];
+    _sortButton.accessibilityLabel = [NSString stringWithFormat:@"Sort by %@", selectedTitle];
+}
+
+- (void)updateSortMenu {
+    NSArray<NSString *> *sorts = @[@"Newest", @"Oldest", @"Largest", @"Smallest", @"A-Z", @"Z-A"];
+    id parentResponder = self.hostParentResponder ?: self;
+    YTDefaultSheetController *sheet = [%c(YTDefaultSheetController) sheetControllerWithParentResponder:parentResponder];
+    NSString *selectedTitle = [self displayTitleForSort:self.selectedSort ?: @"Newest"];
+    [sheet addHeaderWithTitle:ymLibraryText(@"DOWNLOAD_LIBRARY_SORT_TITLE", @"Sort videos by") subtitle:selectedTitle];
+
+    __weak typeof(self) weakSelf = self;
+    for (NSString *sort in sorts) {
+        BOOL selected = [sort isEqualToString:self.selectedSort];
+        UIImage *checkImage = selected ? YouModSymbolImageInCanvas(@"checkmark", 24, 18, UIImageSymbolWeightMedium) : nil;
+        YTActionSheetAction *action = [%c(YTActionSheetAction) actionWithTitle:[self displayTitleForSort:sort]
+                                                                      iconImage:checkImage
+                                                                         style:0
+                                                                       handler:^(__unused YTActionSheetAction *selectedAction) {
+            __strong typeof(weakSelf) strongSelf = weakSelf;
+            if (!strongSelf) return;
+            strongSelf.selectedSort = sort;
+            [[NSUserDefaults standardUserDefaults] setObject:sort forKey:@"YouModDownloadLibrarySelectedSort"];
+            [strongSelf updateSortButtonAccessibilityLabel];
+            [strongSelf applyFiltersAndSort];
+        }];
+        [sheet addAction:action];
+    }
+    [sheet presentFromView:self.sortButton animated:YES completion:nil];
 }
 
 - (void)rebuildLibraryControls {
     [self.typeStackView.arrangedSubviews makeObjectsPerformSelector:@selector(removeFromSuperview)];
-    [self.sortStackView.arrangedSubviews makeObjectsPerformSelector:@selector(removeFromSuperview)];
     NSArray *types = @[kYMLibraryTypeAll, kYMLibraryTypeVideos, kYMLibraryTypeShorts, kYMLibraryTypeAudio, kYMLibraryTypePlaylists, kYMLibraryTypePrivate];
     [types enumerateObjectsUsingBlock:^(NSString *type, NSUInteger idx, BOOL *stop) {
         UIButton *button = [UIButton buttonWithType:UIButtonTypeSystem];
@@ -726,22 +755,13 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
         if ([type isEqualToString:kYMLibraryTypePlaylists] && self.selectedPlaylistID.length > 0) title = [NSString stringWithFormat:@"‹ %@", title];
         [button setTitle:title forState:UIControlStateNormal];
         button.titleLabel.font = [UIFont systemFontOfSize:15 weight:[self.selectedType isEqualToString:type] ? UIFontWeightSemibold : UIFontWeightRegular];
-        [button setTitleColor:[UIColor labelColor] forState:UIControlStateNormal];
+        [button setTitleColor:[self.selectedType isEqualToString:type] ? [UIColor labelColor] : [UIColor secondaryLabelColor] forState:UIControlStateNormal];
         [button addTarget:self action:@selector(libraryTypeTapped:) forControlEvents:UIControlEventTouchUpInside];
-        button.contentEdgeInsets = UIEdgeInsetsMake(2, 0, 4, 0);
+        button.contentEdgeInsets = UIEdgeInsetsMake(7, 12, 7, 12);
+        button.layer.cornerRadius = 16;
+        button.clipsToBounds = YES;
+        button.backgroundColor = [self.selectedType isEqualToString:type] ? [UIColor.secondarySystemFillColor colorWithAlphaComponent:0.82] : UIColor.clearColor;
         [self.typeStackView addArrangedSubview:button];
-        if ([self.selectedType isEqualToString:type]) {
-            UIView *indicator = [UIView new];
-            indicator.backgroundColor = [UIColor labelColor];
-            indicator.translatesAutoresizingMaskIntoConstraints = NO;
-            [button addSubview:indicator];
-            [NSLayoutConstraint activateConstraints:@[
-                [indicator.leadingAnchor constraintEqualToAnchor:button.leadingAnchor],
-                [indicator.trailingAnchor constraintEqualToAnchor:button.trailingAnchor],
-                [indicator.bottomAnchor constraintEqualToAnchor:button.bottomAnchor],
-                [indicator.heightAnchor constraintEqualToConstant:2],
-            ]];
-        }
         if ([type isEqualToString:kYMLibraryTypePlaylists]) {
             UIButton *addPlaylist = [UIButton buttonWithType:UIButtonTypeSystem];
             [addPlaylist setImage:[UIImage systemImageNamed:@"plus"] forState:UIControlStateNormal];
@@ -764,14 +784,7 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
         }
     }];
 
-    NSArray *sorts = @[@"Newest", @"Oldest", @"Largest", @"Smallest", @"A-Z", @"Z-A"];
-    [sorts enumerateObjectsUsingBlock:^(NSString *sort, NSUInteger idx, BOOL *stop) {
-        UIButton *button = [self libraryButtonWithTitle:[self displayTitleForSort:sort] tag:(NSInteger)idx selector:@selector(librarySortTapped:)];
-        BOOL selected = [self.selectedSort isEqualToString:sort];
-        button.backgroundColor = selected ? [UIColor labelColor] : [UIColor secondarySystemBackgroundColor];
-        [button setTitleColor:selected ? [UIColor systemBackgroundColor] : [UIColor labelColor] forState:UIControlStateNormal];
-        [self.sortStackView addArrangedSubview:button];
-    }];
+    [self updateSortButtonAccessibilityLabel];
 }
 
 - (void)libraryTypeTapped:(UIButton *)sender {
@@ -849,34 +862,28 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
     [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationDidEnterBackgroundNotification object:nil];
 }
 
-- (void)librarySortTapped:(UIButton *)sender {
-    NSArray *sorts = @[@"Newest", @"Oldest", @"Largest", @"Smallest", @"A-Z", @"Z-A"];
-    if (sender.tag < 0 || sender.tag >= (NSInteger)sorts.count) return;
-    self.selectedSort = sorts[(NSUInteger)sender.tag];
-    [[NSUserDefaults standardUserDefaults] setObject:self.selectedSort forKey:@"YouModDownloadLibrarySelectedSort"];
-    [self rebuildLibraryControls];
-    [self applyFiltersAndSort];
-}
-
 // Same treatment as the YouMod settings pages: the bar itself blends into the
-// background and only the rounded text field carries a fill color.
+// background and the rounded text field carries an adaptive glass effect.
 - (void)updateSearchBarTheme {
     UISearchBar *sb = self.searchBar;
     if (!sb) return;
     BOOL dark = self.traitCollection.userInterfaceStyle == UIUserInterfaceStyleDark;
-    UIColor *bgColor = dark ? [%c(YTColor) black3] : [UIColor systemBackgroundColor];
-    sb.backgroundColor = bgColor;
-    sb.barTintColor = bgColor;
+    sb.backgroundColor = UIColor.clearColor;
+    sb.barTintColor = UIColor.clearColor;
     if ([sb respondsToSelector:@selector(searchTextField)]) {
         UITextField *tf = sb.searchTextField;
         tf.textColor = dark ? [UIColor whiteColor] : [UIColor labelColor];
-        tf.backgroundColor = dark ? [UIColor colorWithWhite:0.15 alpha:1.0] : [UIColor colorWithWhite:0.94 alpha:1.0];
+        tf.backgroundColor = UIColor.clearColor;
+        tf.tintColor = sb.tintColor;
+        tf.attributedPlaceholder = [[NSAttributedString alloc] initWithString:sb.placeholder ?: @"" attributes:@{NSForegroundColorAttributeName: [UIColor secondaryLabelColor]}];
+        YouModApplyLiquidGlassBackdropToView(tf, 18);
     }
 }
 
 - (void)traitCollectionDidChange:(UITraitCollection *)previousTraitCollection {
     [super traitCollectionDidChange:previousTraitCollection];
     if (previousTraitCollection.userInterfaceStyle != self.traitCollection.userInterfaceStyle) {
+        YouModApplyLiquidGlassBackdropToView(self.typeGlassView, 21);
         [self updateSearchBarTheme];
     }
 }
