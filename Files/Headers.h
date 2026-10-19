@@ -689,7 +689,6 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 
 // Sleep timer - For newer YT versions (starting with YT 21.41 maybe)
 @interface YTSlimStatusBarConfiguration : NSObject
-@property (nonatomic, readwrite, copy) NSString *text;
 @property (nonatomic, readwrite, strong) UIImage *icon;
 @property (nonatomic, readwrite, strong) UIColor *backgroundColor;
 @property (nonatomic, readwrite, strong) UIColor *textColor;
@@ -703,6 +702,7 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 // new one
 - (void)updateWithConfiguration:(YTSlimStatusBarConfiguration *)config;
 - (void)updateStatusLabelAppearanceWithConfiguration:(YTSlimStatusBarConfiguration *)config;
+- (void)updateBackgroundColorToStyle:(NSInteger)style;
 @end
 
 @interface YTSlimStatusBarControllerImpl : NSObject
