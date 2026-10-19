@@ -11,7 +11,7 @@ static void createSleepTimerConfig(NSString *time) {
     sleepTimerConfig.animated = YES;
     YTIIcon *sleepIcon = [%c(YTIIcon) new];
     sleepIcon.iconType = 916;
-    sleepTimerConfig.iconImage = [sleepIcon iconImageWithColor:[UIColor whiteColor]];
+    sleepTimerConfig.icon = [sleepIcon iconImageWithColor:[UIColor whiteColor]];
 }
 
 static BOOL isNewYTSlimStatusBarConfig() {
