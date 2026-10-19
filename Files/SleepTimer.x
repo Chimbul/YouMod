@@ -1,21 +1,22 @@
 #import "Headers.h"
 
-// Sleep timer: counts down on wall-clock time (persisted, survives suspend /
-// relaunch), shows the countdown on YouTube's slim status bar, and pauses the
-// main player when it fires. Started from the overlay moon button or the tab
-// long-press menu.
-
-#pragma mark - Slim status bar classes
-
-@interface YTSlimStatusBarView : UIView
-- (void)updateAppearanceToSleepTimerActiveWithText:(NSString *)text;
-@end
-
-@interface YTSlimStatusBarControllerImpl : NSObject
-- (void)updateWithSleepTimerActiveStatus:(BOOL)arg;
-@end
-
 #pragma mark - State
+
+static YTSlimStatusBarConfiguration *sleepTimerConfig = nil;
+
+static void createSleepTimerConfig(NSString *time) {
+    sleepTimerConfig = [%c(YTSlimStatusBarConfiguration) configurationWithText:time style:0];
+    sleepTimerConfig.backgroundColor = [UIColor blackColor];
+    sleepTimerConfig.textColor = [UIColor whiteColor];
+    sleepTimerConfig.animated = YES;
+    YTIIcon *sleepIcon = [%c(YTIIcon) new];
+    sleepIcon.iconType = 916;
+    sleepTimerConfig.iconImage = [sleepIcon iconImageWithColor:[UIColor whiteColor]];
+}
+
+static BOOL isNewYTSlimStatusBarConfig() {
+    return %c(YTSlimStatusBarConfiguration);
+}
 
 typedef NS_ENUM(NSInteger, YMSleepTimerMode) {
     YMSleepTimerModeCountdown = 0,
@@ -154,6 +155,7 @@ static NSString *YMSleepTimerFormatClock(NSTimeInterval interval) {
     [self persist];
     [self deactivateSlimBars];
     [self notifyButtons];
+    sleepTimerConfig = nil;
 }
 
 // The user moved to a different video before this one ended: shut the timer
@@ -172,6 +174,7 @@ static NSString *YMSleepTimerFormatClock(NSTimeInterval interval) {
     };
     if ([NSThread isMainThread]) pill();
     else dispatch_async(dispatch_get_main_queue(), pill);
+    sleepTimerConfig = nil;
 }
 
 - (void)fire {
@@ -196,6 +199,7 @@ static NSString *YMSleepTimerFormatClock(NSTimeInterval interval) {
     };
     if ([NSThread isMainThread]) alert();
     else dispatch_async(dispatch_get_main_queue(), alert);
+    sleepTimerConfig = nil;
 }
 
 #pragma mark Timer
@@ -317,16 +321,25 @@ static NSString *YMSleepTimerFormatClock(NSTimeInterval interval) {
 
     NSString *text = [self remainingText];
     void (^update)(void) = ^{
-        if (!slimBarController) return;
-        if (!slimBarThemed) {
-            [slimBarController updateWithSleepTimerActiveStatus:YES];
-            for (YTSlimStatusBarView *barView in slimBarSet) {
-                [barView updateAppearanceToSleepTimerActiveWithText:text];
+        if (isNewYTSlimStatusBarConfig()) {
+            if (!slimBarThemed) {
+                [slimBarController updateWithSleepTimerActiveStatus:YES];
+                if (sleepTimerConfig == nil) createSleepTimerConfig(text);
+                else sleepTimerConfig.text = text;
+                for (YTSlimStatusBarView *barView in slimBarSet) [barView updateWithConfiguration:sleepTimerConfig];
+                slimBarThemed = YES;
+            } else {
+                if (sleepTimerConfig == nil) createSleepTimerConfig(text);
+                else sleepTimerConfig.text = text;
+                for (YTSlimStatusBarView *barView in slimBarSet) [barView updateStatusLabelAppearanceWithConfiguration:sleepTimerConfig];
             }
-            slimBarThemed = YES;
         } else {
-            for (YTSlimStatusBarView *barView in slimBarSet) {
-                [barView updateAppearanceToSleepTimerActiveWithText:text];
+            if (!slimBarThemed) {
+                [slimBarController updateWithSleepTimerActiveStatus:YES];
+                for (YTSlimStatusBarView *barView in slimBarSet) [barView updateAppearanceToSleepTimerActiveWithText:text];
+                slimBarThemed = YES;
+            } else {
+                for (YTSlimStatusBarView *barView in slimBarSet) [barView updateAppearanceToSleepTimerActiveWithText:text];
             }
         }
     };
@@ -569,10 +582,6 @@ void YMSleepTimerPresentPicker(UIView *sourceView) {
     } else {
         timer.connectionLost = YES;
     }
-}
-- (void)setDismissTimer:(id)arg {
-    if ([[YMSleepTimer shared] isActive]) return;
-    %orig;
 }
 %end
 

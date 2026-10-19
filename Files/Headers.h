@@ -680,6 +680,34 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 - (ASDisplayNode *)scrollNode;
 @end
 
+@interface YTDialogContainerScrollView : UIScrollView
+@end
+
+@interface YTContextualSheetView : UIView
+@end
+
+// Sleep timer - For newer YT versions (starting with YT 21.41 maybe)
+@interface YTSlimStatusBarConfiguration : NSObject
+@property (nonatomic, readwrite, copy) NSString *text;
+@property (nonatomic, readwrite, string) UIImage *icon;
+@property (nonatomic, readwrite, strong) UIColor *backgroundColor;
+@property (nonatomic, readwrite, strong) UIColor *textColor;
+@property (nonatomic, readwrite, assign) BOOL animated;
++ (id)configurationWithText:(NSString *)text style:(NSInteger)style;
+@end
+
+// For older YTs
+@interface YTSlimStatusBarView : UIView
+- (void)updateAppearanceToSleepTimerActiveWithText:(NSString *)text;
+// new one
+- (void)updateWithConfiguration:(YTSlimStatusBarConfiguration *)config;
+- (void)updateStatusLabelAppearanceWithConfiguration:(YTSlimStatusBarConfiguration *)config;
+@end
+
+@interface YTSlimStatusBarControllerImpl : NSObject
+- (void)updateWithSleepTimerActiveStatus:(BOOL)arg;
+@end
+
 // Player Gestures - @bhackel (YTLitePlus)
 @interface YTMainAppVideoPlayerOverlayViewController (YouMod)
 - (YTCaptionTrackSwitchController *)captionTrackController;

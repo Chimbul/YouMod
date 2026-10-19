@@ -196,3 +196,24 @@ void YouModApplyLiquidGlassBackdropToView(UIView *view, CGFloat cornerRadius) {
     %orig;
 }
 %end
+
+%hook GOODialogView
+- (void)didMoveToWindow {
+    %orig;
+    self.backgroundColor = [UIColor clearColor];
+}
+%end
+
+%hook YTDialogContainerScrollView
+- (void)didMoveToWindow {
+    %orig;
+    self.backgroundColor = [UIColor clearColor];
+}
+%end
+
+%hook YTContextualSheetView
+- (void)didMoveToWindow {
+    %orig;
+    YouModApplyLiquidGlassToView(self, YES);
+}
+%end

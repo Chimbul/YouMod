@@ -47,12 +47,16 @@ void YouModApplyOLEDToDisplayView(_ASDisplayView *view, NSString *iden) {
         }];
         view.backgroundColor = dynamicColor;
         view.superview.backgroundColor = dynamicColor;
-    } else if ([controller isKindOfClass:%c(YTActionSheetDialogViewController)] || [controller isKindOfClass:%c(YTBottomSheetController)]) {
+    }
+    /* 
+    else if ([controller isKindOfClass:%c(YTActionSheetDialogViewController)] || [controller isKindOfClass:%c(YTBottomSheetController)]) {
         if ([view.superview.accessibilityIdentifier isEqualToString:@"eml.animated_subscribe_button"]) return;
         view.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor * _Nonnull(UITraitCollection * _Nonnull traitCollection) {
             return isDarkMode(view) ? [UIColor blackColor] : [UIColor clearColor];
         }];
-    } else if ([iden isEqualToString:@"eml.live_chat_text_message"] && [controller isKindOfClass:%c(YCHAsyncLiveChatCollectionViewController)]) {
+    } 
+    */
+    else if ([iden isEqualToString:@"eml.live_chat_text_message"] && [controller isKindOfClass:%c(YCHAsyncLiveChatCollectionViewController)]) {
         YCHAsyncLiveChatCollectionViewController *con = (YCHAsyncLiveChatCollectionViewController *)controller;
         if ([con.view isKindOfClass:%c(YCHAsyncLiveChatImmersiveCollectionView)]) return;
         view.backgroundColor = [UIColor colorWithDynamicProvider:^UIColor * _Nonnull(UITraitCollection * _Nonnull traitCollection) {
@@ -92,6 +96,7 @@ void YouModApplyOLEDCollectionView(ASCollectionView *self, NSString *iden) {
     }];
 }
 
+/*
 %hook YTContextualWrapView
 - (void)didMoveToWindow {
     %orig;
@@ -115,6 +120,7 @@ void YouModApplyOLEDCollectionView(ASCollectionView *self, NSString *iden) {
     objc_setAssociatedObject(self, kOLEDKey, @YES, OBJC_ASSOCIATION_ASSIGN);
 }
 %end
+*/
 
 %hook YTStartupAnimationViewController
 - (void)viewWillAppear:(BOOL)animated {
