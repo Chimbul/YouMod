@@ -78,6 +78,7 @@
 #import <objc/runtime.h>
 #import <YouTubeHeader/GPBMessage.h>
 #import <YouTubeHeader/YTReelNonVideoContentModel.h>
+#import <YouTubeHeader/GOODialogView.h>
 
 // For Settings.x and SponsorBlockSettings.x
 #import <roothide.h>
