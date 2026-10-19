@@ -1119,26 +1119,27 @@ static const void *kYMCachedDisplayedItemsKey = &kYMCachedDisplayedItemsKey;
         UIAction *action = [UIAction actionWithTitle:optionTitle image:nil identifier:nil handler:^(__kindof UIAction *a) {
             [[NSUserDefaults standardUserDefaults] setInteger:i forKey:itemKey];
             if ([itemKey isEqualToString:SleepTimerEntry]) {
-                // Keep the locked sleep.timer overlay-button toggle and the
-                // player in sync with the picker. Entries coming back from
-                // NSUserDefaults are immutable dictionaries, so deep-copy each
-                // one — mutating a shared entry would crash on an immutable
-                // object ("mutating method sent to immutable object").
-                NSMutableArray *order = [NSMutableArray array];
-                for (NSDictionary *entry in [[NSUserDefaults standardUserDefaults] arrayForKey:OverlayButtonOrder] ?: @[]) {
-                    if ([entry isKindOfClass:[NSDictionary class]]) [order addObject:[entry mutableCopy]];
+                // Update the locked sleep.timer entry only when a custom
+                // overlay order already exists. Creating a one-entry order
+                // here makes every other missing button default to enabled.
+                NSArray *savedOrder = [[NSUserDefaults standardUserDefaults] arrayForKey:OverlayButtonOrder];
+                if (savedOrder.count > 0) {
+                    NSMutableArray *order = [NSMutableArray array];
+                    for (NSDictionary *entry in savedOrder) {
+                        if ([entry isKindOfClass:[NSDictionary class]]) [order addObject:[entry mutableCopy]];
+                    }
+                    NSMutableDictionary *sleepEntry = nil;
+                    for (NSMutableDictionary *d in order) {
+                        if ([d[@"id"] isEqualToString:@"sleep.timer"]) { sleepEntry = d; break; }
+                    }
+                    if (!sleepEntry) {
+                        sleepEntry = [NSMutableDictionary dictionaryWithDictionary:@{@"id": @"sleep.timer", @"bottom": @(NO)}];
+                        [order addObject:sleepEntry];
+                    }
+                    sleepEntry[@"enabled"] = @(i == 2 || i == 3);
+                    [[NSUserDefaults standardUserDefaults] setObject:order forKey:OverlayButtonOrder];
+                    [[NSUserDefaults standardUserDefaults] synchronize];
                 }
-                NSMutableDictionary *sleepEntry = nil;
-                for (NSMutableDictionary *d in order) {
-                    if ([d[@"id"] isEqualToString:@"sleep.timer"]) { sleepEntry = d; break; }
-                }
-                if (!sleepEntry) {
-                    sleepEntry = [NSMutableDictionary dictionaryWithDictionary:@{@"id": @"sleep.timer", @"bottom": @(NO)}];
-                    [order addObject:sleepEntry];
-                }
-                sleepEntry[@"enabled"] = @(i == 2 || i == 3);
-                [[NSUserDefaults standardUserDefaults] setObject:order forKey:OverlayButtonOrder];
-                [[NSUserDefaults standardUserDefaults] synchronize];
                 [[NSNotificationCenter defaultCenter] postNotificationName:@"YouModUpdateOverlayButtons" object:nil];
             }
             if (weakButton) {
