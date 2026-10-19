@@ -297,8 +297,9 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
             [YMToggle(YMLOC(@"DISABLES_CAPTION_TRACK"), YMLOC(@"DISABLES_CAPTION_TRACK_DESC"), DisablesCaptionTrack) visibleWhenKey:CaptionTrack equals:2],
             YMHeader(@""),
             YMToggle(YMLOC(@"NO_AUTO_TRANSLATED_TITLES"), YMLOC(@"NO_AUTO_TRANSLATED_TITLES_DESC"), NoTranslatedTitles),
-            YMSlider(YMLOC(@"HOLD_TO_SPEED"), YMLOC(@"HOLD_TO_SPEED_DESC"), HoldToSpeedRate, 0.25, 10.0, 0.25, 2.0),
-            YMToggle(YMLOC(@"LOCK_SPEED"), YMLOC(@"LOCK_SPEED_DESC"), LockSpeed),
+            YMToggle(YMLOC(@"HOLD_TO_SPEED"), YMLOC(@"HOLD_TO_SPEED_DESC"), HoldToSpeedEnabled),
+            [YMSlider(YMLOC(@"PLAYBACK_SPEED"), nil, HoldToSpeedRate, 0.25, 10.0, 0.25, 2.0) visibleWhenBoolKey:HoldToSpeedEnabled],
+            [YMToggle(YMLOC(@"LOCK_SPEED"), YMLOC(@"LOCK_SPEED_DESC"), LockSpeed) visibleWhenBoolKey:HoldToSpeedEnabled],
             YMHeader(YMLOC(@"INTERFACE")),
             YMNavAction(YMLOC(@"MANAGE_OVERLAY_BUTTONS"), YMLOC(@"MANAGE_OVERLAY_BUTTONS_DESC"), ^(UIViewController *vc) {
                 (void)vc;
@@ -687,6 +688,7 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
 %ctor {
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     [defaults registerDefaults:@{
+        HoldToSpeedEnabled: @NO,
         AutoClearCache: @YES,
         NotifyUpdates: @YES,
         YTLogoIndex: @1,

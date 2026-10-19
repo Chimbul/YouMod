@@ -800,7 +800,11 @@ static const void *kYMCachedDisplayedItemsKey = &kYMCachedDisplayedItemsKey;
 - (void)toggleChanged:(UISwitch *)sender {
     NSString *key = objc_getAssociatedObject(sender, kYMSwitchKeyAssoc);
     if (key) {
-        [[NSUserDefaults standardUserDefaults] setBool:sender.on forKey:key];
+        NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+        [defaults setBool:sender.on forKey:key];
+        if ([key isEqualToString:HoldToSpeedEnabled] && !sender.on) {
+            [defaults setBool:NO forKey:GlobalSpeedLocked];
+        }
         [self updateDisplayedItemsAnimated:YES];
         if ([key isEqualToString:SkipBackwardEnabled] || [key isEqualToString:SkipForwardEnabled]) {
             YouModConfigureRemoteSkipCommands();

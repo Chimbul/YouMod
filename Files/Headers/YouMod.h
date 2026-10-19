@@ -178,6 +178,7 @@
 #define DisablesCaptionTrack @"YouModDisablesCaptionTrack"
 #define AutoSpeedIndex @"YouModAutoSpeedIndex"
 #define ShortsAutoSpeedIndex @"YouModShortsAutoSpeedIndex"
+#define HoldToSpeedEnabled @"YouModHoldToSpeedEnabled"
 #define HoldToSpeedRate @"YouModHoldToSpeedRate"
 #define HideAutoPlayToggle @"YouModHideAutoPlayToggle"
 #define HideCaptionsButton @"YouModHideCaptionsButton"
