@@ -340,10 +340,7 @@ static NSString *YMSleepTimerFormatClock(NSTimeInterval interval) {
             } else {
                 if (sleepTimerConfig == nil) createSleepTimerConfig(text);
                 else sleepTimerConfig.text = text;
-                for (YTSlimStatusBarView *barView in slimBarSet) {
-                    [barView updateWithConfiguration:sleepTimerConfig];
-                    if (!canApplyColorToConfig) [barView updateBackgroundColorToStyle:0];
-                }
+                for (YTSlimStatusBarView *barView in slimBarSet) [barView updateWithConfiguration:sleepTimerConfig];
             }
         } else {
             if (!slimBarThemed) {
