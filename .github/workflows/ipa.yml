@@ -289,13 +289,6 @@ jobs:
         if: ${{ inputs.youquality }}
         run: git clone --quiet --depth=1 https://github.com/PoomSmart/YouQuality.git
 
-      - name: Restore FFmpegKit cache
-        id: cache-ffmpegkit
-        uses: actions/cache/restore@v6
-        with:
-          path: YouMod/modules/ffmpegkit
-          key: ffmpegkit-${{ runner.os }}-${{ hashFiles('YouMod/tools/fetch-ffmpegkit.sh') }}
-
       - name: Build YouMod
         run: |
           cd YouMod
@@ -303,13 +296,6 @@ jobs:
           make clean package DEBUG=0 FINALPACKAGE=1 THEOS_PACKAGE_SCHEME=rootless
           mv packages/*.deb ${{ github.workspace }}/youmod.deb
 
-      - name: Save FFmpegKit cache
-        if: ${{ steps.cache-ffmpegkit.outputs.cache-hit != 'true' }}
-        uses: actions/cache/save@v6
-        with:
-          path: YouMod/modules/ffmpegkit
-          key: ${{ steps.cache-ffmpegkit.outputs.cache-primary-key }}
-        
       - name: Build YouPiP
         if: ${{ inputs.youpip }}
         run: |

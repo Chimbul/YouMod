@@ -394,7 +394,9 @@ NSString *YouModGlobalAuthHeader = nil;
     
     UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:vc];
     
-    if (@available(iOS 15.0, *)) {
+    // Use a runtime version check here: this toolchain does not link the
+    // compiler-rt availability helper emitted by @available.
+    if ([NSProcessInfo processInfo].operatingSystemVersion.majorVersion >= 15) {
         UISheetPresentationController *sheet = nav.sheetPresentationController;
         if (sheet) {
             sheet.detents = @[ 

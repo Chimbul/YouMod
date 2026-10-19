@@ -1,6 +1,5 @@
 #import "Headers.h"
 
-extern void YouModApplyLiquidGlassBackdropToView(UIView *view, CGFloat cornerRadius);
 #import <AVFoundation/AVFoundation.h>
 #import <AVKit/AVKit.h>
 #import <CoreMedia/CoreMedia.h>
@@ -570,7 +569,7 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
 
     _typeGlassView = [UIView new];
     _typeGlassView.translatesAutoresizingMaskIntoConstraints = NO;
-    YouModApplyLiquidGlassBackdropToView(_typeGlassView, 21);
+    YouModApplyLiquidGlassToView(_typeGlassView, YES);
     [topBar addSubview:_typeGlassView];
 
     _typeScrollView = [UIScrollView new];
@@ -876,14 +875,14 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
         tf.backgroundColor = UIColor.clearColor;
         tf.tintColor = sb.tintColor;
         tf.attributedPlaceholder = [[NSAttributedString alloc] initWithString:sb.placeholder ?: @"" attributes:@{NSForegroundColorAttributeName: [UIColor secondaryLabelColor]}];
-        YouModApplyLiquidGlassBackdropToView(tf, 18);
+        YouModApplyLiquidGlassToView(tf, NO);
     }
 }
 
 - (void)traitCollectionDidChange:(UITraitCollection *)previousTraitCollection {
     [super traitCollectionDidChange:previousTraitCollection];
     if (previousTraitCollection.userInterfaceStyle != self.traitCollection.userInterfaceStyle) {
-        YouModApplyLiquidGlassBackdropToView(self.typeGlassView, 21);
+        YouModApplyLiquidGlassToView(self.typeGlassView, YES);
         [self updateSearchBarTheme];
     }
 }
