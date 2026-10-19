@@ -704,6 +704,7 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 - (void)updateBackgroundColorToStyle:(NSInteger)style;
 // new one
 - (void)updateWithConfiguration:(YTSlimStatusBarConfiguration *)config;
+- (void)updateStatusLabelAppearanceWithConfiguration:(YTSlimStatusBarConfiguration *)config;
 @end
 
 @interface YTSlimStatusBarControllerImpl : NSObject
