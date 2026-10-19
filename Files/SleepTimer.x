@@ -3,15 +3,21 @@
 #pragma mark - State
 
 static YTSlimStatusBarConfiguration *sleepTimerConfig = nil;
+static BOOL canApplyColorToConfig = YES;
 
 static void createSleepTimerConfig(NSString *time) {
     sleepTimerConfig = [%c(YTSlimStatusBarConfiguration) configurationWithText:time style:0];
-    sleepTimerConfig.backgroundColor = [UIColor blackColor];
-    sleepTimerConfig.textColor = [UIColor whiteColor];
     sleepTimerConfig.animated = YES;
     YTIIcon *sleepIcon = [%c(YTIIcon) new];
     sleepIcon.iconType = 916;
     sleepTimerConfig.icon = [sleepIcon iconImageWithColor:[UIColor whiteColor]];
+    // for newer than YT 21.40
+    @try {
+        sleepTimerConfig.backgroundColor = [UIColor blackColor];
+        sleepTimerConfig.textColor = [UIColor whiteColor];
+    } @catch (id ex) {
+        canApplyColorToConfig = NO;
+    }
 }
 
 static BOOL isNewYTSlimStatusBarConfig() {
@@ -326,12 +332,18 @@ static NSString *YMSleepTimerFormatClock(NSTimeInterval interval) {
                 [slimBarController updateWithSleepTimerActiveStatus:YES];
                 if (sleepTimerConfig == nil) createSleepTimerConfig(text);
                 else sleepTimerConfig.text = text;
-                for (YTSlimStatusBarView *barView in slimBarSet) [barView updateWithConfiguration:sleepTimerConfig];
+                for (YTSlimStatusBarView *barView in slimBarSet) {
+                    [barView updateWithConfiguration:sleepTimerConfig];
+                    if (!canApplyColorToConfig) [barView updateBackgroundColorToStyle:0];
+                }
                 slimBarThemed = YES;
             } else {
                 if (sleepTimerConfig == nil) createSleepTimerConfig(text);
                 else sleepTimerConfig.text = text;
-                for (YTSlimStatusBarView *barView in slimBarSet) [barView updateStatusLabelAppearanceWithConfiguration:sleepTimerConfig];
+                for (YTSlimStatusBarView *barView in slimBarSet) {
+                    [barView updateWithConfiguration:sleepTimerConfig];
+                    if (!canApplyColorToConfig) [barView updateBackgroundColorToStyle:0];
+                }
             }
         } else {
             if (!slimBarThemed) {
