@@ -3,7 +3,6 @@
 #pragma mark - State
 
 static YTSlimStatusBarConfiguration *sleepTimerConfig = nil;
-static BOOL canApplyColorToConfig = YES;
 
 static void createSleepTimerConfig(NSString *time) {
     sleepTimerConfig = [%c(YTSlimStatusBarConfiguration) configurationWithText:time style:0];
@@ -11,13 +10,11 @@ static void createSleepTimerConfig(NSString *time) {
     YTIIcon *sleepIcon = [%c(YTIIcon) new];
     sleepIcon.iconType = 916;
     sleepTimerConfig.icon = [sleepIcon iconImageWithColor:[UIColor whiteColor]];
-    // for newer than YT 21.40
+    // for YT 21.41 or newer
     @try {
         sleepTimerConfig.backgroundColor = [UIColor blackColor];
         sleepTimerConfig.textColor = [UIColor whiteColor];
-    } @catch (id ex) {
-        canApplyColorToConfig = NO;
-    }
+    } @catch (id ex) {}
 }
 
 static BOOL isNewYTSlimStatusBarConfig() {
@@ -161,7 +158,6 @@ static NSString *YMSleepTimerFormatClock(NSTimeInterval interval) {
     [self persist];
     [self deactivateSlimBars];
     [self notifyButtons];
-    sleepTimerConfig = nil;
 }
 
 // The user moved to a different video before this one ended: shut the timer
@@ -180,7 +176,6 @@ static NSString *YMSleepTimerFormatClock(NSTimeInterval interval) {
     };
     if ([NSThread isMainThread]) pill();
     else dispatch_async(dispatch_get_main_queue(), pill);
-    sleepTimerConfig = nil;
 }
 
 - (void)fire {
@@ -205,7 +200,6 @@ static NSString *YMSleepTimerFormatClock(NSTimeInterval interval) {
     };
     if ([NSThread isMainThread]) alert();
     else dispatch_async(dispatch_get_main_queue(), alert);
-    sleepTimerConfig = nil;
 }
 
 #pragma mark Timer
@@ -330,15 +324,12 @@ static NSString *YMSleepTimerFormatClock(NSTimeInterval interval) {
         if (isNewYTSlimStatusBarConfig()) {
             if (!slimBarThemed) {
                 [slimBarController updateWithSleepTimerActiveStatus:YES];
-                if (sleepTimerConfig == nil) createSleepTimerConfig(text);
+                if (!sleepTimerConfig) createSleepTimerConfig(text);
                 else sleepTimerConfig.text = text;
-                for (YTSlimStatusBarView *barView in slimBarSet) {
-                    [barView updateWithConfiguration:sleepTimerConfig];
-                    if (!canApplyColorToConfig) [barView updateBackgroundColorToStyle:0];
-                }
+                for (YTSlimStatusBarView *barView in slimBarSet) [barView updateWithConfiguration:sleepTimerConfig];
                 slimBarThemed = YES;
             } else {
-                if (sleepTimerConfig == nil) createSleepTimerConfig(text);
+                if (!sleepTimerConfig) createSleepTimerConfig(text);
                 else sleepTimerConfig.text = text;
                 for (YTSlimStatusBarView *barView in slimBarSet) {
                     if ([barView respondsToSelector:@selector(updateStatusLabelAppearanceWithConfiguration:)]) [barView updateStatusLabelAppearanceWithConfiguration:sleepTimerConfig];
@@ -626,15 +617,11 @@ void YMSleepTimerPresentPicker(UIView *sourceView) {
 %ctor {
     %init;
     if (!slimBarSet) slimBarSet = [NSHashTable weakObjectsHashTable];
-    // Resume a timer persisted before the app was suspended or relaunched.
+    // A sleep timer is session-only. Clear any value left by an earlier app
+    // process so force-quitting and reopening YouTube starts with no timer.
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-    double savedEnd = [defaults doubleForKey:SleepTimerEndDate];
-    if (savedEnd > [[NSDate date] timeIntervalSince1970]) {
-        YMSleepTimer *timer = [YMSleepTimer shared];
-        timer.mode = (YMSleepTimerMode)[defaults integerForKey:SleepTimerMode];
-        timer.endDate = [NSDate dateWithTimeIntervalSince1970:savedEnd];
-        [timer scheduleTimer];
-    }
+    [defaults removeObjectForKey:SleepTimerEndDate];
+    [defaults removeObjectForKey:SleepTimerMode];
     __weak YMSleepTimer *weakTimer = [YMSleepTimer shared];
     [[NSNotificationCenter defaultCenter] addObserverForName:UIApplicationWillEnterForegroundNotification
                                                       object:nil

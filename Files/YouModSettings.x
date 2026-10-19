@@ -449,6 +449,19 @@ static const void *kYMSliderStepAssoc = &kYMSliderStepAssoc;
 static const void *kYMSliderLabelAssoc = &kYMSliderLabelAssoc;
 static const void *kYMPageFilterKey = &kYMPageFilterKey;
 
+static NSString *YMFormattedSliderValue(NSString *key, float value) {
+    if ([key isEqualToString:HoldToSpeedRate]) {
+        NSString *number = [NSString stringWithFormat:@"%.2f", value];
+        while ([number hasSuffix:@"0"]) number = [number substringToIndex:number.length - 1];
+        if ([number hasSuffix:@"."]) number = [number substringToIndex:number.length - 1];
+        return [number stringByAppendingString:@"x"];
+    }
+    NSDateComponentsFormatter *formatter = [[NSDateComponentsFormatter alloc] init];
+    formatter.allowedUnits = NSCalendarUnitSecond;
+    formatter.unitsStyle = NSDateComponentsFormatterUnitsStyleAbbreviated;
+    return [formatter stringFromTimeInterval:value] ?: @"";
+}
+
 @implementation YMSubSettingsViewController
 
 - (UITableView *)tableView { return objc_getAssociatedObject(self, kYMTableViewKey); }
@@ -804,6 +817,10 @@ static const void *kYMCachedDisplayedItemsKey = &kYMCachedDisplayedItemsKey;
     // default. Slider ranges are therefore expected to be positive.
     float stored = [[NSUserDefaults standardUserDefaults] floatForKey:item.key];
     if (stored <= 0) stored = item.sliderDefault;
+    stored = fmaxf(item.sliderMin, fminf(stored, item.sliderMax));
+    if (item.sliderStep > 0) {
+        stored = item.sliderMin + roundf((stored - item.sliderMin) / item.sliderStep) * item.sliderStep;
+    }
 
     UILabel *titleLabel = [[UILabel alloc] init];
     titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
@@ -817,18 +834,14 @@ static const void *kYMCachedDisplayedItemsKey = &kYMCachedDisplayedItemsKey;
     valueLabel.textColor = [self ymSecondaryColor];
     valueLabel.font = [UIFont systemFontOfSize:14 weight:UIFontWeightMedium];
     valueLabel.textAlignment = NSTextAlignmentRight;
-    NSDateComponentsFormatter *formatter = [[NSDateComponentsFormatter alloc] init];
-    formatter.allowedUnits = NSCalendarUnitSecond;
-    formatter.unitsStyle = NSDateComponentsFormatterUnitsStyleAbbreviated;
-    
-    valueLabel.text = [formatter stringFromTimeInterval:stored];
+    valueLabel.text = YMFormattedSliderValue(item.key, stored);
     [cell.contentView addSubview:valueLabel];
 
     UISlider *slider = [[UISlider alloc] init];
     slider.translatesAutoresizingMaskIntoConstraints = NO;
     slider.minimumValue = item.sliderMin;
     slider.maximumValue = item.sliderMax;
-    slider.value = stored;
+    [slider setValue:stored animated:NO];
     slider.minimumTrackTintColor = [UIColor colorWithRed:0.6 green:0.2 blue:0.9 alpha:1.0];
     slider.maximumTrackTintColor = [UIColor colorWithWhite:0.3 alpha:1.0];
     objc_setAssociatedObject(slider, kYMSliderKeyAssoc, item.key, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
@@ -857,15 +870,19 @@ static const void *kYMCachedDisplayedItemsKey = &kYMCachedDisplayedItemsKey;
     if (!key) return;
     float step = [objc_getAssociatedObject(sender, kYMSliderStepAssoc) floatValue];
     if (step <= 0) step = 1;
-    float snapped = roundf(sender.value / step) * step;
-    sender.value = snapped;
+    float snapped = sender.minimumValue + roundf((sender.value - sender.minimumValue) / step) * step;
+    snapped = fmaxf(sender.minimumValue, fminf(snapped, sender.maximumValue));
+    [sender setValue:snapped animated:YES];
     [[NSUserDefaults standardUserDefaults] setFloat:snapped forKey:key];
     UILabel *valueLabel = objc_getAssociatedObject(sender, kYMSliderLabelAssoc);
-    NSDateComponentsFormatter *formatter = [[NSDateComponentsFormatter alloc] init];
-    formatter.allowedUnits = NSCalendarUnitSecond;
-    formatter.unitsStyle = NSDateComponentsFormatterUnitsStyleAbbreviated;
-    
-    valueLabel.text = [formatter stringFromTimeInterval:snapped];
+    NSString *formattedValue = YMFormattedSliderValue(key, snapped);
+    if (valueLabel && ![valueLabel.text isEqualToString:formattedValue]) {
+        [UIView transitionWithView:valueLabel
+                          duration:0.12
+                           options:UIViewAnimationOptionTransitionCrossDissolve | UIViewAnimationOptionBeginFromCurrentState
+                        animations:^{ valueLabel.text = formattedValue; }
+                        completion:nil];
+    }
     if ([key isEqualToString:RewindSeconds] || [key isEqualToString:ForwardSeconds]) {
         YouModConfigureRemoteSkipCommands();
     }

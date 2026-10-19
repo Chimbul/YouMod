@@ -1,4 +1,5 @@
 #import "Headers.h"
+/*
 #import <objc/message.h>
 
 static const void *kYMPivotBarSystemEffectKey = &kYMPivotBarSystemEffectKey;
@@ -86,11 +87,6 @@ static void YMInstallSystemGlassOnPivotBar(YTPivotBarView *pivotBar) {
 }
 %end
 
-void YouModApplyLiquidGlassToView(UIView *view, BOOL wantsBackground) {
-    if (wantsBackground && [view respondsToSelector:@selector(tuui_applyFlexibleClearGlassWithShadowBackground)]) [view tuui_applyFlexibleClearGlassWithShadowBackground];
-    else if (!wantsBackground && [view respondsToSelector:@selector(tuui_applyFlexibleSmallGlassBackground)]) [view tuui_applyFlexibleSmallGlassBackground];
-}
-
 void YouModApplyLiquidGlassBackdropToView(UIView *view, CGFloat cornerRadius) {
     if (!view) return;
 
@@ -116,6 +112,12 @@ void YouModApplyLiquidGlassBackdropToView(UIView *view, CGFloat cornerRadius) {
     UIColor *edgeColor = [(dark ? UIColor.whiteColor : UIColor.blackColor) colorWithAlphaComponent:dark ? 0.20 : 0.10];
     view.layer.borderWidth = 0.5;
     view.layer.borderColor = edgeColor.CGColor;
+}
+*/
+
+void YouModApplyLiquidGlassToView(UIView *view, BOOL wantsBackground) {
+    if (wantsBackground && [view respondsToSelector:@selector(tuui_applyFlexibleClearGlassWithShadowBackground)]) [view tuui_applyFlexibleClearGlassWithShadowBackground];
+    else if (!wantsBackground && [view respondsToSelector:@selector(tuui_applyFlexibleSmallGlassBackground)]) [view tuui_applyFlexibleSmallGlassBackground];
 }
 
 %hook YTChipCloudChipView
@@ -197,18 +199,13 @@ void YouModApplyLiquidGlassBackdropToView(UIView *view, CGFloat cornerRadius) {
 }
 %end
 
+/*
 %hook YTContextualWrapView
-- (void)didMoveToWindow {
-    %orig;
-    self.backgroundColor = [UIColor clearColor];
-}
+- (void)setBackgroundColor:(UIColor *)color { %orig([UIColor clearColor]); }
 %end
 
 %hook GOODialogView
-- (void)didMoveToWindow {
-    %orig;
-    self.backgroundColor = [UIColor clearColor];
-}
+- (void)setBackgroundColor:(UIColor *)color { %orig([UIColor clearColor]); }
 %end
 
 %hook YTDialogContainerScrollView
@@ -219,5 +216,65 @@ void YouModApplyLiquidGlassBackdropToView(UIView *view, CGFloat cornerRadius) {
 - (void)didMoveToWindow {
     %orig;
     YouModApplyLiquidGlassToView(self, YES);
+}
+%end
+
+%hook GOOPopoverView
+- (void)setBackgroundColor:(UIColor *)color { %orig([UIColor clearColor]); }
+%end
+
+%hook GOOShrinkWrapView
+- (void)didMoveToWindow {
+    %orig;
+    YouModApplyLiquidGlassToView(self, YES);
+}
+%end
+*/
+
+// Testing
+static float YMSeekStartValue;
+
+%hook YTInlineMutedPlaybackPlayerOverlayView
+%property (nonatomic, retain) UIPanGestureRecognizer *ymSeekPan;
+
+- (void)didMoveToWindow {
+    %orig;
+
+    if (self.window && !self.ymSeekPan) {
+        self.ymSeekPan =
+            [[UIPanGestureRecognizer alloc] initWithTarget:self
+                                                    action:@selector(ym_handleSeekPan:)];
+        self.ymSeekPan.delegate = (id<UIGestureRecognizerDelegate>)self;
+        self.ymSeekPan.cancelsTouchesInView = NO;
+        [self addGestureRecognizer:self.ymSeekPan];
+    }
+}
+
+%new
+- (BOOL)gestureRecognizerShouldBegin:(UIGestureRecognizer *)gesture {
+    if (gesture != self.ymSeekPan) return YES;
+
+    CGPoint velocity = [(UIPanGestureRecognizer *)gesture velocityInView:self];
+    return fabs(velocity.x) > fabs(velocity.y); // horizontal swipes only
+}
+
+%new
+- (void)ym_handleSeekPan:(UIPanGestureRecognizer *)pan {
+    UISlider *slider = self.scrubberView.scrubber;
+    if (!slider) return;
+
+    if (pan.state == UIGestureRecognizerStateBegan) {
+        YMSeekStartValue = slider.value;
+    }
+
+    if (pan.state == UIGestureRecognizerStateChanged ||
+        pan.state == UIGestureRecognizerStateEnded) {
+        CGFloat dx = [pan translationInView:self].x;
+        float range = slider.maximumValue - slider.minimumValue;
+        float value = YMSeekStartValue + dx / self.bounds.size.width * range;
+
+        slider.value = fminf(fmaxf(value, slider.minimumValue), slider.maximumValue);
+        [slider sendActionsForControlEvents:UIControlEventValueChanged];
+    }
 }
 %end

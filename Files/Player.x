@@ -733,8 +733,7 @@ static void YouModAddEndTime(YTInlinePlayerBarContainerView *playerbar, YTPlayer
 - (BOOL)allowDoubleTapToSeekGestureRecognizer { return IS_ENABLED(DisablesDoubleTap) ? NO : %orig; }
 // Disable long hold
 - (BOOL)allowLongPressGestureRecognizerInView:(id)arg { 
-    if (IS_ENABLED(DisablesLongHold) || INTFORVAL(HoldToSpeedIndex) != 0) return NO;
-    return %orig;
+    return NO;
 }
 // Copy timestamp on pause
 - (void)didPressPause:(id)arg {
@@ -899,7 +898,9 @@ static void YouModApplyExtraSpeedOptions(id controller) {
     return self;
 }
 %end
+%end
 
+%group PlaybackRateLimit
 %hook YTIPlayerHotConfig
 %new(f@:)
 - (float)maximumPlaybackRate {
@@ -915,17 +916,21 @@ static void YouModApplyExtraSpeedOptions(id controller) {
 %end
 %end
 
-static CGFloat YouModSpeedForHoldIndex(NSInteger index) {
-    NSArray *values = @[@1.0, @0.25, @0.5, @0.75, @1.0, @1.25, @1.5, @1.75, @2.0, @3.0, @4.0, @5.0];
-    return [values[index] floatValue];
+static CGFloat YouModConfiguredHoldToSpeedRate(void) {
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    NSNumber *storedRate = [defaults objectForKey:HoldToSpeedRate];
+    CGFloat rate = storedRate ? [storedRate floatValue] : 2.0;
+    if (rate <= 0.0) rate = 2.0;
+    rate = fmax(0.25, fmin(rate, 10.0));
+    return 0.25 + round((rate - 0.25) / 0.25) * 0.25;
 }
 
 %hook YTMainAppVideoPlayerOverlayView
 // setPlayerResponse: sets this directly, so the YTAnnotationsViewController hooks miss it.
 - (void)setFeaturedChannelWatermarkImageView:(id)arg { if (!IS_ENABLED(HideWaterMark)) %orig; }
 - (void)setLongPressGestureRecognizer:(UILongPressGestureRecognizer *)arg {
-    if (INTFORVAL(HoldToSpeedIndex) != 0) return;
-    %orig;
+    // The slider always selects a custom rate, so YouMod installs its own
+    // recognizer and suppresses YouTube's built-in long-press recognizer.
 }
 // Remove Dark Background in Overlay
 - (void)setBackgroundVisible:(BOOL)arg1 isGradientBackground:(BOOL)arg2 {
@@ -1074,7 +1079,7 @@ static CGFloat YouModSpeedForHoldIndex(NSInteger index) {
             playerViewController.YouModTapGesture.delegate = playerViewController;
             [pv addGestureRecognizer:playerViewController.YouModTapGesture];
         }
-        if (!playerViewController.YouModHoldGesture && INTFORVAL(HoldToSpeedIndex) != 0) {
+        if (!playerViewController.YouModHoldGesture && !IS_ENABLED(DisablesLongHold)) {
             playerViewController.YouModHoldGesture = [[UILongPressGestureRecognizer alloc] initWithTarget:playerViewController action:@selector(YouModHoldToSpeed:)];
             playerViewController.YouModHoldGesture.minimumPressDuration = 0.4;
             playerViewController.YouModHoldGesture.numberOfTouchesRequired = 1;
@@ -1446,8 +1451,7 @@ static UISlider *YouModVolumeSlider(void) {
         return;
     }
     if (IS_ENABLED(GlobalSpeedLocked)) {
-        NSInteger speedIndex = INTFORVAL(HoldToSpeedIndex);
-        CGFloat speed = YouModSpeedForHoldIndex(speedIndex);
+        CGFloat speed = YouModConfiguredHoldToSpeedRate();
         [self setPlaybackRate:speed];
         return;
     }
@@ -1653,14 +1657,14 @@ static UISlider *YouModVolumeSlider(void) {
 
 %new
 - (void)YouModHoldToSpeed:(UILongPressGestureRecognizer *)gesture {
+    if (IS_ENABLED(DisablesLongHold)) return;
     if (isRelatedVideosPanelEnabled(self)) return;
 
     CGPoint touchLocation = [gesture locationInView:self.view];
     CGFloat activeWidth = remainingOverlayWidth(self, self.view.bounds.size.width);
     if (touchLocation.x > activeWidth) return;
 
-    NSInteger speedIndex = INTFORVAL(HoldToSpeedIndex);
-    CGFloat speed = YouModSpeedForHoldIndex(speedIndex);
+    CGFloat speed = YouModConfiguredHoldToSpeedRate();
     
     static CGPoint startLocation;
     static BOOL initialLockState;
@@ -1927,6 +1931,7 @@ void YouModFilterVideoButtons(_ASDisplayView *view, NSString *iden) {
 
 %ctor {
     %init;
+    %init(PlaybackRateLimit);
     YouModConfigureRemoteSkipCommands();
     if (INTFORVAL(WifiQualityIndex) != 0 || INTFORVAL(CellQualityIndex) != 0) {
         startNetworkMonitoring();
@@ -1934,7 +1939,7 @@ void YouModFilterVideoButtons(_ASDisplayView *view, NSString *iden) {
     if (IS_ENABLED(OldQualityPicker)) {
         %init(OldVideoQuality);
     }
-    if (IS_ENABLED(ExtraSpeed) || IS_ENABLED(GestureControls) || INTFORVAL(HoldToSpeedIndex) >= 9 || INTFORVAL(AutoSpeedIndex) >= 9 || INTFORVAL(ShortsAutoSpeedIndex) >= 9) {
+    if (IS_ENABLED(ExtraSpeed) || IS_ENABLED(GestureControls) || INTFORVAL(AutoSpeedIndex) >= 9 || INTFORVAL(ShortsAutoSpeedIndex) >= 9) {
         %init(Speed);
     }
     if (IS_ENABLED(ForceMiniPlayer)) {

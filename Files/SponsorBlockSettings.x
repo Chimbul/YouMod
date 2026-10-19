@@ -526,7 +526,7 @@ static const void *kSBAllFlatRowsKey = &kSBAllFlatRowsKey;
     else key = SBMinDuration;
 
     int rounded = (int)roundf(sender.value);
-    sender.value = rounded;
+    [sender setValue:rounded animated:YES];
     [[NSUserDefaults standardUserDefaults] setFloat:(float)rounded forKey:key];
     [[NSUserDefaults standardUserDefaults] synchronize];
     
@@ -535,7 +535,14 @@ static const void *kSBAllFlatRowsKey = &kSBAllFlatRowsKey;
     formatter.allowedUnits = NSCalendarUnitSecond;
     formatter.unitsStyle = NSDateComponentsFormatterUnitsStyleAbbreviated;
     
-    valueLabel.text = [formatter stringFromTimeInterval:rounded];
+    NSString *formattedValue = [formatter stringFromTimeInterval:rounded] ?: @"";
+    if (valueLabel && ![valueLabel.text isEqualToString:formattedValue]) {
+        [UIView transitionWithView:valueLabel
+                          duration:0.12
+                           options:UIViewAnimationOptionTransitionCrossDissolve | UIViewAnimationOptionBeginFromCurrentState
+                        animations:^{ valueLabel.text = formattedValue; }
+                        completion:nil];
+    }
 }
 
 #pragma mark - Segment Cells (Section 2)
