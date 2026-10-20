@@ -706,7 +706,6 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 - (void)updateAppearanceToSleepTimerActiveWithText:(NSString *)text;
 // new one
 - (void)updateWithConfiguration:(YTSlimStatusBarConfiguration *)config;
-- (void)updateStatusLabelAppearanceWithConfiguration:(YTSlimStatusBarConfiguration *)config;
 @end
 
 @interface YTSlimStatusBarControllerImpl : NSObject
