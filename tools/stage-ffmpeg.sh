@@ -63,8 +63,8 @@ download_release() {
   done
 
   rm -rf "$MODULES_CACHE"
-  mkdir -p "$(dirname "$MODULES_CACHE")"
-  mv "$DOWNLOAD_TMP/extracted/ffmpegkit" "$MODULES_CACHE"
+  mkdir -p "$MODULES_CACHE"
+  mv "$DOWNLOAD_TMP/extracted/ffmpegkit" "$MODULES_CACHE/ffmpegkit"
   info "downloaded FFmpegKit release $version"
 }
 
