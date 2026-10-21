@@ -57,7 +57,7 @@ void YouModApplyLiquidGlassToView(UIView *view, BOOL wantsBackground) {
     return YES;
 }
 - (NSInteger)mainAppCoreClientIosFloatingBarStyle {
-    return 3;
+    return 2;
 }
 %end
 
@@ -66,7 +66,7 @@ void YouModApplyLiquidGlassToView(UIView *view, BOOL wantsBackground) {
     return YES;
 }
 - (NSInteger)iosFloatingBarStyle {
-    return 3;
+    return 2;
 }
 %end
 
