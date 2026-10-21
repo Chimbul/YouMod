@@ -1,6 +1,6 @@
 #import "Headers.h"
-/*
 #import <objc/message.h>
+/*
 
 static const void *kYMPivotBarSystemEffectKey = &kYMPivotBarSystemEffectKey;
 static const void *kYMPivotBarSystemEffectViewKey = &kYMPivotBarSystemEffectViewKey;
@@ -114,6 +114,52 @@ void YouModApplyLiquidGlassBackdropToView(UIView *view, CGFloat cornerRadius) {
     view.layer.borderColor = edgeColor.CGColor;
 }
 */
+
+// System bar-style glass backdrop: a real UIGlassEffect ("liquid glass") on
+// iOS 26+, falling back to a system material blur on older versions. The
+// backdrop view is created once per view and reused on repeated calls, so
+// it's safe to re-apply after theme changes.
+static const void *kYMLiquidGlassBackdropKey = &kYMLiquidGlassBackdropKey;
+
+// Resolved dynamically so this compiles against any SDK: UIGlassEffect only
+// exists on iOS 26+, so the class lookup itself acts as the availability
+// check (no @available needed, which some toolchains can't link).
+static UIVisualEffect *YMCreateSystemBarGlassEffect(void) {
+    Class glass = NSClassFromString(@"UIGlassEffect");
+    SEL selector = NSSelectorFromString(@"effectWithStyle:");
+    if (glass && [glass respondsToSelector:selector]) {
+        UIVisualEffect *(*createEffect)(id, SEL, NSInteger) = (UIVisualEffect *(*)(id, SEL, NSInteger))objc_msgSend;
+        return createEffect(glass, selector, 0); // UIGlassEffectStyleRegular
+    }
+    return nil;
+}
+
+void YouModApplyLiquidGlassBackdropToView(UIView *view, CGFloat cornerRadius) {
+    if (!view) return;
+
+    UIVisualEffectView *glassView = objc_getAssociatedObject(view, kYMLiquidGlassBackdropKey);
+    if (!glassView) {
+        UIVisualEffect *effect = YMCreateSystemBarGlassEffect();
+        if (!effect) effect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemMaterial];
+        glassView = [[UIVisualEffectView alloc] initWithEffect:effect];
+        glassView.userInteractionEnabled = NO;
+        glassView.isAccessibilityElement = NO;
+        glassView.accessibilityElementsHidden = YES;
+        glassView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+        [view insertSubview:glassView atIndex:0];
+        objc_setAssociatedObject(view, kYMLiquidGlassBackdropKey, glassView, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    }
+
+    glassView.frame = view.bounds;
+    view.backgroundColor = UIColor.clearColor;
+    view.layer.cornerRadius = cornerRadius;
+    view.layer.cornerCurve = kCACornerCurveContinuous;
+    view.layer.masksToBounds = YES;
+    BOOL dark = view.traitCollection.userInterfaceStyle == UIUserInterfaceStyleDark;
+    UIColor *edgeColor = [(dark ? UIColor.whiteColor : UIColor.blackColor) colorWithAlphaComponent:dark ? 0.20 : 0.10];
+    view.layer.borderWidth = 0.5;
+    view.layer.borderColor = edgeColor.CGColor;
+}
 
 void YouModApplyLiquidGlassToView(UIView *view, BOOL wantsBackground) {
     if (wantsBackground && [view respondsToSelector:@selector(tuui_applyFlexibleClearGlassWithShadowBackground)]) [view tuui_applyFlexibleClearGlassWithShadowBackground];

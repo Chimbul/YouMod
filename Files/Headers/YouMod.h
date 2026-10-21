@@ -1257,3 +1257,4 @@ extern void YouModApplyOLEDCollectionView(ASCollectionView *self, NSString *iden
 extern void YouModRemoveDrawerAds(YTELMViewController *self);
 extern void YouModRemoveFullscreenActionsButtons(YTELMViewController *controller);
 extern void YouModApplyLiquidGlassToView(UIView *view, BOOL arg);
+extern void YouModApplyLiquidGlassBackdropToView(UIView *view, CGFloat cornerRadius);

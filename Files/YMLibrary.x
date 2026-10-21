@@ -491,9 +491,13 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
 @property (nonatomic, strong) UICollectionView *collectionView;
 @property (nonatomic, strong) UISearchBar *searchBar;
 @property (nonatomic, strong) YTQTMButton *sortButton;
+@property (nonatomic, strong) UIView *topBar;
 @property (nonatomic, strong) UIView *typeGlassView;
 @property (nonatomic, strong) UIScrollView *typeScrollView;
 @property (nonatomic, strong) UIStackView *typeStackView;
+@property (nonatomic, strong) UIView *playlistActionsView;
+@property (nonatomic, strong) UIButton *addPlaylistButton;
+@property (nonatomic, strong) UIButton *deletePlaylistButton;
 @property (nonatomic, strong) UILabel *emptyLabel;
 @property (nonatomic, strong) YMLibraryRefreshControl *refreshControl;
 @property (nonatomic, strong) NSMutableArray<YMLibraryRow *> *allRows; // unfiltered backing store
@@ -528,10 +532,13 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
     self.selectedSort = [sorts containsObject:savedSort] ? savedSort : @"Newest";
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(libraryDidEnterBackground) name:UIApplicationDidEnterBackgroundNotification object:nil];
 
+    // The subheader behaves like a system bar: a liquid glass backdrop with
+    // the library content scrolling underneath it.
     UIView *topBar = [UIView new];
-    topBar.backgroundColor = ymYouTubeBackgroundColor();
     topBar.translatesAutoresizingMaskIntoConstraints = NO;
     [self.view addSubview:topBar];
+    _topBar = topBar;
+    YouModApplyLiquidGlassBackdropToView(topBar, 0);
 
     UIView *topBarSeparator = [UIView new];
     topBarSeparator.backgroundColor = [UIColor separatorColor];
@@ -583,6 +590,37 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
     [_typeScrollView addSubview:_typeStackView];
     [topBar addSubview:_typeScrollView];
 
+    // Playlist create/delete actions live in their own glass pill, pinned to
+    // the trailing end of the type bar and floating above the scrolling
+    // chips instead of scrolling away with them.
+    _playlistActionsView = [UIView new];
+    _playlistActionsView.translatesAutoresizingMaskIntoConstraints = NO;
+    _playlistActionsView.layer.zPosition = 1;
+    _playlistActionsView.hidden = YES;
+    YouModApplyLiquidGlassBackdropToView(_playlistActionsView, 18);
+    [topBar addSubview:_playlistActionsView];
+
+    _addPlaylistButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    [_addPlaylistButton setImage:[UIImage systemImageNamed:@"plus"] forState:UIControlStateNormal];
+    _addPlaylistButton.accessibilityLabel = ymLibraryText(@"DOWNLOAD_LIBRARY_CREATE_PLAYLIST", @"Create playlist");
+    [_addPlaylistButton addTarget:self action:@selector(createPlaylistTapped) forControlEvents:UIControlEventTouchUpInside];
+    _addPlaylistButton.translatesAutoresizingMaskIntoConstraints = NO;
+
+    _deletePlaylistButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    [_deletePlaylistButton setImage:[UIImage systemImageNamed:@"trash"] forState:UIControlStateNormal];
+    _deletePlaylistButton.accessibilityLabel = ymLibraryText(@"DOWNLOAD_LIBRARY_DELETE_PLAYLIST", @"Delete playlist");
+    [_deletePlaylistButton addTarget:self action:@selector(deletePlaylistTapped) forControlEvents:UIControlEventTouchUpInside];
+    _deletePlaylistButton.translatesAutoresizingMaskIntoConstraints = NO;
+
+    UIStackView *playlistActionsStack = [[UIStackView alloc] initWithArrangedSubviews:@[_addPlaylistButton, _deletePlaylistButton]];
+    playlistActionsStack.axis = UILayoutConstraintAxisHorizontal;
+    playlistActionsStack.spacing = 4;
+    playlistActionsStack.alignment = UIStackViewAlignmentCenter;
+    playlistActionsStack.layoutMarginsRelativeArrangement = YES;
+    playlistActionsStack.directionalLayoutMargins = NSDirectionalEdgeInsetsMake(4, 6, 4, 6);
+    playlistActionsStack.translatesAutoresizingMaskIntoConstraints = NO;
+    [_playlistActionsView addSubview:playlistActionsStack];
+
     [self rebuildLibraryControls];
 
     UILayoutGuide *headerContentGuide = [UILayoutGuide new];
@@ -594,6 +632,11 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
     _collectionView.backgroundColor = ymYouTubeBackgroundColor();
     _collectionView.keyboardDismissMode = UIScrollViewKeyboardDismissModeOnDrag;
     _collectionView.alwaysBounceVertical = YES; // lets the pull-to-refresh gesture work even with few or no items
+    // The collection view extends up behind the glass subheader bar, so the
+    // bar stays translucent over the scrolling content.
+    _collectionView.contentInsetAdjustmentBehavior = UIScrollViewContentInsetAdjustmentNever;
+    _collectionView.contentInset = UIEdgeInsetsMake(174, 0, 0, 0);
+    _collectionView.scrollIndicatorInsets = _collectionView.contentInset;
     _collectionView.translatesAutoresizingMaskIntoConstraints = NO;
     [_collectionView registerClass:[YMLibraryVideoCell class] forCellWithReuseIdentifier:@"video"];
     [self.view addSubview:_collectionView];
@@ -604,7 +647,7 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
     _refreshControl.layer.zPosition = 1000;
     [_collectionView addSubview:_refreshControl];
     [NSLayoutConstraint activateConstraints:@[
-        [_refreshControl.topAnchor constraintEqualToAnchor:_collectionView.frameLayoutGuide.topAnchor constant:12],
+        [_refreshControl.topAnchor constraintEqualToAnchor:_collectionView.frameLayoutGuide.topAnchor constant:174 + 12],
         [_refreshControl.centerXAnchor constraintEqualToAnchor:_collectionView.frameLayoutGuide.centerXAnchor],
         [_refreshControl.widthAnchor constraintEqualToConstant:44],
         [_refreshControl.heightAnchor constraintEqualToConstant:44],
@@ -661,7 +704,21 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
         [_typeStackView.trailingAnchor constraintEqualToAnchor:_typeScrollView.contentLayoutGuide.trailingAnchor],
         [_typeStackView.heightAnchor constraintEqualToAnchor:_typeScrollView.frameLayoutGuide.heightAnchor],
 
-        [_collectionView.topAnchor constraintEqualToAnchor:topBar.bottomAnchor],
+        [_playlistActionsView.trailingAnchor constraintEqualToAnchor:topBar.trailingAnchor constant:-14],
+        [_playlistActionsView.centerYAnchor constraintEqualToAnchor:_typeScrollView.centerYAnchor],
+        [_playlistActionsView.heightAnchor constraintEqualToConstant:36],
+
+        [playlistActionsStack.topAnchor constraintEqualToAnchor:_playlistActionsView.topAnchor],
+        [playlistActionsStack.bottomAnchor constraintEqualToAnchor:_playlistActionsView.bottomAnchor],
+        [playlistActionsStack.leadingAnchor constraintEqualToAnchor:_playlistActionsView.leadingAnchor],
+        [playlistActionsStack.trailingAnchor constraintEqualToAnchor:_playlistActionsView.trailingAnchor],
+
+        [_addPlaylistButton.widthAnchor constraintEqualToConstant:28],
+        [_addPlaylistButton.heightAnchor constraintEqualToConstant:28],
+        [_deletePlaylistButton.widthAnchor constraintEqualToConstant:28],
+        [_deletePlaylistButton.heightAnchor constraintEqualToConstant:28],
+
+        [_collectionView.topAnchor constraintEqualToAnchor:self.view.topAnchor],
         [_collectionView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor],
         [_collectionView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
         [_collectionView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
@@ -761,27 +818,15 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
         button.clipsToBounds = YES;
         button.backgroundColor = [self.selectedType isEqualToString:type] ? [UIColor.secondarySystemFillColor colorWithAlphaComponent:0.82] : UIColor.clearColor;
         [self.typeStackView addArrangedSubview:button];
-        if ([type isEqualToString:kYMLibraryTypePlaylists]) {
-            UIButton *addPlaylist = [UIButton buttonWithType:UIButtonTypeSystem];
-            [addPlaylist setImage:[UIImage systemImageNamed:@"plus"] forState:UIControlStateNormal];
-            addPlaylist.accessibilityLabel = ymLibraryText(@"DOWNLOAD_LIBRARY_CREATE_PLAYLIST", @"Create playlist");
-            addPlaylist.hidden = ![self.selectedType isEqualToString:kYMLibraryTypePlaylists];
-            [addPlaylist addTarget:self action:@selector(createPlaylistTapped) forControlEvents:UIControlEventTouchUpInside];
-            addPlaylist.translatesAutoresizingMaskIntoConstraints = NO;
-            [NSLayoutConstraint activateConstraints:@[[addPlaylist.widthAnchor constraintEqualToConstant:32], [addPlaylist.heightAnchor constraintEqualToConstant:32]]];
-            [self.typeStackView addArrangedSubview:addPlaylist];
-
-            UIButton *deletePlaylist = [UIButton buttonWithType:UIButtonTypeSystem];
-            [deletePlaylist setImage:[UIImage systemImageNamed:@"trash"] forState:UIControlStateNormal];
-            deletePlaylist.accessibilityLabel = ymLibraryText(@"DOWNLOAD_LIBRARY_DELETE_PLAYLIST", @"Delete playlist");
-            deletePlaylist.enabled = ymLibraryPlaylists().count > 0;
-            deletePlaylist.hidden = ![self.selectedType isEqualToString:kYMLibraryTypePlaylists];
-            [deletePlaylist addTarget:self action:@selector(deletePlaylistTapped) forControlEvents:UIControlEventTouchUpInside];
-            deletePlaylist.translatesAutoresizingMaskIntoConstraints = NO;
-            [NSLayoutConstraint activateConstraints:@[[deletePlaylist.widthAnchor constraintEqualToConstant:32], [deletePlaylist.heightAnchor constraintEqualToConstant:32]]];
-            [self.typeStackView addArrangedSubview:deletePlaylist];
-        }
     }];
+
+    // The playlist actions pill is fixed at the trailing end of the type bar
+    // and only appears while the Playlists category is selected. Reserving
+    // scroll inset keeps the last chip tappable from behind the pill.
+    BOOL inPlaylists = [self.selectedType isEqualToString:kYMLibraryTypePlaylists];
+    self.playlistActionsView.hidden = !inPlaylists;
+    self.deletePlaylistButton.enabled = ymLibraryPlaylists().count > 0;
+    self.typeScrollView.contentInset = UIEdgeInsetsMake(0, 0, 0, inPlaylists ? 84 : 0);
 
     [self updateSortButtonAccessibilityLabel];
 }
@@ -882,7 +927,9 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
 - (void)traitCollectionDidChange:(UITraitCollection *)previousTraitCollection {
     [super traitCollectionDidChange:previousTraitCollection];
     if (previousTraitCollection.userInterfaceStyle != self.traitCollection.userInterfaceStyle) {
+        YouModApplyLiquidGlassBackdropToView(self.topBar, 0);
         YouModApplyLiquidGlassToView(self.typeGlassView, YES);
+        YouModApplyLiquidGlassBackdropToView(self.playlistActionsView, 18);
         [self updateSearchBarTheme];
     }
 }
@@ -1092,8 +1139,8 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
     }
     [picker addAction:[UIAlertAction actionWithTitle:LOC(@"CANCEL") style:UIAlertActionStyleCancel handler:nil]];
     UIPopoverPresentationController *popover = picker.popoverPresentationController;
-    popover.sourceView = self.typeScrollView;
-    popover.sourceRect = CGRectMake(CGRectGetMidX(self.typeScrollView.bounds), CGRectGetMidY(self.typeScrollView.bounds), 1, 1);
+    popover.sourceView = self.deletePlaylistButton;
+    popover.sourceRect = self.deletePlaylistButton.bounds;
     [self presentViewController:picker animated:YES completion:nil];
 }
 

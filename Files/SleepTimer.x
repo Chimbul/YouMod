@@ -103,7 +103,7 @@ static NSString *YMSleepTimerFormatClock(NSTimeInterval interval) {
     if (self.mode == YMSleepTimerModeEndOfVideo) {
         // Count down the remaining playback time of the current video.
         YTPlayerViewController *player = YouModCurrentPlayerViewController;
-        if (!player) return @"0:00";
+        if (!player) return @"--:--";
         return YMSleepTimerFormatClock([player currentVideoTotalMediaTime] - [player currentVideoMediaTime]);
     }
     return YMSleepTimerFormatClock([self remainingSeconds]);
