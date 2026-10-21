@@ -1,6 +1,5 @@
 #import "Headers.h"
 #import <objc/message.h>
-static const void *kYMLiquidGlassBackdropKey = &kYMLiquidGlassBackdropKey;
 
 // System bar-style glass backdrop: a real UIGlassEffect ("liquid glass") on
 // iOS 26+, falling back to a system material blur on older versions. The
