@@ -54,6 +54,11 @@
 "UPDATE" = "อัปเดต";
 "UPDATE_AVAILABLE_MESSAGE" = "มี YouMod เวอร์ชันใหม่ (v. %@) ต้องการอัปเดต tweak หรือไม่?";
 "UPDATE_NOW" = "อัปเดต";
+"UPDATE_SKIP" = "ข้ามเวอร์ชันนี้";
+"UPDATE_UP_TO_DATE" = "YouMod เป็นเวอร์ชันล่าสุดแล้ว (v. %@)";
+"UPDATE_CHECK_FAILED" = "ไม่สามารถตรวจสอบการอัปเดตได้ ลองใหม่ภายหลัง";
+"CHECK_UPDATES_NOW" = "ตรวจสอบการอัปเดตตอนนี้";
+"CHECK_UPDATES_NOW_DESC" = "ตรวจสอบ GitHub หาเวอร์ชัน YouMod ใหม่ทันที";
 
 "DOWNLOADING" = "การดาวน์โหลด";
 "DOWNLOAD_MANAGER" = "ตัวจัดการดาวน์โหลด";

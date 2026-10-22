@@ -80,6 +80,7 @@
 #import "YTReelNonVideoContentModel.h"
 #import "GOODialogView.h"
 #import "GOOShrinkWrapView.h"
+#import "YTShortsContentPresenterView.h"
 
 // For Settings.x and SponsorBlockSettings.x
 #import <roothide.h>
@@ -139,8 +140,7 @@
 #define AutoClearCache @"YouModAutoClearCache"
 #define NotifyUpdates @"YouModNotifyUpdates"
 #define UpdateHasChecked @"YouModUpdateHasChecked"
-#define UpdateCheckAttempts @"YouModUpdateCheckAttempts"
-#define UpdateNextRetryDate @"YouModUpdateNextRetryDate"
+#define UpdateSkippedVersion @"YouModUpdateSkippedVersion"
 // Appearance
 #define OLEDTheme @"YouModEnablesOLEDTheme"
 #define OLEDKeyboard @"YouModEnablesOLEDKeyboard"
@@ -501,6 +501,7 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 @property (nonatomic, strong) UIView *YouModSpeedToastView;
 @property (nonatomic, strong) UILabel *YouModSpeedToastLabel;
 @property (nonatomic, retain) UILongPressGestureRecognizer *YouModHoldGesture;
+@property (nonatomic, strong) NSArray *YouModGesturesSuspendedByHold;
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer;
 - (void)YouModAutoFullscreen;
 - (void)YouModSetAutoSpeed;
@@ -895,6 +896,7 @@ extern void sbDismissAllNotifications(void);
 extern void sbUpdateOverlayInsetForPivotBar(void);
 extern void YMPresentTabOrderModally(id parentResponder);
 extern void YouModShowPill(NSString *message, BOOL success);
+extern void YouModCheckForUpdateManually(void);
 
 // SponsorBlock menu / voting / whitelist (SponsorBlockMenu.x)
 extern BOOL sbActiveForVideo(YTPlayerViewController *player);
@@ -1067,10 +1069,6 @@ extern BOOL YMFFmpegConvertStartupVideo(NSURL *inputURL, NSURL *outputURL, NSStr
 extern BOOL YMStartupVideoFileExists(void);
 extern void YMStartupVideoPresentPicker(UIViewController *presenter);
 extern void YMStartupVideoDelete(UIViewController *presenter);
-extern BOOL YMStartupVideoPrepare(YTStartupAnimationViewController *controller);
-extern BOOL YMStartupVideoIsPrepared(YTStartupAnimationViewController *controller);
-extern void YMStartupVideoPlay(YTStartupAnimationViewController *controller);
-extern void YMStartupVideoLayout(YTStartupAnimationViewController *controller);
 extern void YMStartupVideoDismiss(YTStartupAnimationViewController *controller, BOOL animated);
 
 typedef NS_ENUM(NSInteger, YMDownloadDestination) {

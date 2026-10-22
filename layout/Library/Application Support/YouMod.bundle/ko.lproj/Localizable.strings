@@ -54,6 +54,11 @@
 "UPDATE" = "Update";
 "UPDATE_AVAILABLE_MESSAGE" = "A newer YouMod version is available (v. %@). Do you want to update the tweak?";
 "UPDATE_NOW" = "Update";
+"UPDATE_SKIP" = "Skip this version";
+"UPDATE_UP_TO_DATE" = "YouMod is up to date (v. %@).";
+"UPDATE_CHECK_FAILED" = "Couldn't check for updates. Try again later.";
+"CHECK_UPDATES_NOW" = "Check for updates";
+"CHECK_UPDATES_NOW_DESC" = "Check GitHub for a newer YouMod version right now.";
 
 "DOWNLOADING" = "다운로드";
 "DOWNLOAD_MANAGER" = "다운로드 관리자";

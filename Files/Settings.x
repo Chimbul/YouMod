@@ -596,6 +596,9 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
             }),
             YMHeader(YMLOC(@"UPDATE")),
             YMToggle(YMLOC(@"CHECK_UPDATES"), YMLOC(@"CHECK_UPDATES_DESC"), NotifyUpdates),
+            YMAction(YMLOC(@"CHECK_UPDATES_NOW"), YMLOC(@"CHECK_UPDATES_NOW_DESC"), ^(UIViewController *vc) {
+                YouModCheckForUpdateManually();
+            }),
             YMHeader(YMLOC(@"CACHE")),
             YMAction(YMLOC(@"CLEARCACHE"), GetCacheSize(), ^(UIViewController *vc) {
                 __weak UIViewController *weakVC = vc;

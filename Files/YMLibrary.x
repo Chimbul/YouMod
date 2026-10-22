@@ -640,6 +640,7 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
     _collectionView.translatesAutoresizingMaskIntoConstraints = NO;
     [_collectionView registerClass:[YMLibraryVideoCell class] forCellWithReuseIdentifier:@"video"];
     [self.view addSubview:_collectionView];
+    [self.view bringSubviewToFront:topBar];
 
     _refreshControl = [YMLibraryRefreshControl new];
     _refreshControl.translatesAutoresizingMaskIntoConstraints = NO;

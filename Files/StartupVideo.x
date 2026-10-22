@@ -2,24 +2,11 @@
 #import <AVFoundation/AVFoundation.h>
 #import <PhotosUI/PhotosUI.h>
 
-@interface YTTimedAction : NSObject
-+ (instancetype)scheduledTimedActionWithTimeInterval:(CFTimeInterval)timeInterval
-                                            repeats:(BOOL)repeats
-                                              queue:(dispatch_queue_t)queue
-                                              block:(dispatch_block_t)block;
-- (void)invalidate;
-@end
-
 @interface UIViewController (YouModStartupVideoSettingsRefresh)
 - (void)updateDisplayedItemsAnimated:(BOOL)animated;
 @end
 
-static const void *kYMStartupPlayerKey = &kYMStartupPlayerKey;
-static const void *kYMStartupLayerKey = &kYMStartupLayerKey;
-static const void *kYMStartupEndObserverKey = &kYMStartupEndObserverKey;
-static const void *kYMStartupDismissedKey = &kYMStartupDismissedKey;
 static const void *kYMStartupPickerDelegateKey = &kYMStartupPickerDelegateKey;
-static const void *kYMStartupGestureHandlerKey = &kYMStartupGestureHandlerKey;
 
 static NSURL *YMStartupVideoDirectoryURL() {
     NSURL *support = [[NSFileManager defaultManager] URLsForDirectory:NSApplicationSupportDirectory inDomains:NSUserDomainMask].firstObject;
@@ -39,18 +26,54 @@ static void YMStartupVideoRefreshSettings(UIViewController *presenter) {
     [presenter updateDisplayedItemsAnimated:YES];
 }
 
-@interface YMStartupVideoTapHandler : NSObject
+@interface YMStartupVideoView : UIView
+@property (nonatomic, strong) AVPlayer *player;
 @property (nonatomic, weak) YTStartupAnimationViewController *controller;
-- (void)handleDoubleTap:(UITapGestureRecognizer *)recognizer;
+@property (nonatomic, strong) id endObserver;
+@property (nonatomic, assign) BOOL dismissed;
+- (void)dismiss;
 @end
 
-static void YMStartupVideoDismissInternal(YTStartupAnimationViewController *controller);
+static YMStartupVideoView *sStartupVideoView;
 
-@implementation YMStartupVideoTapHandler
+@implementation YMStartupVideoView
++ (Class)layerClass {
+    return AVPlayerLayer.class;
+}
+
 - (void)handleDoubleTap:(UITapGestureRecognizer *)recognizer {
-    if (recognizer.state == UIGestureRecognizerStateRecognized) YMStartupVideoDismissInternal(self.controller);
+    if (recognizer.state == UIGestureRecognizerStateRecognized) [self dismiss];
+}
+
+- (void)dismiss {
+    if (self.dismissed) return;
+    self.dismissed = YES;
+    [self.player pause];
+    if (self.endObserver) [[NSNotificationCenter defaultCenter] removeObserver:self.endObserver];
+    self.endObserver = nil;
+
+    YTStartupAnimationViewController *controller = self.controller;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [controller forceDismissStartupAnimationAnimated:YES];
+        [UIView animateWithDuration:0.2 animations:^{
+            self.alpha = 0;
+        } completion:^(BOOL finished) {
+            for (UIGestureRecognizer *gesture in self.gestureRecognizers) [self removeGestureRecognizer:gesture];
+            [self removeFromSuperview];
+            if (sStartupVideoView == self) sStartupVideoView = nil;
+        }];
+    });
 }
 @end
+
+static UIWindow *YMStartupHostWindow(YTStartupAnimationViewController *controller) {
+    if (controller.view.window) return controller.view.window;
+    for (UIScene *scene in UIApplication.sharedApplication.connectedScenes) {
+        if (![scene isKindOfClass:UIWindowScene.class]) continue;
+        for (UIWindow *window in ((UIWindowScene *)scene).windows) if (window.isKeyWindow) return window;
+    }
+    return nil;
+}
 
 @interface YMStartupVideoPickerDelegate : NSObject <PHPickerViewControllerDelegate>
 @property (nonatomic, weak) UIViewController *presenter;
@@ -151,119 +174,56 @@ void YMStartupVideoDelete(UIViewController *presenter) {
     [confirm show];
 }
 
-BOOL YMStartupVideoPrepare(YTStartupAnimationViewController *controller) {
-    if (!controller || !YMStartupVideoFileExists()) return NO;
-    if (YMStartupVideoIsPrepared(controller)) return YES;
-    NSURL *url = YMStartupVideoURL();
-    AVPlayerItem *item = [AVPlayerItem playerItemWithURL:url];
+static BOOL YMStartupVideoPrepare() {
+    if (!YMStartupVideoFileExists()) return NO;
+    if (sStartupVideoView && !sStartupVideoView.dismissed) return YES;
+
+    AVPlayerItem *item = [AVPlayerItem playerItemWithURL:YMStartupVideoURL()];
     AVPlayer *player = [AVPlayer playerWithPlayerItem:item];
-    AVPlayerLayer *layer = [AVPlayerLayer playerLayerWithPlayer:player];
+    YMStartupVideoView *videoView = [[YMStartupVideoView alloc] initWithFrame:UIScreen.mainScreen.bounds];
+    videoView.backgroundColor = UIColor.blackColor;
+    videoView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    AVPlayerLayer *layer = (AVPlayerLayer *)videoView.layer;
+    layer.player = player;
     layer.videoGravity = AVLayerVideoGravityResize; // Stretch to the full startup screen.
-    layer.frame = controller.view.bounds;
-    controller.view.backgroundColor = UIColor.blackColor;
-    [controller.view.layer addSublayer:layer];
-    YMStartupVideoTapHandler *tapHandler = [YMStartupVideoTapHandler new];
-    tapHandler.controller = controller;
-    UITapGestureRecognizer *doubleTap = [[UITapGestureRecognizer alloc] initWithTarget:tapHandler action:@selector(handleDoubleTap:)];
+    videoView.player = player;
+
+    UITapGestureRecognizer *doubleTap = [[UITapGestureRecognizer alloc] initWithTarget:videoView action:@selector(handleDoubleTap:)];
     doubleTap.numberOfTapsRequired = 2;
     doubleTap.cancelsTouchesInView = NO;
-    [controller.view addGestureRecognizer:doubleTap];
-    objc_setAssociatedObject(controller, kYMStartupPlayerKey, player, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-    objc_setAssociatedObject(controller, kYMStartupLayerKey, layer, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-    objc_setAssociatedObject(controller, kYMStartupDismissedKey, @NO, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-    objc_setAssociatedObject(controller, kYMStartupGestureHandlerKey, tapHandler, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    [videoView addGestureRecognizer:doubleTap];
+
+    sStartupVideoView = videoView;
     return YES;
 }
 
-BOOL YMStartupVideoIsPrepared(YTStartupAnimationViewController *controller) {
-    return objc_getAssociatedObject(controller, kYMStartupPlayerKey) != nil;
-}
-
-static void YMStartupVideoStopSafeguardTimer(YTStartupAnimationViewController *controller) {
-    if (!controller) return;
-    YTTimedAction *action = [controller valueForKey:@"_safeguardToDismissAnimationAction"];
-    [action invalidate];
-    [controller setValue:nil forKey:@"_safeguardToDismissAnimationAction"];
-}
-
-static void YMStartupVideoStartSafeguardTimer(YTStartupAnimationViewController *controller) {
-    if (!controller) return;
-    YMStartupVideoStopSafeguardTimer(controller);
-
-    __weak YTStartupAnimationViewController *weakController = controller;
-    YTTimedAction *action = [%c(YTTimedAction) scheduledTimedActionWithTimeInterval:10.0
-                                                                           repeats:NO
-                                                                             queue:dispatch_get_main_queue()
-                                                                             block:^{
-        YMStartupVideoDismissInternal(weakController);
-    }];
-    if (action) [controller setValue:action forKey:@"_safeguardToDismissAnimationAction"];
-}
-
-void YMStartupVideoLayout(YTStartupAnimationViewController *controller) {
-    AVPlayerLayer *layer = objc_getAssociatedObject(controller, kYMStartupLayerKey);
-    if (layer) layer.frame = controller.view.bounds;
-}
-
-static void YMStartupVideoDismissInternal(YTStartupAnimationViewController *controller) {
-    if (!controller || [objc_getAssociatedObject(controller, kYMStartupDismissedKey) boolValue]) return;
-    objc_setAssociatedObject(controller, kYMStartupDismissedKey, @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-    AVPlayer *player = objc_getAssociatedObject(controller, kYMStartupPlayerKey);
-    [player pause];
-    YMStartupVideoStopSafeguardTimer(controller);
-    id observer = objc_getAssociatedObject(controller, kYMStartupEndObserverKey);
-    if (observer) [[NSNotificationCenter defaultCenter] removeObserver:observer];
-    objc_setAssociatedObject(controller, kYMStartupEndObserverKey, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-
-    dispatch_async(dispatch_get_main_queue(), ^{
+static void YMStartupVideoPlay(YTStartupAnimationViewController *controller) {
+    YMStartupVideoView *videoView = sStartupVideoView;
+    AVPlayer *player = videoView.player;
+    UIWindow *window = YMStartupHostWindow(controller);
+    if (!player.currentItem || !window) {
         [controller forceDismissStartupAnimationAnimated:YES];
-    });
-}
-
-void YMStartupVideoPlay(YTStartupAnimationViewController *controller) {
-    AVPlayer *player = objc_getAssociatedObject(controller, kYMStartupPlayerKey);
-    AVPlayerItem *item = player.currentItem;
-    if (!player || !item) {
-        YMStartupVideoDismissInternal(controller);
         return;
     }
-    YMStartupVideoStartSafeguardTimer(controller);
-    __weak YTStartupAnimationViewController *weakController = controller;
-    id observer = [[NSNotificationCenter defaultCenter] addObserverForName:AVPlayerItemDidPlayToEndTimeNotification object:item queue:NSOperationQueue.mainQueue usingBlock:^(__unused NSNotification *note) {
-        YMStartupVideoDismissInternal(weakController);
+
+    videoView.controller = controller;
+    videoView.frame = window.bounds;
+    [window addSubview:videoView];
+
+    __weak YMStartupVideoView *weakView = videoView;
+    videoView.endObserver = [[NSNotificationCenter defaultCenter] addObserverForName:AVPlayerItemDidPlayToEndTimeNotification object:player.currentItem queue:NSOperationQueue.mainQueue usingBlock:^(__unused NSNotification *note) {
+        [weakView dismiss];
     }];
-    objc_setAssociatedObject(controller, kYMStartupEndObserverKey, observer, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     [player play];
 }
 
 %hook YTStartupAnimationViewController
 - (void)setUpLottieAnimation {
+    if (INTFORVAL(StartupAnimation) == 3) YMStartupVideoPrepare();
     %orig;
-    if (INTFORVAL(StartupAnimation) == 3 && YMStartupVideoFileExists()) YMStartupVideoPrepare(self);
 }
 - (void)playLottieAnimation {
-    if (INTFORVAL(StartupAnimation) == 3 && YMStartupVideoIsPrepared(self)) {
-        YMStartupVideoPlay(self);
-        return;
-    }
-    %orig;
-}
-- (void)viewWillAppear:(BOOL)animated {
-    if (INTFORVAL(StartupAnimation) == 3 && YMStartupVideoIsPrepared(self)) YMStartupVideoLayout(self);
-    %orig;
-}
-- (void)startSafeguardAnimationTimer {
-    if (INTFORVAL(StartupAnimation) == 3 && YMStartupVideoIsPrepared(self)) {
-        YMStartupVideoStartSafeguardTimer(self);
-        return;
-    }
-    %orig;
-}
-- (void)stopAnimationTimer {
-    if (INTFORVAL(StartupAnimation) == 3 && YMStartupVideoIsPrepared(self)) {
-        YMStartupVideoStopSafeguardTimer(self);
-        return;
-    }
+    if (INTFORVAL(StartupAnimation) == 3 && sStartupVideoView && !sStartupVideoView.dismissed) YMStartupVideoPlay(self);
     %orig;
 }
 %end

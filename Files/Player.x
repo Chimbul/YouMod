@@ -1053,6 +1053,44 @@ static CGFloat YouModConfiguredHoldToSpeedRate(void) {
 %end
 %end
 
+static void YouModRequireAncestorPansToFail(UIView *playerView, UIGestureRecognizer *gesture) {
+    for (UIView *view = playerView.superview; view && ![view isKindOfClass:[UIWindow class]]; view = view.superview) {
+        for (UIGestureRecognizer *other in view.gestureRecognizers) {
+            if ([other isKindOfClass:[UIPanGestureRecognizer class]]) [other requireGestureRecognizerToFail:gesture];
+        }
+    }
+}
+
+static NSArray<UIGestureRecognizer *> *YouModGesturesAroundPlayer(UIView *playerView) {
+    NSMutableArray<UIGestureRecognizer *> *gestures = [NSMutableArray array];
+    for (UIView *view = playerView; view && ![view isKindOfClass:[UIWindow class]]; view = view.superview) {
+        [gestures addObjectsFromArray:view.gestureRecognizers];
+    }
+    NSMutableArray<UIView *> *queue = [playerView.subviews mutableCopy];
+    while (queue.count) {
+        UIView *view = queue.lastObject;
+        [queue removeLastObject];
+        [gestures addObjectsFromArray:view.gestureRecognizers];
+        [queue addObjectsFromArray:view.subviews];
+    }
+    return gestures;
+}
+
+static void YouModSuspendGesturesForHold(YTPlayerViewController *player, UIGestureRecognizer *hold) {
+    NSMutableArray<UIGestureRecognizer *> *suspended = [NSMutableArray array];
+    for (UIGestureRecognizer *gesture in YouModGesturesAroundPlayer(player.playerView)) {
+        if (gesture == hold || !gesture.enabled) continue;
+        gesture.enabled = NO; // Disabling cancels any in-flight recognition.
+        [suspended addObject:gesture];
+    }
+    player.YouModGesturesSuspendedByHold = suspended;
+}
+
+static void YouModRestoreGesturesSuspendedByHold(YTPlayerViewController *player) {
+    for (UIGestureRecognizer *gesture in player.YouModGesturesSuspendedByHold) gesture.enabled = YES;
+    player.YouModGesturesSuspendedByHold = nil;
+}
+
 %hook YTWatchLayerViewController
 // invoked when the player view controller is either created or destroyed
 - (void)watchController:(YTWatchController *)watchController didSetPlayerViewController:(YTPlayerViewController *)playerViewController {
@@ -1062,6 +1100,10 @@ static CGFloat YouModConfiguredHoldToSpeedRate(void) {
             playerViewController.YouModPanGesture = [[UIPanGestureRecognizer alloc] initWithTarget:playerViewController action:@selector(YouModHandlePanGesture:)];
             playerViewController.YouModPanGesture.delegate = playerViewController;
             [pv addGestureRecognizer:playerViewController.YouModPanGesture];
+            UIPanGestureRecognizer *pan = playerViewController.YouModPanGesture;
+            dispatch_async(dispatch_get_main_queue(), ^{
+                YouModRequireAncestorPansToFail(pv, pan);
+            });
         }
         if (!playerViewController.YouModTapGesture && IS_ENABLED(PauseTwoFingers)) {
             playerViewController.YouModTapGesture = [[UITapGestureRecognizer alloc] initWithTarget:playerViewController action:@selector(YouModHandleTapGesture:)];
@@ -1141,6 +1183,7 @@ static UISlider *YouModVolumeSlider(void) {
 %property (nonatomic, strong) UIView *YouModSpeedToastView;
 %property (nonatomic, strong) UILabel *YouModSpeedToastLabel;
 %property (nonatomic, retain) UILongPressGestureRecognizer *YouModHoldGesture;
+%property (nonatomic, strong) NSArray *YouModGesturesSuspendedByHold;
 %new
 - (BOOL)gestureRecognizerShouldBegin:(UIGestureRecognizer *)gestureRecognizer {
     if (gestureRecognizer == self.YouModPanGesture) {
@@ -1396,7 +1439,9 @@ static UISlider *YouModVolumeSlider(void) {
 
 %new
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldBeRequiredToFailByGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer {
-    if (gestureRecognizer == self.YouModPanGesture && [otherGestureRecognizer isKindOfClass:[UIPanGestureRecognizer class]]) {
+    // Only the player's own pans (e.g. YouTube's scrubber) need to fail first. Page scroll pans
+    // are handled by YouModRequireAncestorPansToFail, so vertical swipes aren't blocked.
+    if (gestureRecognizer == self.YouModPanGesture && [otherGestureRecognizer isKindOfClass:[UIPanGestureRecognizer class]] && [otherGestureRecognizer.view isDescendantOfView:self.playerView]) {
         return YES;
     }
     return NO;
@@ -1404,7 +1449,7 @@ static UISlider *YouModVolumeSlider(void) {
 
 %new
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer {
-    if (gestureRecognizer == self.YouModPanGesture) return NO;
+    if (gestureRecognizer == self.YouModPanGesture || gestureRecognizer == self.YouModHoldGesture) return NO;
     return YES;
 }
 
@@ -1652,6 +1697,9 @@ static UISlider *YouModVolumeSlider(void) {
 
 %new
 - (void)YouModHoldToSpeed:(UILongPressGestureRecognizer *)gesture {
+    if (gesture.state == UIGestureRecognizerStateEnded || gesture.state == UIGestureRecognizerStateCancelled || gesture.state == UIGestureRecognizerStateFailed) {
+        YouModRestoreGesturesSuspendedByHold(self);
+    }
     if (!IS_ENABLED(HoldToSpeedEnabled) || IS_ENABLED(DisablesLongHold)) return;
     if (isRelatedVideosPanelEnabled(self)) return;
 
@@ -1696,6 +1744,7 @@ static UISlider *YouModVolumeSlider(void) {
             [self YouModShowSpeedToast:speed isLocked:YES];
         }
         holdGestureActive = YES;
+        YouModSuspendGesturesForHold(self, gesture);
     } else if (gesture.state == UIGestureRecognizerStateChanged) {
         if (!holdGestureActive || !IS_ENABLED(LockSpeed)) return;
         
