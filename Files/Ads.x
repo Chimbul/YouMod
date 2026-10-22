@@ -200,7 +200,7 @@ static NSMutableArray <YTIItemSectionRenderer *> *filteredArray(NSArray <YTIItem
     return newArray;
 }
 
-// Filering new ads
+// Filer new ads
 %hook YTIElementRenderer
 - (NSData *)elementData {
     if (self.compatibilityOptions.hasAdLoggingData) return nil;

@@ -52,22 +52,15 @@ void YouModApplyLiquidGlassToView(UIView *view, BOOL wantsBackground) {
     else if (!wantsBackground && [view respondsToSelector:@selector(tuui_applyFlexibleSmallGlassBackground)]) [view tuui_applyFlexibleSmallGlassBackground];
 }
 
+// BETA - use in pre-release versions only
 %hook YTColdConfig
-- (BOOL)mainAppCoreClientIosEnablePositionedFloatyBars {
-    return YES;
-}
-- (NSInteger)mainAppCoreClientIosFloatingBarStyle {
-    return 2;
-}
+- (BOOL)mainAppCoreClientIosEnablePositionedFloatyBars { return YES; }
+- (NSInteger)mainAppCoreClientIosFloatingBarStyle { return 2; }
 %end
 
 %hook YTColdConfigMainAppCoreClientImpl
-- (BOOL)iosEnablePositionedFloatyBars {
-    return YES;
-}
-- (NSInteger)iosFloatingBarStyle {
-    return 2;
-}
+- (BOOL)iosEnablePositionedFloatyBars { return YES; }
+- (NSInteger)iosFloatingBarStyle { return 2; }
 %end
 
 %hook YTChipCloudChipView
@@ -129,15 +122,15 @@ void YouModApplyLiquidGlassToView(UIView *view, BOOL wantsBackground) {
 %hook YTFirstTimeSignInView
 - (void)didMoveToWindow {
     %orig;
-    if (self.chooseAccountButton != nil) YouModApplyLiquidGlassToView(self.chooseAccountButton, NO);
-    if (self.alternateAccountButton != nil) YouModApplyLiquidGlassToView(self.alternateAccountButton, NO);
+    if (self.chooseAccountButton != nil) YouModApplyLiquidGlassToView(self.chooseAccountButton, YES);
+    if (self.alternateAccountButton != nil) YouModApplyLiquidGlassToView(self.alternateAccountButton, YES);
 }
 %end
 
 %hook YTBackgroundPromoCell
 - (YTQTMButton *)ctaButton {
     YTQTMButton *orig = %orig;
-    if (orig) YouModApplyLiquidGlassToView(orig, NO);
+    if (orig) YouModApplyLiquidGlassToView(orig, YES);
     return orig;
 }
 %end
@@ -149,7 +142,6 @@ void YouModApplyLiquidGlassToView(UIView *view, BOOL wantsBackground) {
 }
 %end
 
-/*
 %hook YTContextualWrapView
 - (void)setBackgroundColor:(UIColor *)color { %orig([UIColor clearColor]); }
 %end
@@ -160,9 +152,6 @@ void YouModApplyLiquidGlassToView(UIView *view, BOOL wantsBackground) {
 
 %hook YTDialogContainerScrollView
 - (void)setBackgroundColor:(UIColor *)color { %orig([UIColor clearColor]); }
-%end
-
-%hook YTContextualSheetView
 - (void)didMoveToWindow {
     %orig;
     YouModApplyLiquidGlassToView(self, YES);
@@ -173,15 +162,17 @@ void YouModApplyLiquidGlassToView(UIView *view, BOOL wantsBackground) {
 - (void)setBackgroundColor:(UIColor *)color { %orig([UIColor clearColor]); }
 %end
 
-%hook GOOShrinkWrapView
-- (void)didMoveToWindow {
-    %orig;
-    YouModApplyLiquidGlassToView(self, YES);
+%hook YTActionSheetHeaderView
+- (void)setBackgroundColor:(UIColor *)color { %orig([UIColor clearColor]); }
+%end
+
+%hook _ASDisplayView
+- (void)setBackgroundColor:(UIColor *)color {
+    if ([self._viewControllerForAncestor isKindOfClass:%c(YTActionSheetDialogViewController)]) color = [UIColor clearColor];
+    %orig(color);
 }
 %end
-*/
 
-// Testing
 static float YMSeekStartValue;
 
 %hook YTInlineMutedPlaybackPlayerOverlayView
@@ -213,18 +204,31 @@ static float YMSeekStartValue;
     UISlider *slider = self.scrubberView.scrubber;
     if (!slider) return;
 
+    float duration = slider.maximumValue - slider.minimumValue;
+    if (duration <= 0) return;
+
     if (pan.state == UIGestureRecognizerStateBegan) {
         YMSeekStartValue = slider.value;
+        [slider sendActionsForControlEvents:UIControlEventTouchDown];
     }
 
-    if (pan.state == UIGestureRecognizerStateChanged ||
-        pan.state == UIGestureRecognizerStateEnded) {
-        CGFloat dx = [pan translationInView:self].x;
-        float range = slider.maximumValue - slider.minimumValue;
-        float value = YMSeekStartValue + dx / self.bounds.size.width * range;
+    UIGestureRecognizerState state = pan.state;
+    if (state != UIGestureRecognizerStateChanged &&
+        state != UIGestureRecognizerStateEnded &&
+        state != UIGestureRecognizerStateCancelled) return;
 
-        slider.value = fminf(fmaxf(value, slider.minimumValue), slider.maximumValue);
+    CGFloat dx = [pan translationInView:self].x;
+    float value = YMSeekStartValue + dx / self.bounds.size.width * duration;
+    value = fminf(fmaxf(value, slider.minimumValue), slider.maximumValue);
+    slider.value = value;
+
+    if (state == UIGestureRecognizerStateChanged) {
         [slider sendActionsForControlEvents:UIControlEventValueChanged];
+    } else if (state == UIGestureRecognizerStateEnded) {
+        [slider sendActionsForControlEvents:UIControlEventValueChanged];
+        [slider sendActionsForControlEvents:UIControlEventTouchUpInside]; // lets the scrub state machine commit + exit
+    } else {
+        [slider sendActionsForControlEvents:UIControlEventTouchCancel];
     }
 }
 %end
