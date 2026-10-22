@@ -209,8 +209,7 @@ void YouModFilterShortsDisplayView(_ASDisplayView *view, NSString *iden) {
 - (void)didPinch:(UIPinchGestureRecognizer *)gesture {
     %orig;
     UIViewController *shortspvc = self._viewControllerForAncestor.parentViewController;
-    if (!IS_ENABLED(FullScreenShorts) || (isShortsOnlyOn && IS_ENABLED(ShortsOnly))
-        || (![shortspvc isKindOfClass:%c(YTShortsPlayerViewController)] && ![shortspvc isKindOfClass:%c(YTShortsContentPresenter)])) return;
+    if (!IS_ENABLED(FullScreenShorts) || (isShortsOnlyOn && IS_ENABLED(ShortsOnly)) || (![shortspvc isKindOfClass:%c(YTShortsPlayerViewController)] && ![shortspvc isKindOfClass:%c(YTReelContainerViewController)])) return;
     UIViewController *appVC = [[[UIApplication sharedApplication] delegate] window].rootViewController;
     BOOL isTabBarHidden = [appVC performSelector:@selector(isPivotBarHidden)];
     UIView *oview = shortspvc.view;
@@ -291,6 +290,43 @@ void YouModFilterShortsDisplayView(_ASDisplayView *view, NSString *iden) {
     [YouModPillView showSuccessInView:parent message:LOC(@"SHORTS_ONLY_DISABLED") duration:3.0];
     [[[[self valueForKey:@"_parentResponder"] valueForKey:@"_delegate"] valueForKey:@"_pivotBarProvider"] performSelector:@selector(showPivotBar)];
     [UIView animateWithDuration:0.3 animations:^{ self.playbackOverlay.alpha = 1; }];
+}
+%new
+- (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldBeRequiredToFailByGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer {
+    if (gestureRecognizer == self.YouModExitShortsOnlyGesture && [otherGestureRecognizer isKindOfClass:[UILongPressGestureRecognizer class]]) {
+        return YES;
+    }
+    return NO;
+}
+%new
+- (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer {
+    if (gestureRecognizer == self.YouModExitShortsOnlyGesture) return NO;
+    return YES;
+}
+%end
+
+%hook YTReelContainerView
+%property (nonatomic, retain) UILongPressGestureRecognizer *YouModExitShortsOnlyGesture;
+- (void)setScrubGestureRecogizer:(UIPanGestureRecognizer *)gesture {
+    %orig;
+    if (!IS_ENABLED(ShortsOnly)) return;
+    self.overlayView.alpha = !isFullscreenEnabled;
+    if (isShortsOnlyOn) {
+        self.YouModExitShortsOnlyGesture = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(YouModTurnOffShortsOnly:)];
+        self.YouModExitShortsOnlyGesture.numberOfTouchesRequired = 2;
+        self.YouModExitShortsOnlyGesture.minimumPressDuration = 0.5;
+        self.YouModExitShortsOnlyGesture.delegate = (id<UIGestureRecognizerDelegate>)self;
+        [self addGestureRecognizer:self.YouModExitShortsOnlyGesture];
+    }
+}
+%new
+- (void)YouModTurnOffShortsOnly:(UILongPressGestureRecognizer *)gesture {
+    if (gesture.state != UIGestureRecognizerStateBegan) return;
+    isShortsOnlyOn = NO;
+    UIView *parent = sbGetNotificationParent();
+    [YouModPillView showSuccessInView:parent message:LOC(@"SHORTS_ONLY_DISABLED") duration:3.0];
+    [[[[self valueForKey:@"_parentResponder"] valueForKey:@"_delegate"] valueForKey:@"_pivotBarProvider"] performSelector:@selector(showPivotBar)];
+    [UIView animateWithDuration:0.3 animations:^{ self.overlayView.alpha = 1; }];
 }
 %new
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldBeRequiredToFailByGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer {
