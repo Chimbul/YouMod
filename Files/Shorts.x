@@ -136,7 +136,9 @@ void YouModRemoveShortsPausedButtons(_ASDisplayView *self, NSString *iden) {
 
 void YouModFilterShortsDisplayView(_ASDisplayView *view, NSString *iden) {
     UIViewController *con = view._viewControllerForAncestor;
-    if ([con isKindOfClass:%c(YTWatchNextResultsViewController)]) {
+    BOOL isShorts = [con isKindOfClass:%c(YTShortsPlayerViewController)] || [con isKindOfClass:%c(YTShortsContentPresenter)];
+    if (([iden isEqualToString:@"id.sponsor_button"] || [iden isEqualToString:@"eml.reel_sponsor_button"]) && IS_ENABLED(HideSponsorButton)) {
+        if (![con isKindOfClass:%c(YTWatchNextResultsViewController)] && !isShorts) return;
         ASDisplayNode *supNode = ((_ASDisplayView *)view.superview).keepalive_node;
         for (ASDisplayNode *child in supNode.yogaChildren) {
             if ([child.description containsString:@"sponsor_button"]) {
@@ -144,9 +146,8 @@ void YouModFilterShortsDisplayView(_ASDisplayView *view, NSString *iden) {
                 break;
             }
         }
-        return;
     }
-    else if (![con isKindOfClass:%c(YTShortsPlayerViewController)] && ![con isKindOfClass:%c(YTShortsContentPresenter)]) return;
+    else if (!isShorts) return;
     else if (([iden isEqualToString:@"product_sticker.main_target"] || [iden isEqualToString:@"product_sticker.secondary_target"]) && IS_ENABLED(HideShortsProducts)) view.hidden = YES;
     else if ([iden isEqualToString:@"id.elements.components.suggested_action"] && IS_ENABLED(HideShortsRecbar)) view.hidden = YES;
     else if ([iden isEqualToString:@"eml.shorts-disclosures"] && IS_ENABLED(RemoveShortsDisclosure)) {
@@ -155,14 +156,6 @@ void YouModFilterShortsDisplayView(_ASDisplayView *view, NSString *iden) {
         _ASDisplayView *maindpView = (_ASDisplayView *)dpView.superview;
         ASDisplayNode *mainNode = maindpView.keepalive_node;
         [mainNode removeYogaChild:node];
-    } else if (([iden isEqualToString:@"id.sponsor_button"] || [iden isEqualToString:@"eml.reel_sponsor_button"]) && IS_ENABLED(HideSponsorButton)) {
-        ASDisplayNode *supNode = ((_ASDisplayView *)view.superview).keepalive_node;
-        for (ASDisplayNode *child in supNode.yogaChildren) {
-            if ([child.description containsString:@"sponsor_button"]) {
-                [supNode removeYogaChild:child];
-                break;
-            }
-        }
     } else if (([iden isEqualToString:@"eml.animated_subscribe_button"] || [iden isEqualToString:@"eml.compact_subscribe_button"]) && IS_ENABLED(RemoveShortsSubButton)) {
         view.hidden = YES;
     } else if ([iden isEqualToString:@"eml.shorts-video-title-new"]) {
@@ -176,6 +169,9 @@ void YouModFilterShortsDisplayView(_ASDisplayView *view, NSString *iden) {
         for (int i=0; i<=1; i++) bruh = (_ASDisplayView *)bruh.superview;
         ASDisplayNode *node = bruh.keepalive_node;
         [node removeYogaChild:node.yogaChildren.lastObject];
+    } else if ([iden isEqualToString:@"decorated-avatar-id"]) {
+        ASDisplayNode *node = ((_ASDisplayView *)view.superview).keepalive_node;
+        [node removeYogaChild:node.yogaChildren.firstObject];
     } else {
         ASDisplayNode *no = view.keepalive_node;
         NSString *desc = nil;
