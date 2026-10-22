@@ -263,7 +263,7 @@ void YouModFilterShortsDisplayView(_ASDisplayView *view, NSString *iden) {
 
 // new hook for newer YT
 %hook YTShortsContentPresenterView
-- (void)setOverlayViewVisible:(BOOL)arg {
+- (void)didMoveToWindow {
     %orig;
     if (!IS_ENABLED(RemoveShortsLikeButton) && !IS_ENABLED(RemoveShortsCommentButton) && !IS_ENABLED(RemoveShortsShareButton) && !IS_ENABLED(RemoveShortsRemixButton) && !IS_ENABLED(RemoveShortsSoundMetadataButton) && !IS_ENABLED(RemoveShortsSaveButton)) return;
     _ASDisplayView *view = [self valueForKey:@"_overlayView"];
