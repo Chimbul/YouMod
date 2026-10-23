@@ -55,7 +55,7 @@ static NSString *ymPivotIDForTabID(NSString *tabID) {
     else if ([tabID isEqualToString:@"minigame"]) return @"FEmini_app_destination";
     else if ([tabID isEqualToString:@"fashion"]) return @"UCrpQ4p1Ql_hG8rKXIKM1MOQ";
     else if ([tabID isEqualToString:@"learning"]) return [%c(YTIBrowseRequest) browseIDForLearningDestination];
-    else return nil;
+    return nil;
 }
 
 static NSInteger ymIconTypeForTabID(NSString *tabID) {
@@ -76,7 +76,7 @@ static NSInteger ymIconTypeForTabID(NSString *tabID) {
     else if ([tabID isEqualToString:@"minigame"]) return 15;
     else if ([tabID isEqualToString:@"fashion"]) return 16;
     else if ([tabID isEqualToString:@"learning"]) return 17;
-    else return 0;
+    return 0;
 }
 
 static NSString *ymTitleForTabID(NSString *tabID) {
@@ -97,7 +97,7 @@ static NSString *ymTitleForTabID(NSString *tabID) {
     else if ([tabID isEqualToString:@"minigame"]) return LOC(@"MINIGAME_TAB");
     else if ([tabID isEqualToString:@"fashion"]) return LOC(@"FASHION_TAB");
     else if ([tabID isEqualToString:@"learning"]) return LOC(@"LEARNING_TAB");
-    else return nil;
+    return nil;
 }
 
 %hook YTPivotBarView
@@ -369,9 +369,9 @@ static BOOL isTabSelected = NO;
 }
 // Translucent tab bar
 - (BOOL)isFrostedPivotBarPermitted {
-    // The pivot bar installs its own UIKit glass view in LiquidGlass.x.
-    // Disallow YouTube's separate frosted background implementation.
-    return NO;
+    if (INTFORVAL(UseFrostedTabBar) == 1) return YES;
+    else if (INTFORVAL(UseFrostedTabBar) == 2) return NO;
+    return %orig;
 }
 %end
 

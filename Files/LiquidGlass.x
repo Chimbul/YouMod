@@ -52,17 +52,6 @@ void YouModApplyLiquidGlassToView(UIView *view, BOOL wantsBackground) {
     else if (!wantsBackground && [view respondsToSelector:@selector(tuui_applyFlexibleSmallGlassBackground)]) [view tuui_applyFlexibleSmallGlassBackground];
 }
 
-// BETA - use in pre-release versions only
-%hook YTColdConfig
-- (BOOL)mainAppCoreClientIosEnablePositionedFloatyBars { return YES; }
-- (NSInteger)mainAppCoreClientIosFloatingBarStyle { return 2; }
-%end
-
-%hook YTColdConfigMainAppCoreClientImpl
-- (BOOL)iosEnablePositionedFloatyBars { return YES; }
-- (NSInteger)iosFloatingBarStyle { return 2; }
-%end
-
 %hook YTChipCloudChipView
 - (void)didMoveToWindow {
     %orig;
@@ -139,37 +128,6 @@ void YouModApplyLiquidGlassToView(UIView *view, BOOL wantsBackground) {
 - (void)addBackButton:(YTQTMButton *)button toStackView:(UIStackView *)stackView {
     if (button) YouModApplyLiquidGlassToView(button, NO);
     %orig;
-}
-%end
-
-%hook YTContextualWrapView
-- (void)setBackgroundColor:(UIColor *)color { %orig([UIColor clearColor]); }
-%end
-
-%hook GOODialogView
-- (void)setBackgroundColor:(UIColor *)color { %orig([UIColor clearColor]); }
-%end
-
-%hook YTDialogContainerScrollView
-- (void)setBackgroundColor:(UIColor *)color { %orig([UIColor clearColor]); }
-- (void)didMoveToWindow {
-    %orig;
-    YouModApplyLiquidGlassToView(self, YES);
-}
-%end
-
-%hook GOOPopoverView
-- (void)setBackgroundColor:(UIColor *)color { %orig([UIColor clearColor]); }
-%end
-
-%hook YTActionSheetHeaderView
-- (void)setBackgroundColor:(UIColor *)color { %orig([UIColor clearColor]); }
-%end
-
-%hook _ASDisplayView
-- (void)setBackgroundColor:(UIColor *)color {
-    if ([self._viewControllerForAncestor isKindOfClass:%c(YTActionSheetDialogViewController)]) color = [UIColor clearColor];
-    %orig(color);
 }
 %end
 

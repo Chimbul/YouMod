@@ -64,20 +64,12 @@ static void showTranscript(YTFormat3CaptionViewController *cvc) {
 
 #pragma mark - Registry
 
-// Base of the view-tag range for registered overlay buttons. Chosen to avoid
-// colliding with other tagged views in the player overlay (e.g. the seek-bar
-// segment markers at 9900).
 static const NSInteger YMOverlayButtonBaseTag = 9910;
 
-// Button geometry. The top inset places the row just below YouTube's own
-// CC/gear row in the top-right corner of the player overlay.
 static const CGFloat YMOverlayButtonSize = 30.0;
 static const CGFloat YMOverlayButtonGap = 6.0;
 static const CGFloat YMOverlayButtonTopInset = 52.0; // fallback row top when the gear can't be located
 static const CGFloat YMOverlayButtonEdgePadding = 12.0; // fallback right padding when the gear isn't found
-
-// Width of a text button. Tweak this to make text buttons wider or narrower; icon
-// buttons stay square at YMOverlayButtonSize.
 static const CGFloat YMOverlayTextButtonWidth = 30.0;
 
 static NSMutableArray<YMOverlayButtonSpec *> *gOverlayButtons = nil;
@@ -200,16 +192,11 @@ NSArray<YMOverlayButtonSpec *> *YMOrderedOverlayButtons(void) {
 
 #pragma mark - Helpers
 
-// The player view controller that owns this controls overlay, reached through the
-// overlay's events delegate. Button handlers use it to act on the current video.
 static YTPlayerViewController *YMPlayerVCFromOverlay(YTMainAppControlsOverlayView *overlay) {
     YTMainAppVideoPlayerOverlayViewController *mainOverlayController = (YTMainAppVideoPlayerOverlayViewController *)overlay.eventsDelegate;
     return (YTPlayerViewController *)mainOverlayController.parentViewController;
 }
 
-// Recursively find the right-most YTQTMButton in the overlay's top region. YouTube
-// nests the gear/CC/cast buttons inside a container, so a one-level scan would miss
-// them; recursion reaches the nested buttons wherever they sit.
 static void YMScanForGearFrame(UIView *view, YTMainAppControlsOverlayView *overlay, CGFloat topRegionMaxY, CGRect *bestFrame) {
     for (UIView *sub in view.subviews) {
         if ([sub isKindOfClass:%c(YTQTMButton)]) {
@@ -226,10 +213,6 @@ static void YMScanForGearFrame(UIView *view, YTMainAppControlsOverlayView *overl
     }
 }
 
-// Find YouTube's settings/overflow button so we can anchor our row directly beneath it.
-// Prefer the overlay's own overflowButton; otherwise take the right-most YTQTMButton in
-// the overlay's top region. Returns its frame in the overlay's coordinate space, or
-// CGRectNull if not found (the caller then falls back to the screen edge / top inset).
 static CGRect YMGearFrameInOverlay(YTMainAppControlsOverlayView *overlay) {
     YTQTMButton *overflow = [overlay valueForKey:@"_overflowButton"];
     if (overflow.window) {
@@ -312,14 +295,11 @@ static BOOL isRelatedVideosExpanded = NO;
     %orig;
     YouModApplyPrevNextReplacement(self);
     NSArray<YMOverlayButtonSpec *> *allRegistered = YMRegisteredOverlayButtons();
-    // Bottom-placed buttons live in YTInlinePlayerBarContainerView, not here.
     NSMutableArray<YMOverlayButtonSpec *> *specs = [NSMutableArray array];
     for (YMOverlayButtonSpec *spec in YMOrderedOverlayButtons()) {
         if (!YMIsOverlayButtonBottom(spec.identifier)) [specs addObject:spec];
     }
 
-    // Nothing enabled on this side — drop any leftovers and bail before the
-    // gear lookup / player resolution.
     if (specs.count == 0) {
         for (YMOverlayButtonSpec *spec in allRegistered) {
             UIView *btn = [self viewWithTag:spec.viewTag];
@@ -546,8 +526,6 @@ static void YMFrostedBackgroundUpdate(YTInlinePlayerBarContainerView *self_, NSA
     for (YMOverlayButtonSpec *spec in YMOrderedOverlayButtons()) {
         if (YMIsOverlayButtonBottom(spec.identifier)) [specs addObject:spec];
     }
-    // Nothing enabled on this side — drop any leftovers and bail before the
-    // anchor lookup / player resolution.
     if (specs.count == 0) {
         for (YMOverlayButtonSpec *spec in allRegistered) {
             UIView *btn = [self viewWithTag:spec.viewTag];
@@ -558,8 +536,6 @@ static void YMFrostedBackgroundUpdate(YTInlinePlayerBarContainerView *self_, NSA
     }
     UIView *button = [self exitFullscreenButton];
     if (button == nil) button = [[self enterExitFullscreenButton] valueForKey:@"_enterExitFullscreenButton"];
-    // A mid-transition anchor can report a zero rect; anchoring to it would
-    // stack the row on a garbage frame, so wait for a real one.
     BOOL hasAnchor = button && button.window && !CGRectIsEmpty(button.bounds);
     if (!hasAnchor) return;
     NSMutableSet<NSNumber *> *activeTags = [NSMutableSet set];
@@ -580,7 +556,6 @@ static void YMFrostedBackgroundUpdate(YTInlinePlayerBarContainerView *self_, NSA
 
     CGRect exitFrame = [button convertRect:button.bounds toView:self];
     CGFloat trailingCenterX = CGRectGetMidX(exitFrame);
-    // Stack the row on top of the fullscreen button, not beside/over it.
     CGFloat rowTop = CGRectGetMinY(exitFrame) - YMOverlayButtonSize;
     CGFloat prevHalfWidth = 0;
     NSMutableArray<UIView *> *laidOutButtons = [NSMutableArray array];
