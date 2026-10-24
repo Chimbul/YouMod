@@ -199,6 +199,8 @@ void YouModHandlePostDownloadFile(NSURL *fileURL, BOOL isVideo, YMDownloadDestin
     if (wantsPhotos) {
         YouModSaveVideoToPhotos(fileURL, presenter, ^(BOOL success, NSError *error) {
             if (success) {
+                // Keep only the Photos copy; otherwise it also shows up in the download library.
+                [[NSFileManager defaultManager] removeItemAtURL:fileURL error:nil];
                 YouModSendSuccess(LOC(@"SAVED_TO_PHOTOS"));
             } else {
                 YouModSendError(error.localizedDescription ?: LOC(@"CANNOT_SAVE_TO_PHOTOS"));
@@ -305,8 +307,9 @@ static void YMDownloadMuxAndFinish(NSURL *videoURL, NSArray<NSURL *> *audioURLs,
             for (NSURL *url in temporaries) {
                 [[NSFileManager defaultManager] removeItemAtURL:url error:nil];
             }
-            if (video) YMSaveThumbnailAlongsideVideo(thumbnailURL, output);
-            YMRecordLibraryDownloadType(output, isShorts && video != nil);
+            BOOL toPhotos = destination == YMDownloadDestinationPhotos && video && YouModFileIsPhotosCompatible(output);
+            if (video && !toPhotos) YMSaveThumbnailAlongsideVideo(thumbnailURL, output);
+            if (!toPhotos) YMRecordLibraryDownloadType(output, isShorts && video != nil);
             dispatch_async(dispatch_get_main_queue(), ^{
                 gYMDownloadBusy = NO;
                 [gYMDownloadProgressView dismiss];
