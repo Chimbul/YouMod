@@ -100,8 +100,32 @@ static NSString *ymTitleForTabID(NSString *tabID) {
     return nil;
 }
 
+static BOOL isNewYTTabbarLayout = NO;
+
+static YTIPivotBarSupportedRenderers *YouModNewTab(NSString *pivotID, NSString *title, int it) {
+    YTIPivotBarSupportedRenderers *tab = [%c(YTIPivotBarSupportedRenderers) new];
+    if (isNewYTTabbarLayout) {
+        tab.pivotBarIconOnlyItemRenderer.pivotIdentifier = pivotID;
+        tab.pivotBarIconOnlyItemRenderer.navigationEndpoint.browseEndpoint.browseId = pivotID;
+        tab.pivotBarIconOnlyItemRenderer.icon.iconType = it;
+        tab.pivotBarIconOnlyItemRenderer.backgroundStyle = 1;
+    } else {
+        tab.pivotBarItemRenderer.pivotIdentifier = pivotID;
+        tab.pivotBarItemRenderer.navigationEndpoint.browseEndpoint.browseId = pivotID;
+        tab.pivotBarItemRenderer.icon.iconType = it;
+        if (IS_ENABLED(HideTabLabels)) {
+            YTIStringRun *name = [%c(YTIStringRun) new];
+            name.text = title;
+            [tab.pivotBarItemRenderer.title.runsArray addObject:name];
+        }
+    }
+    return tab;
+}
+
 %hook YTPivotBarView
 - (void)setRenderer:(YTIPivotBarRenderer *)renderer {
+    if (renderer.backgroundStyle == 2) isNewYTTabbarLayout = YES;
+    else isNewYTTabbarLayout = NO;
     NSMutableArray <YTIPivotBarSupportedRenderers *> *items = [renderer itemsArray];
     NSArray *savedOrder = [[NSUserDefaults standardUserDefaults] arrayForKey:TabOrder];
     if (savedOrder.count > 0) {
@@ -110,8 +134,8 @@ static NSString *ymTitleForTabID(NSString *tabID) {
         for (YTIPivotBarSupportedRenderers *item in items) {
             NSString *pID = [[item pivotBarItemRenderer] pivotIdentifier];
             NSString *pID2 = [[item pivotBarIconOnlyItemRenderer] pivotIdentifier];
-            if (pID) lookup[pID] = item;
-            else if (pID2) lookup[pID2] = item;
+            if (pID && pID.length > 0) lookup[pID] = item;
+            else if (pID2 && pID2.length > 0) lookup[pID2] = item;
         }
 
         // Build ordered array from saved data
@@ -135,7 +159,7 @@ static NSString *ymTitleForTabID(NSString *tabID) {
                 NSInteger iconType = isDownloadTab ? 18 : ymIconTypeForTabID(tabID);
                 NSString *title = isDownloadTab ? LOC(@"DOWNLOAD_LIBRARY_TAB") : ymTitleForTabID(tabID);
                 if (iconType > 0 && title) {
-                    YTIPivotBarSupportedRenderers *newTab = [%c(YTIPivotBarRenderer) pivotSupportedRenderersWithBrowseId:pivotID title:title iconType:iconType];
+                    YTIPivotBarSupportedRenderers *newTab = YouModNewTab(pivotID, title, iconType);
                     if (newTab) [ordered addObject:newTab];
                 }
             }
@@ -147,11 +171,12 @@ static NSString *ymTitleForTabID(NSString *tabID) {
     if (IS_ENABLED(DownloadLibraryTab)) {
         BOOL alreadyPresent = NO;
         for (YTIPivotBarSupportedRenderers *item in items) {
-            NSString *pID = [[item pivotBarItemRenderer] pivotIdentifier] ?: [[item pivotBarIconOnlyItemRenderer] pivotIdentifier];
-            if ([pID isEqualToString:kYMLibraryPivotIdentifier]) { alreadyPresent = YES; break; }
+            NSString *pID = [[item pivotBarItemRenderer] pivotIdentifier];
+            NSString *pID2 = [[item pivotBarIconOnlyItemRenderer] pivotIdentifier];
+            if ([pID isEqualToString:kYMLibraryPivotIdentifier] || [pID2 isEqualToString:kYMLibraryPivotIdentifier]) { alreadyPresent = YES; break; }
         }
         if (!alreadyPresent) {
-            YTIPivotBarSupportedRenderers *libraryTab = [%c(YTIPivotBarRenderer) pivotSupportedRenderersWithBrowseId:kYMLibraryPivotIdentifier title:LOC(@"DOWNLOAD_LIBRARY_TAB") iconType:18];
+            YTIPivotBarSupportedRenderers *libraryTab = YouModNewTab(kYMLibraryPivotIdentifier, LOC(@"DOWNLOAD_LIBRARY_TAB"), 18);
             if (libraryTab) [items addObject:libraryTab];
         }
     }
@@ -244,6 +269,14 @@ static BOOL isGestureRegistered = NO;
         renderer.title = nil;
         [self.navigationButton setSizeWithPaddingAndInsets:NO];
     }
+    %orig;
+    if (!isGestureRegistered) {
+        UIContextMenuInteraction *interaction = [[UIContextMenuInteraction alloc] initWithDelegate:(id<UIContextMenuInteractionDelegate>)self];
+        [self addInteraction:interaction];
+        isGestureRegistered = YES;
+    }
+}
+- (void)setIconOnlyItemRenderer:(YTIPivotBarIconOnlyItemRenderer *)renderer {
     %orig;
     if (!isGestureRegistered) {
         UIContextMenuInteraction *interaction = [[UIContextMenuInteraction alloc] initWithDelegate:(id<UIContextMenuInteractionDelegate>)self];

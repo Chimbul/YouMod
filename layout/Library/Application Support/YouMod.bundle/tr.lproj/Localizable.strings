@@ -663,6 +663,7 @@
 "DOWNLOAD_LIBRARY_TAB" = "Download library";
 "DOWNLOAD_LIBRARY_TAB_DESC" = "Adds a tab that lists every downloaded video with thumbnails and sizes.";
 "DOWNLOAD_LIBRARY_EMPTY" = "No downloads yet";
+"DOWNLOAD_LIBRARY_DELETE_PLAYLIST_CONFIRM" = "Delete ‘%@’? Downloaded files will stay in the library.";
 
 "LIBRARY_OPEN_VIDEO" = "Open Video on YouTube";
 "LIBRARY_NO_VIDEO_ID" = "Couldn't find this video's ID";

@@ -3,19 +3,22 @@
 static const void *kASViewKey = &kASViewKey;
 
 %hook _ASDisplayView
-%property (nonatomic, assign) _ASDisplayView *currentDownloadButton;
 - (void)didMoveToWindow {
     %orig;
+    if (!self.window) return;
     // YouModFilterVideoButtons(self, iden); not rn, im having a headache with this shi. no matter what i do, it just doesnt work well.
     if (objc_getAssociatedObject(self, kASViewKey)) return;
     NSString *iden = self.accessibilityIdentifier;
-    YouModApplyOLEDToDisplayView(self, iden);
     YouModConfigureDownloadButton(self, iden);
     YouModSetupDownloadGestures(self, iden);
     if (IS_ENABLED(RemoveAds)) YouModFilterAdsDisplayView(self, iden);
     YouModFilterShortsDisplayView(self, iden);
     YouModRemoveShortsPausedButtons(self, iden);
     if (iden.length > 0) objc_setAssociatedObject(self, kASViewKey, @YES, OBJC_ASSOCIATION_ASSIGN);
+}
+- (void)setBackgroundColor:(UIColor *)color {
+    color = YouModApplyOLEDToDisplayView(self, self.accessibilityIdentifier, color);
+    %orig(color);
 }
 %new
 - (void)YouModHandleCommentLongPress:(UILongPressGestureRecognizer *)sender {
@@ -35,7 +38,7 @@ static const void *kASViewKey = &kASViewKey;
 %new
 - (void)YouModHandleNewDownloadButtonTapped:(UITapGestureRecognizer *)sender {
     if (sender.state != UIGestureRecognizerStateEnded) return;
-    YTDefaultSheetController *sheetController = [self.currentDownloadButton._viewControllerForAncestor valueForKey:@"_delegate"];
+    YTDefaultSheetController *sheetController = [self._viewControllerForAncestor valueForKey:@"_delegate"];
     _ASDisplayView *moreButton = [sheetController valueForKey:@"_sourceView"];
     [sheetController dismissViewControllerAnimated:YES completion:^{
         YouModHandleDownloadButtonAction(moreButton);
@@ -44,11 +47,9 @@ static const void *kASViewKey = &kASViewKey;
 %end
 
 %hook ASCollectionView
-- (void)didMoveToWindow {
-    %orig;
-    if (objc_getAssociatedObject(self, kASViewKey)) return;
-    YouModApplyOLEDCollectionView(self, self.accessibilityIdentifier);
-    objc_setAssociatedObject(self, kASViewKey, @YES, OBJC_ASSOCIATION_ASSIGN);
+- (void)setBackgroundColor:(UIColor *)color {
+    color = YouModApplyOLEDCollectionView(self, self.accessibilityIdentifier, color);
+    %orig(color);
 }
 %end
 

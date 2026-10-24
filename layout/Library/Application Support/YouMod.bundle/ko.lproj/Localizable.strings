@@ -659,6 +659,7 @@
 "DOWNLOAD_LIBRARY_TAB" = "다운로드";
 "DOWNLOAD_LIBRARY_TAB_DESC" = "다운로드한 모든 동영상을 썸네일과 용량과 함께 보여주는 탭을 추가합니다.";
 "DOWNLOAD_LIBRARY_EMPTY" = "아직 다운로드한 항목이 없습니다";
+"DOWNLOAD_LIBRARY_DELETE_PLAYLIST_CONFIRM" = "Delete ‘%@’? Downloaded files will stay in the library.";
 
 "LIBRARY_OPEN_VIDEO" = "YouTube에서 동영상 열기";
 "LIBRARY_NO_VIDEO_ID" = "이 동영상의 ID를 찾을 수 없습니다";

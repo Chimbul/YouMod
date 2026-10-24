@@ -441,6 +441,10 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 - (void)enableNewTouchFeedback;
 @end
 
+@interface YTReelContainerViewController : UIViewController
+@property (nonatomic, strong, readwrite) YTPlayerViewController *player;
+@end
+
 @interface YTHeaderView : UIView
 - (void)setStickyNavHeaderEnabled:(BOOL)arg;
 @end
@@ -472,16 +476,23 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 - (void)didTapPivotBarItem:(id)renderer withViewControllers:(NSArray *)viewControllers animated:(BOOL)animated;
 @end
 
+@interface GOODialogContentView : UIView
+@end
+
 @interface YTReelWatchPlaybackOverlayView : UIView
 @end
 
-@interface YTReelContentView (YouMod) <UIGestureRecognizerDelegate>
+@interface YTReelContentView (YouMod)
 @property (nonatomic, retain) UILongPressGestureRecognizer *YouModExitShortsOnlyGesture;
+@property (nonatomic, retain) UIPinchGestureRecognizer *YouModPinchGesture;
 - (YTReelWatchPlaybackOverlayView *)playbackOverlay;
 @end
 
 @interface YTLanguages : NSObject
 + (instancetype)languageList;
+@end
+
+@interface YTReelFreeZoomOverlayView : UIView
 @end
 
 @interface YTSettingsSectionItem (YouMod)
@@ -584,10 +595,6 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 - (ELMNodeController *)nodeController;
 @end
 
-@interface _ASDisplayView (YouMod)
-@property (nonatomic, assign) _ASDisplayView *currentDownloadButton;
-@end
-
 @interface YTEngagementPanelHeaderView : UIView
 - (YTQTMButton *)informationButton;
 - (YTQTMButton *)sortFilterMenuButton;
@@ -612,6 +619,7 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 
 @interface YTMainAppControlsOverlayView (YouMod)
 - (YTMainAppVideoPlayerOverlayViewController *)eventsDelegate;
+@property (nonatomic, assign, readonly) YTQTMButton *overflowButton;
 @end
 
 @interface YTVideoQualitySwitchOriginalController (YouMod)
@@ -1242,7 +1250,7 @@ typedef NS_ENUM(NSInteger, YouModTranslationState) {
 @end
 
 // _ASDisplayView/YTELMViewController centralized helpers
-extern void YouModApplyOLEDToDisplayView(_ASDisplayView *view, NSString *iden);
+extern UIColor *YouModApplyOLEDToDisplayView(_ASDisplayView *view, NSString *iden, UIColor *color);
 extern void YouModFilterAdsDisplayView(_ASDisplayView *view, NSString *iden);
 extern void YouModConfigureDownloadButton(_ASDisplayView *view, NSString *iden);
 extern void YouModSetupDownloadGestures(_ASDisplayView *view, NSString *iden);
@@ -1252,7 +1260,7 @@ extern void YouModHandleDownloadButtonAction(_ASDisplayView *view);
 extern void YouModFilterVideoButtons(_ASDisplayView *view, NSString *iden);
 extern void YouModFilterShortsDisplayView(_ASDisplayView *view, NSString *iden);
 extern void YouModRemoveShortsPausedButtons(_ASDisplayView *view, NSString *iden);
-extern void YouModApplyOLEDCollectionView(ASCollectionView *self, NSString *iden);
+extern UIColor *YouModApplyOLEDCollectionView(ASCollectionView *self, NSString *iden, UIColor *color);
 extern void YouModRemoveDrawerAds(YTELMViewController *self);
 extern void YouModRemoveFullscreenActionsButtons(YTELMViewController *controller);
 extern void YouModApplyLiquidGlassToView(UIView *view, BOOL arg);

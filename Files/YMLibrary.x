@@ -491,10 +491,14 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
 @property (nonatomic, strong) UICollectionView *collectionView;
 @property (nonatomic, strong) UISearchBar *searchBar;
 @property (nonatomic, strong) YTQTMButton *sortButton;
-@property (nonatomic, strong) UIView *topBar;
 @property (nonatomic, strong) UIView *typeGlassView;
 @property (nonatomic, strong) UIScrollView *typeScrollView;
 @property (nonatomic, strong) UIStackView *typeStackView;
+@property (nonatomic, strong) NSLayoutConstraint *typeGlassTrailingConstraint;
+@property (nonatomic, strong) NSLayoutConstraint *typeScrollTrailingConstraint;
+@property (nonatomic, strong) NSLayoutConstraint *typeGlassLeadingConstraint;
+@property (nonatomic, strong) NSLayoutConstraint *typeScrollLeadingConstraint;
+@property (nonatomic, strong) UIButton *playlistBackButton;
 @property (nonatomic, strong) UIView *playlistActionsView;
 @property (nonatomic, strong) UIButton *addPlaylistButton;
 @property (nonatomic, strong) UIButton *deletePlaylistButton;
@@ -513,6 +517,7 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
 - (void)updateSortMenu;
 - (void)updateSortButtonAccessibilityLabel;
 - (void)rebuildLibraryControls;
+- (void)refreshTypeSelection;
 @end
 
 @implementation YMLibraryViewController
@@ -532,13 +537,10 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
     self.selectedSort = [sorts containsObject:savedSort] ? savedSort : @"Newest";
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(libraryDidEnterBackground) name:UIApplicationDidEnterBackgroundNotification object:nil];
 
-    // The subheader behaves like a system bar: a liquid glass backdrop with
-    // the library content scrolling underneath it.
+    // Keep the large header clear; the type selector below gets its own rounded glass pill.
     UIView *topBar = [UIView new];
     topBar.translatesAutoresizingMaskIntoConstraints = NO;
     [self.view addSubview:topBar];
-    _topBar = topBar;
-    YouModApplyLiquidGlassBackdropToView(topBar, 0);
 
     UIView *topBarSeparator = [UIView new];
     topBarSeparator.backgroundColor = [UIColor separatorColor];
@@ -576,12 +578,21 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
 
     _typeGlassView = [UIView new];
     _typeGlassView.translatesAutoresizingMaskIntoConstraints = NO;
-    YouModApplyLiquidGlassToView(_typeGlassView, YES);
+    YouModApplyLiquidGlassBackdropToView(_typeGlassView, 21);
     [topBar addSubview:_typeGlassView];
+    _typeGlassLeadingConstraint = [_typeGlassView.leadingAnchor constraintEqualToAnchor:topBar.leadingAnchor constant:14];
+    _typeGlassTrailingConstraint = [_typeGlassView.trailingAnchor constraintEqualToAnchor:topBar.trailingAnchor constant:-14];
 
     _typeScrollView = [UIScrollView new];
     _typeScrollView.showsHorizontalScrollIndicator = NO;
     _typeScrollView.translatesAutoresizingMaskIntoConstraints = NO;
+    // Clip the regular scroll-view subheader to a continuous curve, independent
+    // of the separate liquid-glass backdrop behind it.
+    _typeScrollView.layer.cornerRadius = 21;
+    _typeScrollView.layer.cornerCurve = kCACornerCurveContinuous;
+    _typeScrollView.clipsToBounds = YES;
+    _typeScrollLeadingConstraint = [_typeScrollView.leadingAnchor constraintEqualToAnchor:topBar.leadingAnchor constant:16];
+    _typeScrollTrailingConstraint = [_typeScrollView.trailingAnchor constraintEqualToAnchor:topBar.trailingAnchor constant:-16];
     _typeStackView = [[UIStackView alloc] initWithFrame:CGRectZero];
     _typeStackView.axis = UILayoutConstraintAxisHorizontal;
     _typeStackView.spacing = 0;
@@ -589,6 +600,20 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
     _typeStackView.translatesAutoresizingMaskIntoConstraints = NO;
     [_typeScrollView addSubview:_typeStackView];
     [topBar addSubview:_typeScrollView];
+
+    _playlistBackButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    [_playlistBackButton setImage:[UIImage systemImageNamed:@"chevron.left"] forState:UIControlStateNormal];
+    _playlistBackButton.tintColor = [UIColor labelColor];
+    _playlistBackButton.accessibilityLabel = ymLibraryText(@"DOWNLOAD_LIBRARY_TYPE_PLAYLISTS", @"Back to playlists");
+    _playlistBackButton.contentEdgeInsets = UIEdgeInsetsMake(7, 10, 7, 10);
+    _playlistBackButton.backgroundColor = [[UIColor secondarySystemFillColor] colorWithAlphaComponent:0.82];
+    _playlistBackButton.layer.cornerRadius = 18;
+    _playlistBackButton.layer.cornerCurve = kCACornerCurveContinuous;
+    _playlistBackButton.clipsToBounds = YES;
+    _playlistBackButton.translatesAutoresizingMaskIntoConstraints = NO;
+    _playlistBackButton.hidden = YES;
+    [_playlistBackButton addTarget:self action:@selector(backToPlaylistsTapped) forControlEvents:UIControlEventTouchUpInside];
+    [topBar addSubview:_playlistBackButton];
 
     // Playlist create/delete actions live in their own glass pill, pinned to
     // the trailing end of the type bar and floating above the scrolling
@@ -602,12 +627,14 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
 
     _addPlaylistButton = [UIButton buttonWithType:UIButtonTypeSystem];
     [_addPlaylistButton setImage:[UIImage systemImageNamed:@"plus"] forState:UIControlStateNormal];
+    _addPlaylistButton.tintColor = [UIColor whiteColor];
     _addPlaylistButton.accessibilityLabel = ymLibraryText(@"DOWNLOAD_LIBRARY_CREATE_PLAYLIST", @"Create playlist");
     [_addPlaylistButton addTarget:self action:@selector(createPlaylistTapped) forControlEvents:UIControlEventTouchUpInside];
     _addPlaylistButton.translatesAutoresizingMaskIntoConstraints = NO;
 
     _deletePlaylistButton = [UIButton buttonWithType:UIButtonTypeSystem];
     [_deletePlaylistButton setImage:[UIImage systemImageNamed:@"trash"] forState:UIControlStateNormal];
+    _deletePlaylistButton.tintColor = [UIColor systemRedColor];
     _deletePlaylistButton.accessibilityLabel = ymLibraryText(@"DOWNLOAD_LIBRARY_DELETE_PLAYLIST", @"Delete playlist");
     [_deletePlaylistButton addTarget:self action:@selector(deletePlaylistTapped) forControlEvents:UIControlEventTouchUpInside];
     _deletePlaylistButton.translatesAutoresizingMaskIntoConstraints = NO;
@@ -632,8 +659,8 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
     _collectionView.backgroundColor = ymYouTubeBackgroundColor();
     _collectionView.keyboardDismissMode = UIScrollViewKeyboardDismissModeOnDrag;
     _collectionView.alwaysBounceVertical = YES; // lets the pull-to-refresh gesture work even with few or no items
-    // The collection view extends up behind the glass subheader bar, so the
-    // bar stays translucent over the scrolling content.
+    // The collection view extends behind the clear header; only the rounded
+    // type-selector pill keeps its glass backdrop over the scrolling content.
     _collectionView.contentInsetAdjustmentBehavior = UIScrollViewContentInsetAdjustmentNever;
     _collectionView.contentInset = UIEdgeInsetsMake(174, 0, 0, 0);
     _collectionView.scrollIndicatorInsets = _collectionView.contentInset;
@@ -691,19 +718,24 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
         [settingsButton.heightAnchor constraintEqualToConstant:40],
 
         [_typeGlassView.topAnchor constraintEqualToAnchor:headerContentGuide.topAnchor constant:58],
-        [_typeGlassView.leadingAnchor constraintEqualToAnchor:topBar.leadingAnchor constant:14],
-        [_typeGlassView.trailingAnchor constraintEqualToAnchor:topBar.trailingAnchor constant:-14],
+        _typeGlassLeadingConstraint,
+        _typeGlassTrailingConstraint,
         [_typeGlassView.heightAnchor constraintEqualToConstant:42],
 
         [_typeScrollView.topAnchor constraintEqualToAnchor:headerContentGuide.topAnchor constant:58],
-        [_typeScrollView.leadingAnchor constraintEqualToAnchor:topBar.leadingAnchor constant:16],
-        [_typeScrollView.trailingAnchor constraintEqualToAnchor:topBar.trailingAnchor constant:-16],
+        _typeScrollLeadingConstraint,
+        _typeScrollTrailingConstraint,
         [_typeScrollView.heightAnchor constraintEqualToConstant:42],
         [_typeStackView.topAnchor constraintEqualToAnchor:_typeScrollView.contentLayoutGuide.topAnchor],
         [_typeStackView.bottomAnchor constraintEqualToAnchor:_typeScrollView.contentLayoutGuide.bottomAnchor],
         [_typeStackView.leadingAnchor constraintEqualToAnchor:_typeScrollView.contentLayoutGuide.leadingAnchor],
         [_typeStackView.trailingAnchor constraintEqualToAnchor:_typeScrollView.contentLayoutGuide.trailingAnchor],
         [_typeStackView.heightAnchor constraintEqualToAnchor:_typeScrollView.frameLayoutGuide.heightAnchor],
+
+        [_playlistBackButton.leadingAnchor constraintEqualToAnchor:topBar.leadingAnchor constant:14],
+        [_playlistBackButton.centerYAnchor constraintEqualToAnchor:_typeScrollView.centerYAnchor],
+        [_playlistBackButton.widthAnchor constraintEqualToConstant:36],
+        [_playlistBackButton.heightAnchor constraintEqualToConstant:36],
 
         [_playlistActionsView.trailingAnchor constraintEqualToAnchor:topBar.trailingAnchor constant:-14],
         [_playlistActionsView.centerYAnchor constraintEqualToAnchor:_typeScrollView.centerYAnchor],
@@ -809,7 +841,6 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
         UIButton *button = [UIButton buttonWithType:UIButtonTypeSystem];
         button.tag = (NSInteger)idx;
         NSString *title = [self displayTitleForType:type];
-        if ([type isEqualToString:kYMLibraryTypePlaylists] && self.selectedPlaylistID.length > 0) title = [NSString stringWithFormat:@"‹ %@", title];
         [button setTitle:title forState:UIControlStateNormal];
         button.titleLabel.font = [UIFont systemFontOfSize:15 weight:[self.selectedType isEqualToString:type] ? UIFontWeightSemibold : UIFontWeightRegular];
         [button setTitleColor:[self.selectedType isEqualToString:type] ? [UIColor labelColor] : [UIColor secondaryLabelColor] forState:UIControlStateNormal];
@@ -821,15 +852,34 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
         [self.typeStackView addArrangedSubview:button];
     }];
 
-    // The playlist actions pill is fixed at the trailing end of the type bar
-    // and only appears while the Playlists category is selected. Reserving
-    // scroll inset keeps the last chip tappable from behind the pill.
+    // Playlist actions are only available on the playlists overview, not
+    // while viewing a playlist's contents.
     BOOL inPlaylists = [self.selectedType isEqualToString:kYMLibraryTypePlaylists];
-    self.playlistActionsView.hidden = !inPlaylists;
+    BOOL viewingPlaylist = inPlaylists && self.selectedPlaylistID.length > 0;
+    self.playlistBackButton.hidden = !viewingPlaylist;
+    self.playlistActionsView.hidden = !inPlaylists || viewingPlaylist;
     self.deletePlaylistButton.enabled = ymLibraryPlaylists().count > 0;
-    self.typeScrollView.contentInset = UIEdgeInsetsMake(0, 0, 0, inPlaylists ? 84 : 0);
+    // Reserve leading space for the back button on a playlist detail screen,
+    // and trailing space for the actions pill on the playlists overview.
+    self.typeGlassLeadingConstraint.constant = viewingPlaylist ? 56 : 14;
+    self.typeScrollLeadingConstraint.constant = viewingPlaylist ? 58 : 16;
+    self.typeGlassTrailingConstraint.constant = inPlaylists && !viewingPlaylist ? -94 : -14;
+    self.typeScrollTrailingConstraint.constant = inPlaylists && !viewingPlaylist ? -96 : -16;
+    self.typeScrollView.contentInset = UIEdgeInsetsZero;
 
     [self updateSortButtonAccessibilityLabel];
+}
+
+- (void)refreshTypeSelection {
+    [self rebuildLibraryControls];
+    [self.view layoutIfNeeded];
+    [self applyFiltersAndSort];
+}
+
+- (void)backToPlaylistsTapped {
+    if (![self.selectedType isEqualToString:kYMLibraryTypePlaylists] || self.selectedPlaylistID.length == 0) return;
+    self.selectedPlaylistID = nil;
+    [self refreshTypeSelection];
 }
 
 - (void)libraryTypeTapped:(UIButton *)sender {
@@ -845,8 +895,7 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
     else if (![newType isEqualToString:kYMLibraryTypePlaylists]) self.selectedPlaylistID = nil;
     self.selectedType = newType;
     [[NSUserDefaults standardUserDefaults] setObject:self.selectedType forKey:@"YouModDownloadLibrarySelectedType"];
-    [self rebuildLibraryControls];
-    [self applyFiltersAndSort];
+    [self refreshTypeSelection];
 }
 
 - (void)authenticateForPrivateLibrary {
@@ -887,8 +936,7 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
     self.selectedPlaylistID = nil;
     self.selectedType = kYMLibraryTypePrivate;
     [[NSUserDefaults standardUserDefaults] setObject:self.selectedType forKey:@"YouModDownloadLibrarySelectedType"];
-    [self rebuildLibraryControls];
-    [self applyFiltersAndSort];
+    [self refreshTypeSelection];
 }
 
 - (void)libraryDidEnterBackground {
@@ -898,8 +946,7 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
         self.selectedType = kYMLibraryTypeAll;
         self.selectedPlaylistID = nil;
         [[NSUserDefaults standardUserDefaults] setObject:self.selectedType forKey:@"YouModDownloadLibrarySelectedType"];
-        [self rebuildLibraryControls];
-        [self applyFiltersAndSort];
+        [self refreshTypeSelection];
     }
 }
 
@@ -928,8 +975,7 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
 - (void)traitCollectionDidChange:(UITraitCollection *)previousTraitCollection {
     [super traitCollectionDidChange:previousTraitCollection];
     if (previousTraitCollection.userInterfaceStyle != self.traitCollection.userInterfaceStyle) {
-        YouModApplyLiquidGlassBackdropToView(self.topBar, 0);
-        YouModApplyLiquidGlassToView(self.typeGlassView, YES);
+        YouModApplyLiquidGlassBackdropToView(self.typeGlassView, 21);
         YouModApplyLiquidGlassBackdropToView(self.playlistActionsView, 18);
         [self updateSearchBarTheme];
     }
@@ -1094,8 +1140,7 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
         NSMutableArray *playlists = [ymLibraryPlaylists() mutableCopy];
         [playlists addObject:@{@"id": NSUUID.UUID.UUIDString, @"name": name}];
         ymSaveLibraryPlaylists(playlists);
-        [weakSelf rebuildLibraryControls];
-        [weakSelf applyFiltersAndSort];
+        [weakSelf refreshTypeSelection];
     }]];
     [self presentViewController:alert animated:YES completion:nil];
 }
@@ -1111,19 +1156,17 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
         NSString *name = playlist[@"name"] ?: @"";
         NSString *playlistID = playlist[@"id"] ?: @"";
         [picker addAction:[UIAlertAction actionWithTitle:name style:UIAlertActionStyleDestructive handler:^(__unused UIAlertAction *action) {
-            UIAlertController *confirm = [UIAlertController alertControllerWithTitle:ymLibraryText(@"DOWNLOAD_LIBRARY_DELETE_PLAYLIST", @"Delete playlist")
-                                                                             message:[NSString stringWithFormat:ymLibraryText(@"DOWNLOAD_LIBRARY_DELETE_PLAYLIST_CONFIRM", @"Delete ‘%@’? Downloaded files will stay in the library."), name]
-                                                                      preferredStyle:UIAlertControllerStyleAlert];
-            [confirm addAction:[UIAlertAction actionWithTitle:LOC(@"CANCEL") style:UIAlertActionStyleCancel handler:nil]];
-            [confirm addAction:[UIAlertAction actionWithTitle:ymLibraryText(@"DELETE", @"Delete") style:UIAlertActionStyleDestructive handler:^(__unused UIAlertAction *confirmAction) {
+            YTAlertView *confirm = [%c(YTAlertView) confirmationDialogWithAction:^{
+                __strong typeof(weakSelf) strongSelf = weakSelf;
+                if (!strongSelf) return;
                 NSMutableArray *updated = [ymLibraryPlaylists() mutableCopy];
                 NSIndexSet *matches = [updated indexesOfObjectsPassingTest:^BOOL(NSDictionary *entry, NSUInteger idx, BOOL *stop) {
                     return [entry[@"id"] isEqualToString:playlistID];
                 }];
                 [updated removeObjectsAtIndexes:matches];
                 ymSaveLibraryPlaylists(updated);
-                if ([weakSelf.selectedPlaylistID isEqualToString:playlistID]) weakSelf.selectedPlaylistID = nil;
-                for (YMLibraryRow *row in weakSelf.allRows) {
+                if ([strongSelf.selectedPlaylistID isEqualToString:playlistID]) strongSelf.selectedPlaylistID = nil;
+                for (YMLibraryRow *row in strongSelf.allRows) {
                     NSMutableArray *ids = [row.playlistIDs mutableCopy] ?: [NSMutableArray array];
                     [ids removeObject:playlistID];
                     row.playlistIDs = ids;
@@ -1132,10 +1175,12 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
                     else [metadata removeObjectForKey:@"playlists"];
                     ymSetLibraryMetadataForURL([NSURL fileURLWithPath:row.path], metadata);
                 }
-                [weakSelf rebuildLibraryControls];
-                [weakSelf applyFiltersAndSort];
-            }]];
-            [weakSelf presentViewController:confirm animated:YES completion:nil];
+                [strongSelf refreshTypeSelection];
+            } actionTitle:ymLibraryText(@"DELETE", @"Delete") cancelTitle:LOC(@"CANCEL")];
+            confirm.title = ymLibraryText(@"DOWNLOAD_LIBRARY_DELETE_PLAYLIST", @"Delete playlist");
+            confirm.subtitle = [NSString stringWithFormat:ymLibraryText(@"DOWNLOAD_LIBRARY_DELETE_PLAYLIST_CONFIRM", @"Delete ‘%@’? Downloaded files will stay in the library."), name];
+            confirm.shouldDismissOnBackgroundTap = YES;
+            [confirm show];
         }]];
     }
     [picker addAction:[UIAlertAction actionWithTitle:LOC(@"CANCEL") style:UIAlertActionStyleCancel handler:nil]];
@@ -1235,7 +1280,7 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
     YMLibraryRow *row = self.rows[indexPath.item];
     if (row.isPlaylist) {
         self.selectedPlaylistID = row.playlistID;
-        [self applyFiltersAndSort];
+        [self refreshTypeSelection];
         return;
     }
     NSURL *fileURL = [NSURL fileURLWithPath:row.path];

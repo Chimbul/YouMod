@@ -378,7 +378,6 @@ NSString *YouModGlobalAuthHeader = nil;
             tap.delaysTouchesBegan = YES;
             tap.delaysTouchesEnded = YES;
             [view addGestureRecognizer:tap];
-            view.currentDownloadButton = view;
             objc_setAssociatedObject(view, @selector(YouModHandleNewDownloadButtonTapped:), @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
         }
     }
@@ -687,12 +686,11 @@ void YouModHandleDownloadButtonAction(_ASDisplayView *view) {
     }
     YTReelElementAsyncComponentView *ov = [self valueForKey:@"_overlayView"];
     if (!ov) return;
-    do {
-        ov = ov.subviews[0];
-    } while (ov.subviews.count == 1);
-    if (ov.subviews.count <= 1) return;
+    id temp = ov;
+    while (ov.subviews.count == 1) ov = ov.subviews[0];
+    if (ov.subviews.count <= 1 || ov == temp) return;
     CGRect frame = [ov convertRect:ov.bounds toView:self];
-    downloadBtn.frame = CGRectMake(frame.origin.x, frame.origin.y - 60, 64, 60);
+    downloadBtn.frame = CGRectMake(ov.subviews[1].frame.origin.x, frame.origin.y - 60, 64, 60);
     [self bringSubviewToFront:downloadBtn];
 }
 %new

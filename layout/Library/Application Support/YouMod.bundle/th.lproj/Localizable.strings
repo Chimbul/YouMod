@@ -675,6 +675,7 @@
 "DOWNLOAD_LIBRARY_TAB" = "คลังดาวน์โหลด";
 "DOWNLOAD_LIBRARY_TAB_DESC" = "เพิ่มแท็บที่แสดงรายการวิดีโอที่ดาวน์โหลดไว้ทั้งหมด";
 "DOWNLOAD_LIBRARY_EMPTY" = "ยังไม่มีรายการดาวน์โหลด";
+"DOWNLOAD_LIBRARY_DELETE_PLAYLIST_CONFIRM" = "ลบ ‘%@’ หรือไม่? ไฟล์ที่ดาวน์โหลดจะยังคงอยู่ในคลัง";
 
 "LIBRARY_OPEN_VIDEO" = "เปิดวิดีโอบน YouTube";
 "LIBRARY_NO_VIDEO_ID" = "หา ID ของวิดีโอนี้ไม่ได้";

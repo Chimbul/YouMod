@@ -115,7 +115,9 @@ BOOL YMFFmpegConvertStartupVideo(NSURL *inputURL, NSURL *outputURL, NSString **f
         @"-i", inputURL.path,
         @"-t", @"10",
         @"-map", @"0:v:0",
-        @"-map", @"0:a?",
+        // Keep the primary audio stream so AVPlayer has a single, default track
+        // to play even when the source contains alternate or secondary tracks.
+        @"-map", @"0:a:0?",
         @"-vf", @"scale='min(1920,iw)':'min(1080,ih)':force_original_aspect_ratio=decrease:force_divisible_by=2",
         // FFmpegKitNext is built without GPL encoders; the native MPEG-4
         // encoder keeps this conversion available in the shipped build.

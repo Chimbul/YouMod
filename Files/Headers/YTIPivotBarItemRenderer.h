@@ -9,5 +9,6 @@
 @property (nonatomic, strong, readwrite) YTICommand *onLongPress;
 @property (nonatomic, strong, readwrite) YTIIcon *icon;
 @property (nonatomic, strong, readwrite) YTIThumbnailDetails *thumbnail;
+@property (nonatomic, strong, readwrite) YTIFormattedString *title;
 - (int)imageOneOfCase;
 @end

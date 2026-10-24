@@ -464,19 +464,19 @@ void YouModRemoveDrawerAds(YTELMViewController *self) {
 - (void)showSurveyWithRenderer:(id)arg1 surveyParentResponder:(id)arg2 {}
 %end
 
+/*
 %hook YTEngagementPanelViewControllerImpl
 - (void)viewWillAppear:(BOOL)animated {
-    /*
     NSString *desc = [[self valueForKey:@"_model"] description];
     if ([desc containsString:@"mealbar_promo.eml"]) {
         [self dismissViewControllerAnimated:NO completion:nil];
         return;
     }
     %orig;
-    */
-    [self dismissViewControllerAnimated:NO completion:nil];
+    [[self.view valueForKey:@"_headerView"] performSelector:@selector(didTapCloseButton:) withObject:nil];
 }
 %end
+*/
 
 %ctor {
     [[NSUserDefaults standardUserDefaults] registerDefaults:@{

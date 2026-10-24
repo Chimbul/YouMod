@@ -7,6 +7,7 @@
 @end
 
 static const void *kYMStartupPickerDelegateKey = &kYMStartupPickerDelegateKey;
+static UIWindow *sStartupVideoWindow;
 
 static NSURL *YMStartupVideoDirectoryURL() {
     NSURL *support = [[NSFileManager defaultManager] URLsForDirectory:NSApplicationSupportDirectory inDomains:NSUserDomainMask].firstObject;
@@ -28,13 +29,17 @@ static void YMStartupVideoRefreshSettings(UIViewController *presenter) {
 
 @interface YMStartupVideoView : UIView
 @property (nonatomic, strong) AVPlayer *player;
-@property (nonatomic, weak) YTStartupAnimationViewController *controller;
 @property (nonatomic, strong) id endObserver;
 @property (nonatomic, assign) BOOL dismissed;
+@property (nonatomic, copy) NSString *previousAudioCategory;
+@property (nonatomic, copy) NSString *previousAudioMode;
+@property (nonatomic, assign) AVAudioSessionCategoryOptions previousAudioCategoryOptions;
+@property (nonatomic, assign) BOOL changedAudioSessionCategory;
 - (void)dismiss;
 @end
 
 static YMStartupVideoView *sStartupVideoView;
+static __weak YTStartupAnimationViewController *sStartupAnimationController;
 
 @implementation YMStartupVideoView
 + (Class)layerClass {
@@ -49,10 +54,19 @@ static YMStartupVideoView *sStartupVideoView;
     if (self.dismissed) return;
     self.dismissed = YES;
     [self.player pause];
+    if (self.changedAudioSessionCategory) {
+        AVAudioSession *audioSession = AVAudioSession.sharedInstance;
+        [audioSession setCategory:self.previousAudioCategory
+                             mode:self.previousAudioMode
+                          options:self.previousAudioCategoryOptions
+                            error:nil];
+        self.changedAudioSessionCategory = NO;
+    }
     if (self.endObserver) [[NSNotificationCenter defaultCenter] removeObserver:self.endObserver];
     self.endObserver = nil;
+    UIWindow *videoWindow = self.window ?: sStartupVideoWindow;
 
-    YTStartupAnimationViewController *controller = self.controller;
+    YTStartupAnimationViewController *controller = sStartupAnimationController;
     dispatch_async(dispatch_get_main_queue(), ^{
         [controller forceDismissStartupAnimationAnimated:YES];
         [UIView animateWithDuration:0.2 animations:^{
@@ -61,18 +75,58 @@ static YMStartupVideoView *sStartupVideoView;
             for (UIGestureRecognizer *gesture in self.gestureRecognizers) [self removeGestureRecognizer:gesture];
             [self removeFromSuperview];
             if (sStartupVideoView == self) sStartupVideoView = nil;
+            if (sStartupVideoWindow == videoWindow) videoWindow.hidden = YES;
         }];
     });
 }
 @end
 
-static UIWindow *YMStartupHostWindow(YTStartupAnimationViewController *controller) {
-    if (controller.view.window) return controller.view.window;
+static UIWindowScene *YMStartupVideoScene(YTStartupAnimationViewController *controller) {
+    // Prefer the scene that owns YouTube's startup controller, especially when
+    // the app has multiple windows/scenes open.
+    UIWindowScene *controllerScene = controller.viewIfLoaded.window.windowScene;
+    if (controllerScene && controllerScene.activationState != UISceneActivationStateUnattached) return controllerScene;
+
     for (UIScene *scene in UIApplication.sharedApplication.connectedScenes) {
-        if (![scene isKindOfClass:UIWindowScene.class]) continue;
-        for (UIWindow *window in ((UIWindowScene *)scene).windows) if (window.isKeyWindow) return window;
+        if (![scene isKindOfClass:UIWindowScene.class] || scene.activationState != UISceneActivationStateForegroundActive) continue;
+        for (UIWindow *window in ((UIWindowScene *)scene).windows) {
+            if (window.isKeyWindow) return (UIWindowScene *)scene;
+        }
+    }
+    for (UIScene *scene in UIApplication.sharedApplication.connectedScenes) {
+        if (![scene isKindOfClass:UIWindowScene.class] || scene.activationState != UISceneActivationStateForegroundActive) continue;
+        return (UIWindowScene *)scene;
     }
     return nil;
+}
+
+static UIWindow *YMStartupVideoWindow(YTStartupAnimationViewController *controller) {
+    UIWindowScene *scene = YMStartupVideoScene(controller);
+    if (!scene) return nil;
+
+    if (sStartupVideoWindow && sStartupVideoWindow.windowScene == scene) {
+        sStartupVideoWindow.frame = scene.coordinateSpace.bounds;
+        sStartupVideoWindow.windowLevel = UIWindowLevelAlert + 1;
+        sStartupVideoWindow.hidden = NO;
+        return sStartupVideoWindow;
+    }
+
+    if (sStartupVideoWindow) {
+        sStartupVideoWindow.hidden = YES;
+    }
+
+    UIWindow *window = [[UIWindow alloc] initWithWindowScene:scene];
+    window.frame = scene.coordinateSpace.bounds;
+    window.windowLevel = UIWindowLevelAlert + 1;
+    window.backgroundColor = UIColor.blackColor;
+
+    UIViewController *rootController = [UIViewController new];
+    rootController.view.backgroundColor = UIColor.blackColor;
+    rootController.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    window.rootViewController = rootController;
+    window.hidden = NO;
+    sStartupVideoWindow = window;
+    return window;
 }
 
 @interface YMStartupVideoPickerDelegate : NSObject <PHPickerViewControllerDelegate>
@@ -200,15 +254,36 @@ static BOOL YMStartupVideoPrepare() {
 static void YMStartupVideoPlay(YTStartupAnimationViewController *controller) {
     YMStartupVideoView *videoView = sStartupVideoView;
     AVPlayer *player = videoView.player;
-    UIWindow *window = YMStartupHostWindow(controller);
-    if (!player.currentItem || !window) {
+    sStartupAnimationController = controller;
+    if (!player.currentItem) {
         [controller forceDismissStartupAnimationAnimated:YES];
         return;
     }
 
-    videoView.controller = controller;
-    videoView.frame = window.bounds;
-    [window addSubview:videoView];
+    UIWindow *window = YMStartupVideoWindow(controller);
+    if (!window) {
+        [controller forceDismissStartupAnimationAnimated:YES];
+        return;
+    }
+
+    UIView *contentView = window.rootViewController.view;
+    videoView.frame = contentView.bounds;
+    if (videoView.superview != contentView) [contentView addSubview:videoView];
+    [contentView bringSubviewToFront:videoView];
+
+    AVAudioSession *audioSession = AVAudioSession.sharedInstance;
+    if (![audioSession.category isEqualToString:AVAudioSessionCategoryPlayback]) {
+        videoView.previousAudioCategory = audioSession.category;
+        videoView.previousAudioMode = audioSession.mode;
+        videoView.previousAudioCategoryOptions = audioSession.categoryOptions;
+        videoView.changedAudioSessionCategory = [audioSession setCategory:AVAudioSessionCategoryPlayback
+                                                                     mode:AVAudioSessionModeMoviePlayback
+                                                                  options:0
+                                                                    error:nil];
+    }
+    [audioSession setActive:YES error:nil];
+    player.muted = NO;
+    player.volume = 1.0;
 
     __weak YMStartupVideoView *weakView = videoView;
     videoView.endObserver = [[NSNotificationCenter defaultCenter] addObserverForName:AVPlayerItemDidPlayToEndTimeNotification object:player.currentItem queue:NSOperationQueue.mainQueue usingBlock:^(__unused NSNotification *note) {
@@ -223,7 +298,7 @@ static void YMStartupVideoPlay(YTStartupAnimationViewController *controller) {
     %orig;
 }
 - (void)playLottieAnimation {
-    if (INTFORVAL(StartupAnimation) == 3 && sStartupVideoView && !sStartupVideoView.dismissed) YMStartupVideoPlay(self);
     %orig;
+    if (INTFORVAL(StartupAnimation) == 3 && sStartupVideoView && !sStartupVideoView.dismissed) YMStartupVideoPlay(self);
 }
 %end

@@ -1113,7 +1113,7 @@ static void YouModRestoreGesturesSuspendedByHold(YTPlayerViewController *player)
         }
         if (!playerViewController.YouModHoldGesture && IS_ENABLED(HoldToSpeedEnabled) && !IS_ENABLED(DisablesLongHold)) {
             playerViewController.YouModHoldGesture = [[UILongPressGestureRecognizer alloc] initWithTarget:playerViewController action:@selector(YouModHoldToSpeed:)];
-            playerViewController.YouModHoldGesture.minimumPressDuration = 0.4;
+            playerViewController.YouModHoldGesture.minimumPressDuration = 0.3;
             playerViewController.YouModHoldGesture.numberOfTouchesRequired = 1;
             playerViewController.YouModHoldGesture.delegate = playerViewController;
             [pv addGestureRecognizer:playerViewController.YouModHoldGesture];
@@ -1931,7 +1931,7 @@ void YouModFilterVideoButtons(_ASDisplayView *view, NSString *iden) {
 */
 
 %hook YTMenuController
-- (NSMutableArray <YTActionSheetAction *> *)actionsForRenderers:(NSMutableArray <YTIMenuItemSupportedRenderers *> *)renderers fromView:(UIView *)fromView entry:(id)entry shouldLogItems:(BOOL)shouldLogItems firstResponder:(id)firstResponder {
+- (NSMutableArray <YTActionSheetAction *> *)actionsForRenderers:(NSMutableArray <YTIMenuItemSupportedRenderers *> *)renderers fromView:(UIView *)fromView entry:(id)entry shouldLogItems:(BOOL)shouldLogItems firstResponder:(YTMainAppVideoPlayerOverlayViewController *)firstResponder {
     NSMutableArray <YTActionSheetAction *> *actions = %orig;
     if (!IS_ENABLED(ExtraSpeed) && !IS_ENABLED(OldQualityPicker) && INTFORVAL(SleepTimerEntry) == 0) return actions;
     NSUInteger speedIndex = [renderers indexOfObjectPassingTest:^BOOL(YTIMenuItemSupportedRenderers *renderer, NSUInteger idx, BOOL *stop) {
@@ -1968,7 +1968,14 @@ void YouModFilterVideoButtons(_ASDisplayView *view, NSString *iden) {
         UIView *elementView = [action.button valueForKey:@"_elementView"];
         elementView.userInteractionEnabled = NO;
     }
-    if (sleepTimerIndex != NSNotFound && INTFORVAL(SleepTimerEntry) != 0) [actions removeObjectAtIndex:sleepTimerIndex];
+    if (sleepTimerIndex != NSNotFound && INTFORVAL(SleepTimerEntry) != 0) {
+        YTActionSheetAction *action = actions[qualityIndex];
+        action.handler = ^{
+            YMSleepTimerPresentPicker(firstResponder.videoPlayerOverlayView.controlsOverlayView.overflowButton);
+        };
+        UIView *elementView = [action.button valueForKey:@"_elementView"];
+        elementView.userInteractionEnabled = NO;
+    }
     return actions;
 }
 %end

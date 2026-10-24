@@ -2285,11 +2285,13 @@ static const void *kYMOverlayMoveInFlightKey = &kYMOverlayMoveInFlightKey;
     cell.imageView.image = btnIcon;
     cell.imageView.tintColor = [UIColor labelColor];
 
-    if ([buttonID isEqualToString:@"download.video"] 
-        || [buttonID isEqualToString:@"sponsorblock.toggle"] 
-        || [buttonID isEqualToString:@"sleep.timer"]) {
-        sw.enabled = NO;
-    }
+    // These buttons are controlled by their own settings, so their switches
+    // are locked here. Always set enabled explicitly because cells are reused;
+    // otherwise a locked switch can leave a regular button's toggle disabled.
+    BOOL isExternallyManaged = [buttonID isEqualToString:@"download.video"]
+        || [buttonID isEqualToString:@"sponsorblock.toggle"]
+        || [buttonID isEqualToString:@"sleep.timer"];
+    sw.enabled = !isExternallyManaged;
 
     sw.on = enabled;
     objc_setAssociatedObject(sw, kYMSwitchKeyAssoc, buttonID, OBJC_ASSOCIATION_RETAIN_NONATOMIC);

@@ -659,6 +659,7 @@
 "DOWNLOAD_LIBRARY_TAB" = "Скачанные";
 "DOWNLOAD_LIBRARY_TAB_DESC" = "Добавляет вкладку со списком всех скачанных видео с превью и размерами.";
 "DOWNLOAD_LIBRARY_EMPTY" = "Пока нет скачанных видео";
+"DOWNLOAD_LIBRARY_DELETE_PLAYLIST_CONFIRM" = "Delete ‘%@’? Downloaded files will stay in the library.";
 
 "LIBRARY_OPEN_VIDEO" = "Открыть видео в YouTube";
 "LIBRARY_NO_VIDEO_ID" = "Не удалось найти ID этого видео";
