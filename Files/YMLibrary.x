@@ -983,17 +983,26 @@ static const CGFloat ymRefreshHiddenTravel = 72.0; // how far the bubble sits ab
 
 - (void)openSettingsTapped {
     id parentResponder = self.hostParentResponder ?: self;
-
-    YTSettingsViewController *settingsVC = [[%c(YTSettingsViewController) alloc] initWithAccountID:nil parentResponder:parentResponder];
-    if (!settingsVC) return;
-    settingsVC.appearance = 1;
-
-    YTNavigationController *nav = [[%c(YTNavigationController) alloc] initWithParentResponder:parentResponder];
-    nav.modalPresentationStyle = UIModalPresentationFormSheet;
-    [nav pushViewController:settingsVC animated:NO];
-
-    YTPresentModalResponderEvent *event = [%c(YTPresentModalResponderEvent) eventWithViewController:nav animated:YES firstResponder:parentResponder];
-    [event send];
+    static const uint64_t kApplicationSettingsEndpointField = 50078082;
+    id endpoint = [[%c(YTIApplicationSettingsEndpoint) alloc] init];
+    if ([endpoint respondsToSelector:NSSelectorFromString(@"setHack:")]) [endpoint setValue:@YES forKey:@"hack"];
+    NSData *payload = [endpoint data];
+    NSMutableData *wire = [NSMutableData data];
+    uint64_t varints[] = {(kApplicationSettingsEndpointField << 3) | 2, payload.length}; // tag, length
+    for (int i = 0; i < 2; i++) {
+        uint64_t v = varints[i];
+        while (v >= 0x80) {
+            uint8_t byte = (uint8_t)(v | 0x80);
+            [wire appendBytes:&byte length:1];
+            v >>= 7;
+        }
+        uint8_t byte = (uint8_t)v;
+        [wire appendBytes:&byte length:1];
+    }
+    [wire appendData:payload];
+    YTICommand *command = [%c(YTICommand) goog_parseFromData:wire error:nil];
+    if (!command) return;
+    [[%c(YTCommandResponderEvent) eventWithCommand:command fromView:nil entry:nil sendClick:NO firstResponder:parentResponder] send];
 }
 
 - (void)reloadWithCompletion:(void (^)(void))completion {
