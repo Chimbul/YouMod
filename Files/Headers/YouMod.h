@@ -653,6 +653,9 @@ typedef NS_ENUM(NSUInteger, GestureSection) {
 @property (nonatomic, copy, readwrite) NSArray *backgroundEffects;
 @end
 
+@interface UIKBInputBackdropView : UIView
+@end
+
 @interface YTAppDelegate : UIResponder
 - (void)YouModAutoClearCache;
 @end

@@ -254,6 +254,13 @@ UIColor *YouModApplyOLEDCollectionView(ASCollectionView *self, NSString *iden, U
 }
 %end
 
+%hook UIKBInputBackdropView
+- (void)layoutSubviews {
+    %orig;
+    self.hidden = isDarkMode(self);
+}
+%end
+
 %hook UIKBVisualEffectView
 - (void)layoutSubviews {
     %orig;
