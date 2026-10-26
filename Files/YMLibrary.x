@@ -225,12 +225,14 @@ static NSString *ymMediaInfoStringForFile(NSURL *fileURL, unsigned long long byt
 @property (nonatomic, copy) void (^menuTappedHandler)(UIView *sourceView);
 @end
 
+static UIColor *ymYouTubeBackgroundColor(void);
+
 @implementation YMLibraryVideoCell
 
 - (instancetype)initWithFrame:(CGRect)frame {
     self = [super initWithFrame:frame];
     if (self) {
-        self.backgroundColor = [UIColor systemBackgroundColor];
+        self.backgroundColor = ymYouTubeBackgroundColor();
 
         _thumbnailImageView = [UIImageView new];
         _thumbnailImageView.contentMode = UIViewContentModeScaleAspectFill;
