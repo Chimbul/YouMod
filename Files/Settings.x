@@ -32,6 +32,7 @@ static const NSInteger TweakSection = 'ytmo';
 - (instancetype)requireAnyCondition;
 @end
 extern void YMPushSubSettings(NSString *title, NSArray<YMSettingsItem *> *items, id settingsVC, id parentResponder);
+extern void YMPushSubSettingsWithFooter(NSString *title, NSArray<YMSettingsItem *> *items, id settingsVC, id parentResponder);
 extern YMSettingsItem *YMToggle(NSString *title, NSString *subtitle, NSString *key);
 extern YMSettingsItem *YMSlider(NSString *title, NSString *subtitle, NSString *key, float min, float max, float step, float defaultValue);
 extern YMSettingsItem *YMPicker(NSString *title, NSString *subtitle, NSString *key, NSArray<NSString *> *options, NSInteger defaultValue);
@@ -41,10 +42,12 @@ extern YMSettingsItem *YMHeader(NSString *title);
 extern YMSettingsItem *YMSegment(NSString *title, NSString *key, NSArray<NSNumber *> *icons, NSInteger defaultValue);
 extern YMSettingsItem *YMTextSegment(NSString *title, NSString *key, NSArray<NSString *> *labels, NSInteger defaultValue);
 extern YMSettingsItem *YMImageSegment(NSString *title, NSString *key, NSArray<UIImage *> *images, NSInteger defaultValue);
+extern YMSettingsItem *YMDeveloper(NSString *name, NSString *role, NSString *profileURL, NSString *avatarBaseURL);
 extern void YMPushTabOrder(id settingsVC, id parentResponder);
 extern void YMPushOverlayButtonOrder(id settingsVC, id parentResponder);
 extern void YMRegisterSettingsGroup(NSString *title, NSArray<YMSettingsItem *> *items);
 extern void YMPushSettingsSearch(id settingsVC, id parentResponder);
+extern void YMPushSponsorBlockSettings(id settingsVC);
 
 @interface YTSettingsSectionItemManager (YouMod)
 - (void)updateYouModSectionWithEntry:(id)entry;
@@ -63,6 +66,194 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
     NSByteCountFormatter *formatter = [[NSByteCountFormatter alloc] init];
     formatter.countStyle = NSByteCountFormatterCountStyleFile;
     return [formatter stringFromByteCount:folderSize];
+}
+
+#pragma mark - Custom YouMod home page
+
+// The custom YouMod home page is a YMSubSettingsViewController (YouMod's own UIKit
+// table page) instead of YouTube's native settings collection view. Its rows are
+// built in -updateYouModSectionWithEntry: (where every sub-group's item array is in
+// scope) and cached here; the top-level "YouMod" tap pushes it via -didReceiveDrillDownItem:.
+static NSArray<YMSettingsItem *> *gYMYouModHomeItems = nil;
+
+// Push the cached custom home page. settingsVC is the YTSettingsViewController that
+// owns the navigation stack; parentResponder seeds YouTube's DI container for theming.
+// Uses the footer variant so the thin version footer shows at the bottom.
+static void YMPushYouModHome(id settingsVC, id parentResponder) {
+    if (!gYMYouModHomeItems || !settingsVC) return;
+    YMPushSubSettingsWithFooter(TweakName, gYMYouModHomeItems, settingsVC, parentResponder);
+}
+
+// Best-effort check that a settings drill-down targets the YouMod category. The exact
+// shape of the drill-down item isn't something we can verify offline, so this probes a
+// few likely KVC paths inside @try and defaults to NO (never intercepts) when unsure —
+// a wrong guess can't break other settings navigation. On-device test-and-adjust point.
+static BOOL YMIsYouModDrillDown(id selfVC, id item) {
+    @try {
+        id cat = [selfVC valueForKey:@"_detailsCategoryID"];
+        if ([cat respondsToSelector:@selector(integerValue)] && [cat integerValue] == TweakSection) return YES;
+    } @catch (...) {}
+    for (NSString *key in @[@"categoryID", @"categoryId", @"category"]) {
+        @try {
+            id v = [item valueForKey:key];
+            if ([v respondsToSelector:@selector(integerValue)] && [v integerValue] == TweakSection) return YES;
+        } @catch (...) {}
+    }
+    return NO;
+}
+
+// Shared push for the "Tab bar" sub-page. Its items need a dynamic image list built
+// from the enabled tabs, so both the native section row and the custom home page call
+// this instead of duplicating the ~50-line image builder.
+static void YMPushTabBarSettings(id settingsVC, id parentResponder) {
+    NSDictionary *tabYTIconMap = @{@"home": @(65), @"shorts": @(769), @"subscriptions": @(66), @"library": @(61)};
+    NSDictionary *tabBundleIconMap = @{@"history": @"icons/history", @"gaming": @"icons/gaming", @"sports": @"icons/sports", @"notifications": @"icons/noti", @"news": @"icons/news", @"music": @"icons/music", @"watchlater": @"icons/watchlater", @"playlist": @"icons/playlist", @"like": @"icons/like", @"live": @"icons/live", @"post": @"icons/post", @"video": @"icons/video", @"movie": @"icons/movie", @"course": @"icons/course", @"minigame": @"icons/minigame", @"fashion": @"icons/fashion", @"learning": @"icons/learning", @"download": @"icons/download"};
+    YTAssetLoader *assetLoader = [[%c(YTAssetLoader) alloc] initWithBundle:YouModBundle()];
+
+    NSMutableArray<UIImage *> *defaultTabImages = [NSMutableArray array];
+    NSArray *savedOrder = [[NSUserDefaults standardUserDefaults] arrayForKey:TabOrder];
+    if (savedOrder.count > 0) {
+        BOOL downloadInOrder = NO;
+        for (NSDictionary *entry in savedOrder) {
+            NSString *tabID = entry[@"id"];
+            BOOL isDownloadTab = [tabID isEqualToString:@"download"];
+            BOOL enabled = isDownloadTab ? IS_ENABLED(DownloadLibraryTab) : [entry[@"enabled"] boolValue];
+            if (!enabled) continue;
+            if ([tabID isEqualToString:@"create"]) continue;
+            if (isDownloadTab) downloadInOrder = YES;
+            NSNumber *ytIconType = tabYTIconMap[tabID];
+            if (ytIconType) {
+                UIImage *img = YouModYTIconImage([ytIconType intValue], YES, [UIColor whiteColor]);
+                if (img) [defaultTabImages addObject:img];
+            } else {
+                NSString *bundleName = tabBundleIconMap[tabID];
+                if (bundleName) {
+                    UIImage *img = [assetLoader imageNamed:bundleName];
+                    if (img) {
+                        UIImage *whiteImg = [img imageWithTintColor:[UIColor whiteColor] renderingMode:UIImageRenderingModeAlwaysOriginal];
+                        [defaultTabImages addObject:whiteImg];
+                    }
+                }
+            }
+        }
+        if (!downloadInOrder && IS_ENABLED(DownloadLibraryTab)) {
+            UIImage *img = [assetLoader imageNamed:@"icons/download"];
+            if (img) {
+                UIImage *whiteImg = [img imageWithTintColor:[UIColor whiteColor] renderingMode:UIImageRenderingModeAlwaysOriginal];
+                [defaultTabImages addObject:whiteImg];
+            }
+        }
+    }
+    if (defaultTabImages.count == 0) {
+        NSArray *fallbackIcons = @[@(65), @(769), @(66), @(61)];
+        for (NSNumber *iconType in fallbackIcons) {
+            UIImage *img = YouModYTIconImage([iconType intValue], YES, [UIColor whiteColor]);
+            if (img) [defaultTabImages addObject:img];
+        }
+    }
+
+    YMPushSubSettings(YMLOC(@"TABBAR"), @[
+        YMImageSegment(YMLOC(@"DEFAULT_TAB"), DefaultTab, defaultTabImages, 0),
+        YMTextSegment(YMLOC(@"FORSTED_TAB_BAR"), UseFrostedTabBar, (@[YMLOC(@"DEFAULT"),YMLOC(@"ENABLED"), YMLOC(@"DISABLED")]), 0),
+        YMToggle(YMLOC(@"HIDE_TAB_INDI"), YMLOC(@"HIDE_TAB_INDI_DESC"), HideTabIndi),
+        YMToggle(YMLOC(@"HIDE_TAB_LABELS"), YMLOC(@"HIDE_TAB_LABELS_DESC"), HideTabLabels),
+        YMNavAction(YMLOC(@"MANAGE_TABS"), YMLOC(@"MANAGE_TABS_DESC"), ^(UIViewController *vc) {
+            (void)vc;
+            YMPushTabOrder(settingsVC, parentResponder);
+        }),
+    ], settingsVC, parentResponder);
+}
+
+// Shared build of the "Preferences" sub-page items, used by both the native section row
+// and the custom home page so the import/export/cache block lives in one place.
+static NSArray<YMSettingsItem *> *YMPreferencesItems(void) {
+    return @[
+        YMHeader(YMLOC(@"PERFER")),
+        YMAction(YMLOC(@"IMPORT"), YMLOC(@"IMPORT_DESC"), ^(UIViewController *vc) {
+            Class alertClass = NSClassFromString(@"YTAlertView");
+            YTAlertView *alertView = [alertClass confirmationDialogWithAction:^{
+                [[YouModPrefsManager sharedManager] importYouModSettingsFromVC:vc];
+            } actionTitle:YMLOC(@"YES")];
+            alertView.title = YMLOC(@"WARNING");
+            alertView.subtitle = YMLOC(@"OVERRIDE");
+            alertView.shouldDismissOnBackgroundTap = YES;
+            [alertView show];
+        }),
+        YMAction(YMLOC(@"EXPORT"), YMLOC(@"EXPORT_DESC"), ^(UIViewController *vc) {
+            [[YouModPrefsManager sharedManager] exportYouModSettingsFromVC:vc];
+        }),
+        YMAction(YMLOC(@"RESTORE"), YMLOC(@"RESTORE_DESC"), ^(UIViewController *vc) {
+            [[YouModPrefsManager sharedManager] restoreYouModDefaults];
+        }),
+        YMHeader(YMLOC(@"UPDATE")),
+        YMToggle(YMLOC(@"CHECK_UPDATES"), YMLOC(@"CHECK_UPDATES_DESC"), NotifyUpdates),
+        YMAction(YMLOC(@"CHECK_UPDATES_NOW"), YMLOC(@"CHECK_UPDATES_NOW_DESC"), ^(UIViewController *vc) {
+            (void)vc;
+            YouModCheckForUpdateManually();
+        }),
+        YMHeader(YMLOC(@"CACHE")),
+        YMAction(YMLOC(@"CLEARCACHE"), GetCacheSize(), ^(UIViewController *vc) {
+            __weak UIViewController *weakVC = vc;
+            NSString *clearTitle = YMLOC(@"CLEARCACHE");
+            dispatch_async(dispatch_get_main_queue(), ^{
+                __strong UIViewController *strongVC = weakVC;
+                if (!strongVC) return;
+                if ([strongVC respondsToSelector:@selector(items)] && [strongVC respondsToSelector:@selector(tableView)]) {
+                    NSArray *items = [(id)strongVC items];
+                    for (id item in items) {
+                        if ([[item title] isEqualToString:clearTitle]) {
+                            [item setSubtitle:@""];
+                            break;
+                        }
+                    }
+                    UITableView *tableView = [(id)strongVC tableView];
+                    [tableView reloadData];
+                    for (UITableViewCell *cell in tableView.visibleCells) {
+                        if ([cell.textLabel.text isEqualToString:clearTitle]) {
+                            UIActivityIndicatorView *indicator = [cell viewWithTag:0xC0FFEE];
+                            if (!indicator) {
+                                indicator = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleMedium];
+                                indicator.tag = 0xC0FFEE;
+                                [indicator startAnimating];
+                                cell.accessoryView = indicator;
+                            }
+                            cell.detailTextLabel.text = @"";
+                            break;
+                        }
+                    }
+                }
+            });
+
+            dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+                NSString *cachePath = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES).firstObject;
+                [[NSFileManager defaultManager] removeItemAtPath:cachePath error:nil];
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    __strong UIViewController *strongVC = weakVC;
+                    if (!strongVC) return;
+                    if ([strongVC respondsToSelector:@selector(tableView)]) {
+                        UITableView *tableView = [(id)strongVC tableView];
+                        for (UITableViewCell *cell in tableView.visibleCells) {
+                            if ([cell.textLabel.text isEqualToString:YMLOC(@"CLEARCACHE")]) {
+                                cell.accessoryView = nil;
+                                break;
+                            }
+                        }
+                    }
+                    if ([strongVC respondsToSelector:@selector(items)] && [strongVC respondsToSelector:@selector(tableView)]) {
+                        NSArray *items = [(id)strongVC items];
+                        for (id item in items) {
+                            if ([[item title] isEqualToString:clearTitle]) {
+                                [item setSubtitle:@"0 KB"];
+                                break;
+                            }
+                        }
+                        [[(id)strongVC tableView] reloadData];
+                    }
+                });
+            });
+        }),
+        YMToggle(YMLOC(@"AUTO_CLEARCACHE"), YMLOC(@"AUTO_CLEARCACHE_DESC"), AutoClearCache),
+    ];
 }
 
 %hook YTSettingsGroupData
@@ -102,6 +293,9 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
     Class YTSettingsSectionItemClass = %c(YTSettingsSectionItem);
     YTSettingsViewController *settingsViewController = [self valueForKey:@"_settingsViewControllerDelegate"];
 
+    // Section 0 (top): version + search. GitHub/Developer and Preferences are
+    // rendered further down (between SponsorBlock and Preferences) in the new layout.
+
     // Tweak Version (at the top)
     // Thanks to the original codes from YTweaks by fosterbarnes - https://github.com/fosterbarnes/YTweaks/blob/e921591a89b87256a2b37c4788bd99282f70d9c2/Settings.x
     YTSettingsSectionItem *tweakVersion = [YTSettingsSectionItemClass itemWithTitle:[@"YouMod v" stringByAppendingString:YouModVersion]
@@ -113,62 +307,7 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
         }];
     [sectionItems addObject:tweakVersion];
 
-    // Section 0
-    // Github
-    YTSettingsSectionItem *github = [YTSettingsSectionItemClass itemWithTitle:nil
-        titleDescription:@"Github"
-        accessibilityIdentifier:nil
-        detailTextBlock:nil
-        selectBlock:^BOOL (YTSettingsCell *cell, NSUInteger arg1) {
-            return NO;
-        }];
-    [sectionItems addObject:github];
-
-    // Issues
-    YTSettingsSectionItem *issues = [YTSettingsSectionItemClass itemWithTitle:YMLOC(@"NEW_ISSUES")
-        titleDescription:YMLOC(@"NEW_ISSUES_DESC") // Found bug or Feature request -> Report Issues
-        accessibilityIdentifier:nil
-        detailTextBlock:nil
-        selectBlock:^BOOL (YTSettingsCell *cell, NSUInteger arg1) {
-            return [%c(YTUIUtils) openURL:[NSURL URLWithString:@"https://github.com/Tonwalter888/YouMod/issues/new/choose"]];
-        }
-    ];
-    [sectionItems addObject:issues];
-
-    // Sources codes
-    YTSettingsSectionItem *sourceCodes = [YTSettingsSectionItemClass itemWithTitle:YMLOC(@"SOURCE_CODES")
-        titleDescription:YMLOC(@"SOURCE_CODES_DESC") // Take a look
-        accessibilityIdentifier:nil
-        detailTextBlock:nil
-        selectBlock:^BOOL (YTSettingsCell *cell, NSUInteger arg1) {
-            return [%c(YTUIUtils) openURL:[NSURL URLWithString:@"https://github.com/Tonwalter888/YouMod"]];
-        }
-    ];
-    [sectionItems addObject:sourceCodes];
-
     // ?
-    YTSettingsSectionItem *blank = [YTSettingsSectionItemClass itemWithTitle:nil
-        titleDescription:YMLOC(@"EXTRA")
-        accessibilityIdentifier:nil
-        detailTextBlock:nil
-        selectBlock:^BOOL (YTSettingsCell *cell, NSUInteger arg1) {
-            return NO;
-        }];
-    [sectionItems addObject:blank];
-
-    // Fix playback issues
-    YTSettingsSectionItem *fixPlaybackissues = [YTSettingsSectionItemClass switchItemWithTitle:YMLOC(@"FIX_PLAYBACK_ISSUES")
-        titleDescription:YMLOC(@"FIX_PLAYBACK_ISSUES_DESC")
-        accessibilityIdentifier:nil
-        switchOn:IS_ENABLED(FixPlaybackIssues)
-        switchBlock:^BOOL (YTSettingsCell *cell, BOOL enabled) {
-            [[NSUserDefaults standardUserDefaults] setBool:enabled forKey:FixPlaybackIssues];
-            return YES;
-        }
-        settingItemId:0];
-    [sectionItems addObject:fixPlaybackissues];
-
-    // Settings
     YTSettingsSectionItem *settings = [YTSettingsSectionItemClass itemWithTitle:nil
         titleDescription:YMLOC(@"SETTINGS")
         accessibilityIdentifier:nil
@@ -345,6 +484,8 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
             YMToggle(YMLOC(@"SKIP_FORWARD"), YMLOC(@"SKIP_FORWARD_DESC"), SkipForwardEnabled),
             [YMSlider(YMLOC(@"FORWARD_SECONDS"), nil, ForwardSeconds, 5, 60, 5, 10) visibleWhenBoolKey:SkipForwardEnabled],
             YMHeader(YMLOC(@"PLAYER_ACTIONS")),
+            // Moved here from the old top-level "Extra" group (was under YouMod home).
+            YMToggle(YMLOC(@"FIX_PLAYBACK_ISSUES"), YMLOC(@"FIX_PLAYBACK_ISSUES_DESC"), FixPlaybackIssues),
             YMPicker(YMLOC(@"DEFAULT_SPEED"), YMLOC(@"DEFAULT_SPEED_DESC"), AutoSpeedIndex, (@[YMLOC(@"DISABLED"), @"0.25x", @"0.5x", @"0.75x", @"1x", @"1.25x", @"1.5x", @"1.75x", @"2x", @"3x", @"4x", @"5x"]), 0),
             YMToggle(YMLOC(@"FORCE_MINIPLAYER"), YMLOC(@"FORCE_MINIPLAYER_DESC"), ForceMiniPlayer),
             YMToggle(YMLOC(@"HIDE_CONTENT_WARNING"), YMLOC(@"HIDE_CONTENT_WARNING_DESC"), HideContentWarning),
@@ -428,65 +569,7 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
     // Section 7
     // Tab bar
     YTSettingsSectionItem *tabgroup = [YTSettingsSectionItemClass itemWithTitle:YMLOC(@"TABBAR") accessibilityIdentifier:nil detailTextBlock:nil selectBlock:^BOOL (YTSettingsCell *cell, NSUInteger arg1) {
-        // Build dynamic image list from enabled tabs (standard + custom).
-        // Mirrors the real bar (Tabbar.x): the Download tab follows the Downloading
-        // settings, and when the saved order has no entry for it yet, it sits at the end.
-        NSDictionary *tabYTIconMap = @{@"home": @(65), @"shorts": @(769), @"subscriptions": @(66), @"library": @(61)};
-        NSDictionary *tabBundleIconMap = @{@"history": @"icons/history", @"gaming": @"icons/gaming", @"sports": @"icons/sports", @"notifications": @"icons/noti", @"news": @"icons/news", @"music": @"icons/music", @"watchlater": @"icons/watchlater", @"playlist": @"icons/playlist", @"like": @"icons/like", @"live": @"icons/live", @"post": @"icons/post", @"video": @"icons/video", @"movie": @"icons/movie", @"course": @"icons/course", @"minigame": @"icons/minigame", @"fashion": @"icons/fashion", @"learning": @"icons/learning", @"download": @"icons/download"};
-        YTAssetLoader *assetLoader = [[%c(YTAssetLoader) alloc] initWithBundle:YouModBundle()];
-
-        NSMutableArray<UIImage *> *defaultTabImages = [NSMutableArray array];
-        NSArray *savedOrder = [[NSUserDefaults standardUserDefaults] arrayForKey:TabOrder];
-        if (savedOrder.count > 0) {
-            BOOL downloadInOrder = NO;
-            for (NSDictionary *entry in savedOrder) {
-                NSString *tabID = entry[@"id"];
-                BOOL isDownloadTab = [tabID isEqualToString:@"download"];
-                BOOL enabled = isDownloadTab ? IS_ENABLED(DownloadLibraryTab) : [entry[@"enabled"] boolValue];
-                if (!enabled) continue;
-                if ([tabID isEqualToString:@"create"]) continue;
-                if (isDownloadTab) downloadInOrder = YES;
-                NSNumber *ytIconType = tabYTIconMap[tabID];
-                if (ytIconType) {
-                    UIImage *img = YouModYTIconImage([ytIconType intValue], YES, [UIColor whiteColor]);
-                    if (img) [defaultTabImages addObject:img];
-                } else {
-                    NSString *bundleName = tabBundleIconMap[tabID];
-                    if (bundleName) {
-                        UIImage *img = [assetLoader imageNamed:bundleName];
-                        if (img) {
-                            UIImage *whiteImg = [img imageWithTintColor:[UIColor whiteColor] renderingMode:UIImageRenderingModeAlwaysOriginal];
-                            [defaultTabImages addObject:whiteImg];
-                        }
-                    }
-                }
-            }
-            if (!downloadInOrder && IS_ENABLED(DownloadLibraryTab)) {
-                UIImage *img = [assetLoader imageNamed:@"icons/download"];
-                if (img) {
-                    UIImage *whiteImg = [img imageWithTintColor:[UIColor whiteColor] renderingMode:UIImageRenderingModeAlwaysOriginal];
-                    [defaultTabImages addObject:whiteImg];
-                }
-            }
-        }
-        if (defaultTabImages.count == 0) {
-            NSArray *fallbackIcons = @[@(65), @(769), @(66), @(61)];
-            for (NSNumber *iconType in fallbackIcons) {
-                UIImage *img = YouModYTIconImage([iconType intValue], YES, [UIColor whiteColor]);
-                if (img) [defaultTabImages addObject:img];
-            }
-        }
-
-        YMPushSubSettings(YMLOC(@"TABBAR"), @[
-            YMImageSegment(YMLOC(@"DEFAULT_TAB"), DefaultTab, defaultTabImages, 0),
-            YMTextSegment(YMLOC(@"FORSTED_TAB_BAR"), UseFrostedTabBar, (@[YMLOC(@"DEFAULT"),YMLOC(@"ENABLED"), YMLOC(@"DISABLED")]), 0),
-            YMToggle(YMLOC(@"HIDE_TAB_INDI"), YMLOC(@"HIDE_TAB_INDI_DESC"), HideTabIndi),
-            YMToggle(YMLOC(@"HIDE_TAB_LABELS"), YMLOC(@"HIDE_TAB_LABELS_DESC"), HideTabLabels),
-            YMNavAction(YMLOC(@"MANAGE_TABS"), YMLOC(@"MANAGE_TABS_DESC"), ^(UIViewController *vc) {
-                (void)vc;
-                YMPushTabOrder(settingsViewController, [self parentResponder]);
-            }),
-        ], settingsViewController, [self parentResponder]);
+        YMPushTabBarSettings(settingsViewController, [self parentResponder]);
         return YES;
     }];
     YTIIcon *icon5 = [%c(YTIIcon) new];
@@ -573,95 +656,42 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
     sponsorblockgroup.indicatorIconType = YT_CHEVRON_RIGHT;
     [sectionItems addObject:sponsorblockgroup];
 
+    // Developer/GitHub (native fallback representation). The rich avatar rows only render
+    // on the custom home page; this keeps the GitHub links reachable if the drill-down
+    // interception doesn't fire on-device. The "Developer" row itself opens the custom
+    // home page so the avatar view is always reachable. Sits between SponsorBlock and Preferences.
+    YTSettingsSectionItem *devHeader = [YTSettingsSectionItemClass itemWithTitle:nil
+        titleDescription:@"Developer"
+        accessibilityIdentifier:nil
+        detailTextBlock:nil
+        selectBlock:^BOOL (YTSettingsCell *cell, NSUInteger arg1) {
+            YMPushYouModHome(settingsViewController, [self parentResponder]);
+            return YES;
+        }];
+    [sectionItems addObject:devHeader];
+
+    YTSettingsSectionItem *fbIssues = [YTSettingsSectionItemClass itemWithTitle:YMLOC(@"NEW_ISSUES")
+        titleDescription:YMLOC(@"NEW_ISSUES_DESC")
+        accessibilityIdentifier:nil
+        detailTextBlock:nil
+        selectBlock:^BOOL (YTSettingsCell *cell, NSUInteger arg1) {
+            return [%c(YTUIUtils) openURL:[NSURL URLWithString:@"https://github.com/Tonwalter888/YouMod/issues/new/choose"]];
+        }];
+    [sectionItems addObject:fbIssues];
+
+    YTSettingsSectionItem *fbSource = [YTSettingsSectionItemClass itemWithTitle:YMLOC(@"SOURCE_CODES")
+        titleDescription:YMLOC(@"SOURCE_CODES_DESC")
+        accessibilityIdentifier:nil
+        detailTextBlock:nil
+        selectBlock:^BOOL (YTSettingsCell *cell, NSUInteger arg1) {
+            return [%c(YTUIUtils) openURL:[NSURL URLWithString:@"https://github.com/Tonwalter888/YouMod"]];
+        }];
+    [sectionItems addObject:fbSource];
+
     // Section 9
     // Perferences
     YTSettingsSectionItem *perfgroup = [YTSettingsSectionItemClass itemWithTitle:YMLOC(@"PERFER_HEADER") accessibilityIdentifier:nil detailTextBlock:nil selectBlock:^BOOL (YTSettingsCell *cell, NSUInteger arg1) {
-        YMPushSubSettings(YMLOC(@"PERFER_HEADER"), @[
-            YMHeader(YMLOC(@"PERFER")),
-            YMAction(YMLOC(@"IMPORT"), YMLOC(@"IMPORT_DESC"), ^(UIViewController *vc) {
-                Class alertClass = NSClassFromString(@"YTAlertView");
-                YTAlertView *alertView = [alertClass confirmationDialogWithAction:^{
-                    [[YouModPrefsManager sharedManager] importYouModSettingsFromVC:vc];
-                } actionTitle:YMLOC(@"YES")];
-                alertView.title = YMLOC(@"WARNING");
-                alertView.subtitle = YMLOC(@"OVERRIDE");
-                alertView.shouldDismissOnBackgroundTap = YES;
-                [alertView show];
-            }),
-            YMAction(YMLOC(@"EXPORT"), YMLOC(@"EXPORT_DESC"), ^(UIViewController *vc) {
-                [[YouModPrefsManager sharedManager] exportYouModSettingsFromVC:vc];
-            }),
-            YMAction(YMLOC(@"RESTORE"), YMLOC(@"RESTORE_DESC"), ^(UIViewController *vc) {
-                [[YouModPrefsManager sharedManager] restoreYouModDefaults];
-            }),
-            YMHeader(YMLOC(@"UPDATE")),
-            YMToggle(YMLOC(@"CHECK_UPDATES"), YMLOC(@"CHECK_UPDATES_DESC"), NotifyUpdates),
-            YMAction(YMLOC(@"CHECK_UPDATES_NOW"), YMLOC(@"CHECK_UPDATES_NOW_DESC"), ^(UIViewController *vc) {
-                YouModCheckForUpdateManually();
-            }),
-            YMHeader(YMLOC(@"CACHE")),
-            YMAction(YMLOC(@"CLEARCACHE"), GetCacheSize(), ^(UIViewController *vc) {
-                __weak UIViewController *weakVC = vc;
-                NSString *clearTitle = YMLOC(@"CLEARCACHE");
-                dispatch_async(dispatch_get_main_queue(), ^{
-                    __strong UIViewController *strongVC = weakVC;
-                    if (!strongVC) return;
-                    if ([strongVC respondsToSelector:@selector(items)] && [strongVC respondsToSelector:@selector(tableView)]) {
-                        NSArray *items = [(id)strongVC items];
-                        for (id item in items) {
-                            if ([[item title] isEqualToString:clearTitle]) {
-                                [item setSubtitle:@""];
-                                break;
-                            }
-                        }
-                        UITableView *tableView = [(id)strongVC tableView];
-                        [tableView reloadData];
-                        for (UITableViewCell *cell in tableView.visibleCells) {
-                            if ([cell.textLabel.text isEqualToString:clearTitle]) {
-                                UIActivityIndicatorView *indicator = [cell viewWithTag:0xC0FFEE];
-                                if (!indicator) {
-                                    indicator = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleMedium];
-                                    indicator.tag = 0xC0FFEE;
-                                    [indicator startAnimating];
-                                    cell.accessoryView = indicator;
-                                }
-                                cell.detailTextLabel.text = @"";
-                                break;
-                            }
-                        }
-                    }
-                });
-
-                dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-                    NSString *cachePath = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES).firstObject;
-                    [[NSFileManager defaultManager] removeItemAtPath:cachePath error:nil];
-                    dispatch_async(dispatch_get_main_queue(), ^{
-                        __strong UIViewController *strongVC = weakVC;
-                        if (!strongVC) return;
-                        if ([strongVC respondsToSelector:@selector(tableView)]) {
-                            UITableView *tableView = [(id)strongVC tableView];
-                            for (UITableViewCell *cell in tableView.visibleCells) {
-                                if ([cell.textLabel.text isEqualToString:YMLOC(@"CLEARCACHE")]) {
-                                    cell.accessoryView = nil;
-                                    break;
-                                }
-                            }
-                        }
-                        if ([strongVC respondsToSelector:@selector(items)] && [strongVC respondsToSelector:@selector(tableView)]) {
-                            NSArray *items = [(id)strongVC items];
-                            for (id item in items) {
-                                if ([[item title] isEqualToString:clearTitle]) {
-                                    [item setSubtitle:@"0 KB"];
-                                    break;
-                                }
-                            }
-                            [[(id)strongVC tableView] reloadData];
-                        }
-                    });
-                });
-            }),
-            YMToggle(YMLOC(@"AUTO_CLEARCACHE"), YMLOC(@"AUTO_CLEARCACHE_DESC"), AutoClearCache),
-        ], settingsViewController, [self parentResponder]);
+        YMPushSubSettings(YMLOC(@"PERFER_HEADER"), YMPreferencesItems(), settingsViewController, [self parentResponder]);
         return YES;
     }];
     YTIIcon *icon7 = [%c(YTIIcon) new];
@@ -669,6 +699,86 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
     perfgroup.settingIcon = icon7;
     perfgroup.indicatorIconType = YT_CHEVRON_RIGHT;
     [sectionItems addObject:perfgroup];
+
+    // ---- Custom YouMod home page ----
+    // Built here (in the one place every sub-group item array is in scope) and cached;
+    // the top-level "YouMod" tap pushes this instead of YouTube's native section view.
+    // Layout: [wider rows with ">" chevrons] for each section, then the Developer/GitHub
+    // block between SponsorBlock and Preferences, then Preferences.
+    NSMutableArray<YMSettingsItem *> *homeItems = [NSMutableArray array];
+
+    // Version (top, informational — no chevron).
+    [homeItems addObject:YMAction([@"YouMod v" stringByAppendingString:YouModVersion], nil, ^(UIViewController *vc) { (void)vc; })];
+
+    // Settings header + Search.
+    [homeItems addObject:YMHeader(YMLOC(@"SETTINGS"))];
+    [homeItems addObject:YMNavAction(YMLOC(@"SEARCH"), YMLOC(@"SEARCH_DESC"), ^(UIViewController *vc) {
+        (void)vc;
+        YMPushSettingsSearch(settingsViewController, [self parentResponder]);
+    })];
+
+    // Section rows — each a nav row (opensPage gives the ">" chevron) pushing its sub-page.
+    [homeItems addObject:YMNavAction(YMLOC(@"DOWNLOADING"), nil, ^(UIViewController *vc) {
+        (void)vc;
+        YMPushSubSettings(YMLOC(@"DOWNLOADING"), downloadingItems, settingsViewController, [self parentResponder]);
+    })];
+    [homeItems addObject:YMNavAction(YMLOC(@"APPEARANCE"), nil, ^(UIViewController *vc) {
+        (void)vc;
+        YMPushSubSettings(YMLOC(@"APPEARANCE"), appearanceItems, settingsViewController, [self parentResponder]);
+    })];
+    [homeItems addObject:YMNavAction(YMLOC(@"NAVBAR"), nil, ^(UIViewController *vc) {
+        (void)vc;
+        YMPushSubSettings(YMLOC(@"NAVBAR"), navbarItems, settingsViewController, [self parentResponder]);
+    })];
+    [homeItems addObject:YMNavAction(YMLOC(@"FEED"), nil, ^(UIViewController *vc) {
+        (void)vc;
+        YMPushSubSettings(YMLOC(@"FEED"), feedItems, settingsViewController, [self parentResponder]);
+    })];
+    [homeItems addObject:YMNavAction(YMLOC(@"PLAYER"), nil, ^(UIViewController *vc) {
+        (void)vc;
+        YMPushSubSettings(YMLOC(@"PLAYER"), playerItems, settingsViewController, [self parentResponder]);
+    })];
+    [homeItems addObject:YMNavAction(YMLOC(@"SHORTS"), nil, ^(UIViewController *vc) {
+        (void)vc;
+        YMPushSubSettings(YMLOC(@"SHORTS"), shortsItems, settingsViewController, [self parentResponder]);
+    })];
+    [homeItems addObject:YMNavAction(YMLOC(@"TABBAR"), nil, ^(UIViewController *vc) {
+        (void)vc;
+        YMPushTabBarSettings(settingsViewController, [self parentResponder]);
+    })];
+    [homeItems addObject:YMNavAction(YMLOC(@"MISCELLANEOUS"), nil, ^(UIViewController *vc) {
+        (void)vc;
+        YMPushSubSettings(YMLOC(@"MISCELLANEOUS"), miscItems, settingsViewController, [self parentResponder]);
+    })];
+    [homeItems addObject:YMNavAction(@"SponsorBlock", nil, ^(UIViewController *vc) {
+        (void)vc;
+        YMPushSponsorBlockSettings(settingsViewController);
+    })];
+
+    // Developer block (GitHub) — sits between SponsorBlock and Preferences.
+    [homeItems addObject:YMHeader(@"Developer")];
+    [homeItems addObject:YMDeveloper(@"Tonwalter888", @"author/owner", @"https://github.com/Tonwalter888", @"https://github.com/Tonwalter888")];
+    [homeItems addObject:YMDeveloper(@"G Rohit", @"collaborator", @"https://github.com/grohit1810", @"https://github.com/grohit1810")];
+    [homeItems addObject:YMDeveloper(@"ZomkaDEV", @"collaborator", @"https://github.com/ZomkaDEV", @"https://github.com/ZomkaDEV")];
+    // Blank header below the Developer section (this section is wide normally).
+    [homeItems addObject:YMHeader(@"")];
+    // The old GitHub link rows, kept like normal.
+    [homeItems addObject:YMAction(YMLOC(@"NEW_ISSUES"), YMLOC(@"NEW_ISSUES_DESC"), ^(UIViewController *vc) {
+        (void)vc;
+        [%c(YTUIUtils) openURL:[NSURL URLWithString:@"https://github.com/Tonwalter888/YouMod/issues/new/choose"]];
+    })];
+    [homeItems addObject:YMAction(YMLOC(@"SOURCE_CODES"), YMLOC(@"SOURCE_CODES_DESC"), ^(UIViewController *vc) {
+        (void)vc;
+        [%c(YTUIUtils) openURL:[NSURL URLWithString:@"https://github.com/Tonwalter888/YouMod"]];
+    })];
+
+    // Preferences (last).
+    [homeItems addObject:YMNavAction(YMLOC(@"PERFER_HEADER"), nil, ^(UIViewController *vc) {
+        (void)vc;
+        YMPushSubSettings(YMLOC(@"PERFER_HEADER"), YMPreferencesItems(), settingsViewController, [self parentResponder]);
+    })];
+
+    gYMYouModHomeItems = [homeItems copy];
 
     if ([settingsViewController respondsToSelector:@selector(setSectionItems:forCategory:title:icon:titleDescription:headerHidden:)]) {
         YTIIcon *icon = [%c(YTIIcon) new];
@@ -688,6 +798,28 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
 
 %end
 
+// The drill-down interceptor is grouped + conditionally initialized in %ctor so that if
+// -didReceiveDrillDownItem: doesn't exist on this YouTube build, we never hook it (a
+// %orig on a missing method would crash). When absent, the native section fallback row
+// still opens the same sub-pages.
+%group YMYouModDrillDown
+%hook YTSettingsViewController
+
+// When the top-level "YouMod" section is tapped, push our custom home page instead of
+// letting YouTube drill into its native section view. See YMIsYouModDrillDown() — the
+// category check is defensive (defaults to letting %orig handle it) and is the
+// on-device test-and-adjust point. Signature taken from the user's class dump.
+- (void)didReceiveDrillDownItem:(id)item {
+    if (gYMYouModHomeItems && YMIsYouModDrillDown(self, item)) {
+        YMPushYouModHome(self, [self parentResponder]);
+        return;
+    }
+    %orig;
+}
+
+%end
+%end
+
 %ctor {
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     [defaults registerDefaults:@{
@@ -704,4 +836,8 @@ static NSString *GetCacheSize() { // YTLite - @dayanch96
         ForwardSeconds: @10.0
     }];
     %init;
+    // Only hook the drill-down interceptor if this build actually has the method.
+    if ([%c(YTSettingsViewController) instancesRespondToSelector:@selector(didReceiveDrillDownItem:)]) {
+        %init(YMYouModDrillDown);
+    }
 }

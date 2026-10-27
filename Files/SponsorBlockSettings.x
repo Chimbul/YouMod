@@ -934,11 +934,10 @@ NSArray<YMSearchRow *> *sbSearchRows(UIViewController *host) {
 - (void)updateSponsorBlockSectionWithEntry:(id)entry;
 @end
 
-%hook YTSettingsSectionItemManager
-
-%new(v@:@)
-- (void)updateSponsorBlockSectionWithEntry:(id)entry {
-    YTSettingsViewController *settingsVC = [self valueForKey:@"_settingsViewControllerDelegate"];
+// Push the SponsorBlock settings page onto a settings view controller. Shared by the
+// native section hook below and the custom YouMod home page, so both entry points
+// open the identical styled SB page.
+void YMPushSponsorBlockSettings(id settingsVC) {
     // Use runtime-registered subclass of YTStyledViewController for YouTube's nav styling
     Class sbClass = objc_getClass("SBSettingsViewControllerStyled");
     if (!sbClass) sbClass = [SBSettingsViewController class];
@@ -946,6 +945,14 @@ NSArray<YMSearchRow *> *sbSearchRows(UIViewController *host) {
     id allocated = [sbClass alloc];
     SBSettingsViewController *sbVC = (SBSettingsViewController *)((id (*)(id, SEL, id))objc_msgSend)(allocated, @selector(initWithParentResponder:), settingsVC);
     [settingsVC pushViewController:sbVC];
+}
+
+%hook YTSettingsSectionItemManager
+
+%new(v@:@)
+- (void)updateSponsorBlockSectionWithEntry:(id)entry {
+    YTSettingsViewController *settingsVC = [self valueForKey:@"_settingsViewControllerDelegate"];
+    YMPushSponsorBlockSettings(settingsVC);
 }
 
 %end

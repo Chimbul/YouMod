@@ -4,6 +4,12 @@
 #import <objc/runtime.h>
 #import <objc/message.h>
 
+// YouTube's real version utility — class method exactly as specified: [%c(YTVersionUtils) appVersion].
+// Declared here so the footer can message it with [] syntax (no runtime guessing).
+@interface YTVersionUtils : NSObject
++ (NSString *)appVersion;
+@end
+
 #pragma mark - Data Model
 
 typedef NS_ENUM(NSInteger, YMRowType) {
@@ -14,7 +20,8 @@ typedef NS_ENUM(NSInteger, YMRowType) {
     YMRowTypeSegment,
     YMRowTypeTextSegment,
     YMRowTypeImageSegment,
-    YMRowTypeSlider
+    YMRowTypeSlider,
+    YMRowTypeDeveloper
 };
 
 typedef NS_ENUM(NSInteger, YMVisibilityOperator) {
@@ -144,6 +151,11 @@ typedef NS_ENUM(NSInteger, YMVisibilityOperator) {
 @property (nonatomic, assign) float sliderMax;
 @property (nonatomic, assign) float sliderStep;
 @property (nonatomic, assign) float sliderDefault;
+// Developer row: a circular GitHub avatar + display name + chevron, with a role
+// line beneath. profileURL is opened on tap; avatarURL is the (github.com/<user>.png)
+// image fetched async and cached in memory.
+@property (nonatomic, strong) NSString *profileURL;
+@property (nonatomic, strong) NSString *avatarURL;
 
 // Multi-condition visibility predicates: all conditions must match by default (AND), or any condition if matchAnyCondition is YES (OR).
 @property (nonatomic, strong) NSMutableArray<YMVisibilityCondition *> *visibilityConditions;
@@ -158,6 +170,7 @@ typedef NS_ENUM(NSInteger, YMVisibilityOperator) {
 + (instancetype)segmentWithTitle:(NSString *)title key:(NSString *)key icons:(NSArray<NSNumber *> *)icons defaultValue:(NSInteger)defaultValue;
 + (instancetype)textSegmentWithTitle:(NSString *)title key:(NSString *)key labels:(NSArray<NSString *> *)labels defaultValue:(NSInteger)defaultValue;
 + (instancetype)imageSegmentWithTitle:(NSString *)title key:(NSString *)key images:(NSArray<UIImage *> *)images defaultValue:(NSInteger)defaultValue;
++ (instancetype)developerWithName:(NSString *)name role:(NSString *)role profileURL:(NSString *)profileURL avatarURL:(NSString *)avatarURL;
 
 // Evaluation
 - (BOOL)isVisible;
@@ -279,6 +292,16 @@ typedef NS_ENUM(NSInteger, YMVisibilityOperator) {
     item.key = key;
     item.segmentImages = images;
     item.pickerDefault = defaultValue;
+    return item;
+}
+
++ (instancetype)developerWithName:(NSString *)name role:(NSString *)role profileURL:(NSString *)profileURL avatarURL:(NSString *)avatarURL {
+    YMSettingsItem *item = [[YMSettingsItem alloc] init];
+    item.type = YMRowTypeDeveloper;
+    item.title = name;
+    item.subtitle = role;
+    item.profileURL = profileURL;
+    item.avatarURL = avatarURL;
     return item;
 }
 
@@ -436,6 +459,11 @@ typedef NS_ENUM(NSInteger, YMVisibilityOperator) {
 // Whether this page installs a per-page search bar that filters its own rows.
 // Subclasses can override this.
 - (BOOL)usesPageSearch;
+// Whether this page shows the thin version footer ("YouTube <ver> • YouMod <ver>")
+// below its rows. Set before pushing; used by the custom YouMod home page.
+- (BOOL)showsVersionFooter;
+- (void)setShowsVersionFooter:(BOOL)shows;
+- (UIView *)ymVersionFooterView;
 @end
 
 static const void *kYMTableViewKey = &kYMTableViewKey;
@@ -447,6 +475,7 @@ static const void *kYMSliderKeyAssoc = &kYMSliderKeyAssoc;
 static const void *kYMSliderStepAssoc = &kYMSliderStepAssoc;
 static const void *kYMSliderLabelAssoc = &kYMSliderLabelAssoc;
 static const void *kYMPageFilterKey = &kYMPageFilterKey;
+static const void *kYMShowsVersionFooterKey = &kYMShowsVersionFooterKey;
 
 static NSString *YMFormattedSliderValue(NSString *key, float value) {
     if ([key isEqualToString:HoldToSpeedRate]) {
@@ -473,6 +502,45 @@ static NSString *YMFormattedSliderValue(NSString *key, float value) {
 - (void)setItems:(NSArray<YMSettingsItem *> *)items { objc_setAssociatedObject(self, kYMItemsKey, items, OBJC_ASSOCIATION_RETAIN_NONATOMIC); }
 
 - (BOOL)usesPageSearch { return YES; }
+
+#pragma mark - Version footer
+
+- (BOOL)showsVersionFooter { return [objc_getAssociatedObject(self, kYMShowsVersionFooterKey) boolValue]; }
+- (void)setShowsVersionFooter:(BOOL)shows { objc_setAssociatedObject(self, kYMShowsVersionFooterKey, @(shows), OBJC_ASSOCIATION_RETAIN_NONATOMIC); }
+
+// Thin, small, unselectable footer: "YouTube <ver> • YouMod <ver>".
+// The edge gap uses leading/trailing anchors (auto-flip under RTL) and the text uses
+// natural alignment, so the layout follows the app's RTL/LTR direction.
+- (UIView *)ymVersionFooterView {
+    // tableFooterView is sized by its frame (not constraints), so give it a real height.
+    // Label sits at top:12 / bottom:-24 within it (see constraints below).
+    UIView *footer = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 0, 50)];
+    footer.userInteractionEnabled = NO;
+
+    UILabel *label = [[UILabel alloc] init];
+    label.translatesAutoresizingMaskIntoConstraints = NO;
+
+    // YouTube version exactly as specified: [%c(YTVersionUtils) appVersion].
+    NSString *ytVersion = @"";
+    @try {
+        ytVersion = [%c(YTVersionUtils) appVersion] ?: @"";
+    } @catch (...) {}
+    label.text = [NSString stringWithFormat:@"YouTube %@ • YouMod %@", ytVersion, YouModVersion];
+    label.font = [UIFont systemFontOfSize:11 weight:UIFontWeightThin];
+    label.textColor = [self ymSecondaryColor];
+    label.textAlignment = NSTextAlignmentNatural; // follows RTL/LTR
+    label.userInteractionEnabled = NO; // unselectable
+    [footer addSubview:label];
+
+    [NSLayoutConstraint activateConstraints:@[
+        [label.leadingAnchor constraintEqualToAnchor:footer.leadingAnchor constant:16],  // gap from screen (flips in RTL)
+        [label.trailingAnchor constraintEqualToAnchor:footer.trailingAnchor constant:-16],
+        [label.topAnchor constraintEqualToAnchor:footer.topAnchor constant:12],
+        [label.bottomAnchor constraintEqualToAnchor:footer.bottomAnchor constant:-24],
+    ]];
+
+    return footer;
+}
 
 // The active per-page filter text (nil/empty = not filtering).
 - (NSString *)pageFilter { return objc_getAssociatedObject(self, kYMPageFilterKey); }
@@ -641,6 +709,11 @@ static const void *kYMCachedDisplayedItemsKey = &kYMCachedDisplayedItemsKey;
             [self.tableView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor]
         ]];
     }
+
+    // Thin version footer below the rows (custom YouMod home page only).
+    if (self.showsVersionFooter) {
+        self.tableView.tableFooterView = [self ymVersionFooterView];
+    }
 }
 
 - (void)traitCollectionDidChange:(UITraitCollection *)previousTraitCollection {
@@ -704,6 +777,17 @@ static const void *kYMCachedDisplayedItemsKey = &kYMCachedDisplayedItemsKey;
     } else {
         backButton.tintColor = [UIColor blackColor];
     }
+
+    // Keep the version footer pinned to the table width (it is created before the
+    // table has been laid out, so its frame width needs to be synced here).
+    UIView *footer = self.tableView.tableFooterView;
+    if (footer) {
+        CGRect f = footer.frame;
+        if (f.size.width != self.tableView.bounds.size.width) {
+            f.size.width = self.tableView.bounds.size.width;
+            footer.frame = f;
+        }
+    }
 }
 
 - (UIColor *)navBarForegroundColor {
@@ -757,6 +841,8 @@ static const void *kYMCachedDisplayedItemsKey = &kYMCachedDisplayedItemsKey;
         return [self imageSegmentCellForItem:item tableView:tableView];
     } else if (item.type == YMRowTypeSlider) {
         return [self sliderCellForItem:item tableView:tableView];
+    } else if (item.type == YMRowTypeDeveloper) {
+        return [self developerCellForItem:item tableView:tableView];
     }
     return [self pickerCellForItem:item tableView:tableView];
 }
@@ -766,6 +852,9 @@ static const void *kYMCachedDisplayedItemsKey = &kYMCachedDisplayedItemsKey;
     YMSettingsItem *item = self.displayedItems[indexPath.row];
     if (item.type == YMRowTypeAction && item.action) {
         item.action(self);
+    } else if (item.type == YMRowTypeDeveloper && item.profileURL.length > 0) {
+        NSURL *url = [NSURL URLWithString:item.profileURL];
+        if (url) [%c(YTUIUtils) openURL:url];
     }
 }
 
@@ -889,6 +978,99 @@ static const void *kYMCachedDisplayedItemsKey = &kYMCachedDisplayedItemsKey;
     if ([key isEqualToString:RewindSeconds] || [key isEqualToString:ForwardSeconds]) {
         YouModConfigureRemoteSkipCommands();
     }
+}
+
+#pragma mark - Developer Cell
+
+// In-memory avatar cache keyed by avatar URL, shared across all settings pages.
+static NSCache<NSString *, UIImage *> *YMAvatarCache(void) {
+    static NSCache<NSString *, UIImage *> *cache;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        cache = [[NSCache alloc] init];
+        cache.countLimit = 32;
+    });
+    return cache;
+}
+
+// Round an image to a circle of the given diameter (points).
+static UIImage *YMCircularImage(UIImage *image, CGFloat diameter) {
+    if (!image) return nil;
+    CGSize size = CGSizeMake(diameter, diameter);
+    UIGraphicsBeginImageContextWithOptions(size, NO, 0);
+    CGRect rect = CGRectMake(0, 0, size.width, size.height);
+    UIBezierPath *path = [UIBezierPath bezierPathWithOvalInRect:rect];
+    [path addClip];
+    [image drawInRect:rect];
+    UIImage *result = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    return result ?: image;
+}
+
+// Gray circle shown while a GitHub avatar is still downloading.
+static UIImage *YMGrayCircle(CGFloat diameter) {
+    CGSize size = CGSizeMake(diameter, diameter);
+    UIGraphicsBeginImageContextWithOptions(size, NO, 0);
+    [[UIColor colorWithWhite:0.3 alpha:1.0] setFill];
+    UIBezierPath *path = [UIBezierPath bezierPathWithOvalInRect:CGRectMake(0, 0, size.width, size.height)];
+    [path fill];
+    UIImage *result = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    return result;
+}
+
+- (UITableViewCell *)developerCellForItem:(YMSettingsItem *)item tableView:(UITableView *)tableView {
+    UITableViewCell *cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:nil];
+    cell.backgroundColor = [UIColor clearColor];
+    cell.selectionStyle = UITableViewCellSelectionStyleDefault;
+    cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator; // the trailing ">"
+
+    cell.textLabel.text = item.title;
+    cell.textLabel.textColor = [self ymTextColor];
+    cell.textLabel.font = [UIFont systemFontOfSize:16 weight:UIFontWeightMedium];
+
+    if (item.subtitle.length > 0) {
+        cell.detailTextLabel.text = item.subtitle;
+        cell.detailTextLabel.textColor = [self ymSecondaryColor];
+        cell.detailTextLabel.font = [UIFont systemFontOfSize:13];
+        cell.detailTextLabel.numberOfLines = 0;
+    }
+
+    // Put the circular avatar in the cell's imageView: UIKit then lays the name/role
+    // text out to its right automatically (no fragile manual frame offsets).
+    const CGFloat avatarDiameter = 36.0;
+    cell.imageView.contentMode = UIViewContentModeScaleAspectFill;
+    cell.imageView.clipsToBounds = YES;
+
+    NSString *urlString = item.avatarURL;
+    if (urlString.length > 0) {
+        UIImage *cached = [YMAvatarCache() objectForKey:urlString];
+        if (cached) {
+            cell.imageView.image = cached;
+        } else {
+            cell.imageView.image = YMGrayCircle(avatarDiameter); // placeholder, no text jump
+            NSURL *url = [NSURL URLWithString:urlString];
+            if (url) {
+                __weak UITableViewCell *weakCell = cell;
+                dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY, 0), ^{
+                    NSData *data = [NSData dataWithContentsOfURL:url];
+                    UIImage *img = data ? [UIImage imageWithData:data] : nil;
+                    UIImage *rounded = img ? YMCircularImage(img, avatarDiameter) : nil;
+                    if (rounded) [YMAvatarCache() setObject:rounded forKey:urlString];
+                    if (rounded) {
+                        dispatch_async(dispatch_get_main_queue(), ^{
+                            __strong UITableViewCell *strongCell = weakCell;
+                            if (!strongCell) return;
+                            strongCell.imageView.image = rounded;
+                            [strongCell setNeedsLayout];
+                        });
+                    }
+                });
+            }
+        }
+    }
+
+    return cell;
 }
 
 #pragma mark - Action Cell
@@ -1438,6 +1620,14 @@ YMSettingsItem *YMTextSegment(NSString *title, NSString *key, NSArray<NSString *
 
 YMSettingsItem *YMImageSegment(NSString *title, NSString *key, NSArray<UIImage *> *images, NSInteger defaultValue) {
     return [YMSettingsItem imageSegmentWithTitle:title key:key images:images defaultValue:defaultValue];
+}
+
+// A Developer row: circular GitHub avatar + display name + chevron, with the role
+// beneath. GitHub serves a user's avatar at github.com/<user>.png, so we only need
+// the handle to both open the profile and fetch the avatar.
+YMSettingsItem *YMDeveloper(NSString *name, NSString *role, NSString *profileURL, NSString *avatarBaseURL) {
+    NSString *avatarURL = [NSString stringWithFormat:@"%@.png", avatarBaseURL];
+    return [YMSettingsItem developerWithName:name role:role profileURL:profileURL avatarURL:avatarURL];
 }
 
 #pragma mark - YMTabOrderViewController
@@ -2484,6 +2674,20 @@ void YMPushSubSettings(NSString *title, NSArray<YMSettingsItem *> *items, id set
     if (!vc) vc = [[styledClass alloc] init];
     vc.navTitle = title;
     vc.items = items;
+    [settingsVC pushViewController:vc];
+}
+
+// Same as YMPushSubSettings, but the page shows the thin version footer. The flag is
+// set before pushing so -viewDidLoad picks it up when it builds the table footer.
+void YMPushSubSettingsWithFooter(NSString *title, NSArray<YMSettingsItem *> *items, id settingsVC, id parentResponder) {
+    Class styledClass = objc_getClass("YMSubSettingsViewControllerStyled");
+    if (!styledClass) styledClass = [YMSubSettingsViewController class];
+
+    YMSubSettingsViewController *vc = (YMSubSettingsViewController *)((id (*)(id, SEL, id))objc_msgSend)([styledClass alloc], @selector(initWithParentResponder:), parentResponder);
+    if (!vc) vc = [[styledClass alloc] init];
+    vc.navTitle = title;
+    vc.items = items;
+    vc.showsVersionFooter = YES;
     [settingsVC pushViewController:vc];
 }
 
