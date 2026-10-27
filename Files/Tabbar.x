@@ -329,16 +329,23 @@ static BOOL isGestureRegistered = NO;
 %end
 
 // Startup Tab
+static BOOL ymShowLibraryForItem(YTPivotBarViewController *pivotBar, id item) {
+    if (![[item pivotIdentifier] isEqualToString:kYMLibraryPivotIdentifier]) return NO;
+    [pivotBar cacheCurrentViewControllers];
+    [pivotBar updateViewsWithSelectedPivotIdentifier:kYMLibraryPivotIdentifier];
+    UIViewController *libraryVC = YouModDownloadLibraryViewController(pivotBar);
+    [[pivotBar delegate] didTapPivotBarItem:item withViewControllers:@[libraryVC] animated:YES];
+    return YES;
+}
+
 static BOOL isTabSelected = NO;
 %hook YTPivotBarViewController
 - (void)selectItemWithPivotBarItem:(id)item {
-    if ([[item pivotIdentifier] isEqualToString:kYMLibraryPivotIdentifier]) {
-        [self cacheCurrentViewControllers];
-        [self updateViewsWithSelectedPivotIdentifier:kYMLibraryPivotIdentifier];
-        UIViewController *libraryVC = YouModDownloadLibraryViewController(self);
-        [[self delegate] didTapPivotBarItem:item withViewControllers:@[libraryVC] animated:YES];
-        return;
-    }
+    if (ymShowLibraryForItem(self, item)) return;
+    %orig(item);
+}
+- (void)selectItemWithPivotRenderer:(id)item {
+    if (ymShowLibraryForItem(self, item)) return;
     %orig(item);
 }
 // Startup-tab support: the Download tab has no native browse destination, so when the
