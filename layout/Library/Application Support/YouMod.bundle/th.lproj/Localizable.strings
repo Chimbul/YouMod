@@ -743,3 +743,6 @@
 "STARTUP_VIDEO_DELETE_FAILED" = "ไม่สามารถลบวิดีโอเริ่มต้นได้";
 "STARTUP_VIDEO_DELETE_CONFIRM" = "ต้องการลบวิดีโอเริ่มต้นหรือไม่?";
 "STARTUP_VIDEO_DELETE_CONFIRM_DESC" = "วิดีโอที่บันทึกไว้จะถูกลบออกจากอุปกรณ์นี้";
+"DUPLICATE_DOWNLOAD_TITLE" = "Already downloaded";
+"DUPLICATE_DOWNLOAD_MESSAGE" = "This video is already in your library. Delete the existing file and download it again?";
+"DUPLICATE_DOWNLOAD_REPLACE" = "Delete and download again";

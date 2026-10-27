@@ -772,3 +772,6 @@
 "SLEEP_TIMER_ENTRY_TABBAR" = "Tab bar";
 "SLEEP_TIMER_ENTRY_OVERLAY" = "Player overlay";
 "SLEEP_TIMER_ENTRY_BOTH" = "Both";
+"DUPLICATE_DOWNLOAD_TITLE" = "Already downloaded";
+"DUPLICATE_DOWNLOAD_MESSAGE" = "This video is already in your library. Delete the existing file and download it again?";
+"DUPLICATE_DOWNLOAD_REPLACE" = "Delete and download again";

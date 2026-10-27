@@ -744,3 +744,6 @@
 "STARTUP_VIDEO_DELETE_FAILED" = "Could not delete the startup video.";
 "STARTUP_VIDEO_DELETE_CONFIRM" = "Delete startup video?";
 "STARTUP_VIDEO_DELETE_CONFIRM_DESC" = "The saved video will be removed from this device.";
+"DUPLICATE_DOWNLOAD_TITLE" = "Already downloaded";
+"DUPLICATE_DOWNLOAD_MESSAGE" = "This video is already in your library. Delete the existing file and download it again?";
+"DUPLICATE_DOWNLOAD_REPLACE" = "Delete and download again";
