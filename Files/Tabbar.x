@@ -108,7 +108,7 @@ static YTIPivotBarSupportedRenderers *YouModNewTab(NSString *pivotID, NSString *
         tab.pivotBarIconOnlyItemRenderer.pivotIdentifier = pivotID;
         tab.pivotBarIconOnlyItemRenderer.navigationEndpoint.browseEndpoint.browseId = pivotID;
         tab.pivotBarIconOnlyItemRenderer.icon.iconType = it;
-        tab.pivotBarIconOnlyItemRenderer.backgroundStyle = 1;
+        if ([tab.pivotBarIconOnlyItemRenderer respondsToSelector:@selector(setBackgroundStyle:)]) tab.pivotBarIconOnlyItemRenderer.backgroundStyle = 1; // absent on older builds
     } else {
         tab.pivotBarItemRenderer.pivotIdentifier = pivotID;
         tab.pivotBarItemRenderer.navigationEndpoint.browseEndpoint.browseId = pivotID;
