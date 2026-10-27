@@ -273,7 +273,9 @@ static void SBRebuildMarkersInDecorationView(UIView *view) {
         SBRebuildMarkersInLayer(progressView.layer, segments, 0.0, totalTime, 0.0, totalTime);
     } else if ([self.activeVideoPlayerOverlay isKindOfClass:%c(YTMainAppVideoPlayerOverlayViewController)]) {
         if (!IS_ENABLED(SBSegmentsInPlayer)) return;
-        YTModularPlayerBarView *playerBarView = ((YTMainAppVideoPlayerOverlayViewController *)self.activeVideoPlayerOverlay).playerBarController.playerBar.modularPlayerBar.view;
+        id playerBar = ((YTMainAppVideoPlayerOverlayViewController *)self.activeVideoPlayerOverlay).playerBarController.playerBar;
+        if (![playerBar respondsToSelector:@selector(modularPlayerBar)]) return; // 19.20.x and older: no modular bar
+        YTModularPlayerBarView *playerBarView = [playerBar modularPlayerBar].view;
         objc_setAssociatedObject(playerBarView, @selector(sbSegmentsForView), segments, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
         objc_setAssociatedObject(playerBarView, @selector(sbMarkerContextForView), @(SBMarkerContextPlayer), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
         for (UIView *sub in playerBarView.subviews) {
@@ -286,7 +288,7 @@ static void SBRebuildMarkersInDecorationView(UIView *view) {
         if (!IS_ENABLED(SBSegmentsInFeed)) return;
         YTInlineMutedPlaybackPlayerOverlayView *view = (YTInlineMutedPlaybackPlayerOverlayView *)((YTInlineMutedPlaybackPlayerOverlayViewController *)self.activeVideoPlayerOverlay).view;
         YTInlineMutedPlaybackScrubberView *scrubView = view.scrubberView;
-        if (scrubView.modularPlayerBarEnabled) {
+        if ([scrubView respondsToSelector:@selector(modularPlayerBarEnabled)] && scrubView.modularPlayerBarEnabled) {
             YTModularPlayerBarView *modularView = scrubView.modularPlayerBar.view;
             objc_setAssociatedObject(modularView, @selector(sbSegmentsForView), segments, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
             objc_setAssociatedObject(modularView, @selector(sbMarkerContextForView), @(SBMarkerContextFeed), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
