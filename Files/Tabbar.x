@@ -348,6 +348,14 @@ static BOOL isTabSelected = NO;
     if (ymShowLibraryForItem(self, item)) return;
     %orig(item);
 }
+- (void)didTapItemWithIconOnlyItemRenderer:(id)renderer {
+    if ([[renderer pivotIdentifier] isEqualToString:kYMLibraryPivotIdentifier]) {
+        YTIPivotBarItemRenderer *item = [%c(YTIPivotBarItemRenderer) new];
+        item.pivotIdentifier = kYMLibraryPivotIdentifier;
+        if (ymShowLibraryForItem(self, item)) return;
+    }
+    %orig(renderer);
+}
 // Startup-tab support: the Download tab has no native browse destination, so when the
 // saved Default Tab resolves to it, present the download library exactly like a real
 // tap instead of letting YouTube resolve a pivot identifier it doesn't know.
