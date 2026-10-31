@@ -897,6 +897,10 @@ typedef NS_ENUM(NSInteger, SBSegmentAction) {
 - (void)didTapCloseButton;
 @end
 
+@interface YTReelWatchRootViewController : UIViewController
+@property (nonatomic, assign, readonly) YTPlayerViewController *player;
+@end
+
 // Overlay window/view that only take touches landing on their subviews; empty
 // areas fall through to YouTube's window underneath (SponsorBlock.x).
 @interface SBPassthroughView : UIView

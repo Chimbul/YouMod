@@ -622,11 +622,34 @@ void YouModHandleDownloadButtonAction(_ASDisplayView *view) {
     [YouModDownloadActions handleDownloadButtonForView:view];
 }
 
-%hook YTReelWatchPlaybackOverlayView
-- (void)layoutSubviews {
+%hook YTReelWatchRootViewController
+- (void)viewDidLayoutSubviews {
     %orig;
     if (!IS_ENABLED(AddDownloadToShorts)) return;
-    YTQTMButton *downloadBtn = (YTQTMButton *)[self viewWithTag:1501];
+    UIView *rootView = self.view;
+    YTQTMButton *downloadBtn = (YTQTMButton *)[rootView viewWithTag:1501];
+    @try {
+        YTReelModel *model = [[self valueForKey:@"_playerParentPlaybackSequentialItemController"] valueForKey:@"_model"];
+        if (model.videoType == 9) {
+            if (downloadBtn) [downloadBtn removeFromSuperview];
+            return;
+        }
+    } @catch (id ex) {
+        if (downloadBtn) [downloadBtn removeFromSuperview];
+        return;
+    }
+    UIView *topView = nil;
+    for (UIView *sub in rootView.subviews) {
+        if ([sub isKindOfClass:%c(YTReelTopBarView)] 
+            || [sub isKindOfClass:%c(YTReelPausedStateCarouselView)]) {
+            topView = sub;
+            break;
+        }
+    }
+    if (topView == nil) {
+        if (downloadBtn) [downloadBtn removeFromSuperview];
+        return;
+    }
     if (!downloadBtn) {
         UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:20 weight:UIImageSymbolWeightMedium];
         UIImage *icon = [UIImage systemImageNamed:@"arrow.down.circle" withConfiguration:config];
@@ -636,68 +659,17 @@ void YouModHandleDownloadButtonAction(_ASDisplayView *view) {
         downloadBtn.exclusiveTouch = YES;
         downloadBtn.tag = 1501;
         [downloadBtn addTarget:self action:@selector(didTapYouModShortsDownload:) forControlEvents:UIControlEventTouchUpInside];
-        [self addSubview:downloadBtn];
+        [rootView addSubview:downloadBtn];
     }
-    CGFloat btnWidth = 64.0;
-    CGFloat btnHeight = 60.0;
-    YTReelElementAsyncComponentView *pov = nil;
-    @try {
-        pov = [self valueForKey:@"_playerOverlayView"];
-    } @catch (...) {}
-    YTReelElementAsyncComponentView *actionBar = [self valueForKey:@"_actionBarComponentView"];
-    CGFloat X = actionBar.frame.origin.x;
-    CGFloat Y = 0.0;
-    if (pov == nil) {
-        Y = actionBar.frame.origin.y - 76.0;
-        btnHeight = btnHeight + 16.0;
-    } else {
-        Y = pov.frame.origin.y - 60.0;
-        [downloadBtn enableNewTouchFeedback];
-    }
-    downloadBtn.frame = CGRectMake(X, Y, btnWidth, btnHeight);
-    [self bringSubviewToFront:downloadBtn];
+    CGRect rect = [topView convertRect:topView.bounds toView:rootView];
+    downloadBtn.frame = CGRectMake(CGRectGetMaxX(rect) - 10, CGRectGetMaxY(rect) - 50, 40, 40);
+    [rootView bringSubviewToFront:downloadBtn];
 }
 %new
 - (void)didTapYouModShortsDownload:(YTQTMButton *)button {
-    YTShortsPlayerViewController *shortsPlayerView = (YTShortsPlayerViewController *)self._viewControllerForAncestor;
-    YTPlayerViewController *player = (YTPlayerViewController *)shortsPlayerView.childViewControllers[0];
     UIViewController *presenter = button._viewControllerForAncestor;
     YouModDownloadParentResponder = [presenter valueForKey:@"_parentResponder"];
-    [YouModDownloadActions showDownloadManagerForPlayer:player presenter:presenter sender:button isShorts:YES];
-}
-%end
-
-%hook YTShortsContentPresenterView
-- (void)layoutSubviews {
-    %orig;
-    if (!IS_ENABLED(AddDownloadToShorts)) return;
-    YTQTMButton *downloadBtn = (YTQTMButton *)[self viewWithTag:1501];
-    if (!downloadBtn) {
-        UIImageSymbolConfiguration *config = [UIImageSymbolConfiguration configurationWithPointSize:20 weight:UIImageSymbolWeightMedium];
-        UIImage *icon = [UIImage systemImageNamed:@"arrow.down.circle" withConfiguration:config];
-        downloadBtn = [%c(YTQTMButton) iconButton];
-        [downloadBtn setImage:icon forState:UIControlStateNormal];
-        [downloadBtn setTintColor:[UIColor whiteColor]];
-        downloadBtn.exclusiveTouch = YES;
-        downloadBtn.tag = 1501;
-        [downloadBtn addTarget:self action:@selector(didTapYouModShortsDownload:) forControlEvents:UIControlEventTouchUpInside];
-        [downloadBtn enableNewTouchFeedback];
-        [self addSubview:downloadBtn];
-    }
-    YTReelElementAsyncComponentView *ov = [self valueForKey:@"_overlayView"];
-    if (!ov) return;
-    id temp = ov;
-    while (ov.subviews.count == 1) ov = ov.subviews[0];
-    if (ov.subviews.count <= 1 || ov == temp) return;
-    CGRect frame = [ov convertRect:ov.bounds toView:self];
-    downloadBtn.frame = CGRectMake(ov.subviews[1].frame.origin.x, frame.origin.y - 60, 64, 60);
-    [self bringSubviewToFront:downloadBtn];
-}
-%new
-- (void)didTapYouModShortsDownload:(YTQTMButton *)button {
-    YTPlayerViewController *player = [[[self valueForKey:@"_delegate"] valueForKey:@"_parentResponder"] valueForKey:@"_player"];
-    YouModDownloadParentResponder = [self valueForKey:@"_parentResponder"];
-    [YouModDownloadActions showDownloadManagerForPlayer:player presenter:button._viewControllerForAncestor sender:button isShorts:YES];
+    [YouModDownloadActions showDownloadManagerForPlayer:presenter.player presenter:presenter sender:button isShorts:YES];
 }
 %end
 

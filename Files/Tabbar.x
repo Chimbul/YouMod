@@ -113,7 +113,7 @@ static YTIPivotBarSupportedRenderers *YouModNewTab(NSString *pivotID, NSString *
         tab.pivotBarItemRenderer.pivotIdentifier = pivotID;
         tab.pivotBarItemRenderer.navigationEndpoint.browseEndpoint.browseId = pivotID;
         tab.pivotBarItemRenderer.icon.iconType = it;
-        if (IS_ENABLED(HideTabLabels)) {
+        if (!IS_ENABLED(HideTabLabels)) {
             YTIStringRun *name = [%c(YTIStringRun) new];
             name.text = title;
             [tab.pivotBarItemRenderer.title.runsArray addObject:name];
